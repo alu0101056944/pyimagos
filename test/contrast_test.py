@@ -5,9 +5,9 @@ Trabajo de Final de Máster
 Pyimagos development
 '''
 
-import pytest
-
 import os.path
+
+import pytest
 import torch
 
 import src.vision_transformer as vits
