@@ -26,12 +26,14 @@ from constants import (
 )
 
 def loadInputImage(filename: str) -> torch.Tensor:
-  transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Lambda(lambda x : x.repeat(3, 1, 1)) # Model needs 3 channels.
-  ])
+
   image = Image.open(filename)
-  tensor_image = transform(image)
+  tensor_image = transforms.ToTensor()(image)
+  if tensor_image.shape[0] <= 3:
+    tensor_image = torch.cat(
+      [tensor_image for i in range(3 - tensor_image.shape[0] + 1)], dim=0)
+  elif tensor_image.shape[0] > 3:
+    tensor_image = tensor_image[:3, :, :]
   tensor_image = tensor_image.unsqueeze(0) # Makes it [1, C, H, W]
   return tensor_image
 
@@ -100,22 +102,70 @@ def main(filename: str) -> None:
 
   differenceImage = np.absolute(inputImage - outputImage)
 
-  f, axs = plt.subplots(2, 2)
-  axs[0, 0].imshow(inputImage, cmap='gray')
-  axs[0, 0].set_title('Input image')
+  # f, axs = plt.subplots(2, 2)
+  # axs[0, 0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
+  # axs[0, 0].set_title('Input image')
 
-  axs[0, 1].imshow(outputImage, cmap='gray')
-  axs[0, 1].set_title('Output image')
+  # axs[0, 1].imshow(outputImage, cmap='gray', vmin=0, vmax=1)
+  # axs[0, 1].set_title('Output image')
 
-  im2 = axs[1, 0].imshow(differenceImage, cmap='gray')
-  axs[1, 0].set_title('Difference normalized')
-  plt.colorbar(im2, ax=axs[1, 0])
+  # im2 = axs[1, 0].imshow(differenceImage, cmap='gray')
+  # axs[1, 0].set_title('Difference normalized')
+  # plt.colorbar(im2, ax=axs[1, 0])
 
-  im3 = axs[1, 1].imshow(np.copy(differenceImage), cmap='gray', vmin=0, vmax=1)
-  axs[1, 1].set_title('Difference')
-  plt.colorbar(im3, ax=axs[1, 1])
+  # im3 = axs[1, 1].imshow(np.copy(differenceImage), cmap='gray', vmin=0, vmax=1)
+  # axs[1, 1].set_title('Difference')
+  # plt.colorbar(im3, ax=axs[1, 1])
+  # plt.show()
+
+
+  ## Border detection
+
+  gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
+
+  block_size = (3, 3)
+  windows = np.lib.stride_tricks.sliding_window_view(
+      gaussianBlurred, 
+      window_shape=block_size
+  )
+  
+  # Reshape to make blocks contiguous
+  reshaped_windows = windows.reshape(-1, *block_size)
+  
+  # Calculate max and min for each block
+  max_min_diff = reshaped_windows.max(axis=(1, 2)) - reshaped_windows.min(axis=(1, 2))
+  
+  bordersDetected = np.copy(gaussianBlurred)
+  for i in range(windows.shape[0]):
+    for j in range(windows.shape[1] ):
+      # Calculate center indices
+      center_y = i + block_size[0] // 2
+      center_x = j + block_size[1] // 2
+      
+      # Replace center value with max-min difference
+      bordersDetected[center_y, center_x] = max_min_diff[i * windows.shape[1] + j]
+  
+  bordersDetectedHEEnchanced = np.copy(bordersDetected)
+  bordersDetectedHEEnchanced = (bordersDetectedHEEnchanced - bordersDetectedHEEnchanced.min()) / (
+     bordersDetectedHEEnchanced.max() - bordersDetectedHEEnchanced.min())
+
+  # showcase before and after
+  f, axs = plt.subplots(1, 5)
+  axs[0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
+  axs[0].set_title('Input image')
+
+  axs[1].imshow(outputImage, cmap='gray', vmin=0, vmax=1)
+  axs[1].set_title('HE enchanced')
+  
+  axs[2].imshow(gaussianBlurred, cmap='gray', vmin=0, vmax=1)
+  axs[2].set_title('Gaussian blur')
+
+  axs[3].imshow(bordersDetected, cmap='gray', vmin=0, vmax=1)
+  axs[3].set_title('Border detection')
+
+  axs[4].imshow(bordersDetectedHEEnchanced, cmap='gray', vmin=0, vmax=1)
+  axs[4].set_title('Border detection HE')
   plt.show()
-
 
 if __name__ == '__main__':
     main()
