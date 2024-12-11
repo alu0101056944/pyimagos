@@ -36,11 +36,11 @@ class TestAttentionMap:
         model.eval()
     return model
 
-  @pytest.fixture(scope="class")
+  @pytest.fixture(scope='class')
   def model(self):
     yield self.dino_vits8(patch_size=8)
 
-  @pytest.fixture(scope="class")
+  @pytest.fixture(scope='class')
   def inputImage(self):
     transform = transforms.Compose([
       transforms.ToTensor(),
@@ -50,24 +50,36 @@ class TestAttentionMap:
     tensorImage = transform(image)
     tensorImage = tensorImage.unsqueeze(0) # Makes it [1, C, H, W]
     yield tensorImage
+
+  @pytest.fixture(scope='class')
+  def selfAttentionMap(self, model, inputImage):
+    with torch.no_grad():
+      attention_maps = model.get_last_selfattention(inputImage)
+    return attention_maps
   
   def test_can_load_pretrained_model(self, model) -> None:
     assert isinstance(model, vits.VisionTransformer)
 
+  def test_can_transform_input_image_to_tensor(self, inputImage) -> None:
+    assert isinstance(inputImage, torch.Tensor)
 
-  def test_can_show_attention_map(self, model, inputImage) -> None:
-      with torch.no_grad():
-        attention_maps = model.get_last_selfattention(inputImage)
+  def test_can_get_attention_map(self, selfAttentionMap) -> None:
+    assert isinstance(selfAttentionMap, torch.Tensor)
+    assert len(selfAttentionMap.shape) == 4
+    expected_num_patches = 5041
+    assert selfAttentionMap.shape[-1] == expected_num_patches
+    expected_num_heads = 6
+    assert selfAttentionMap.shape[1] == expected_num_heads
 
-      # Selection: attention head, batch, patchNi, patchNj.
-      cls_attention = attention_maps[0, 0, 0, 1:] # dont include attention to self
-      w0 = inputImage.shape[-1] // 8 # 8 = num_patches
-      h0 = inputImage.shape[-2] // 8
-      fit_size = w0 * h0
-      attention_grid = cls_attention[:fit_size]
-      attention_grid = attention_grid.reshape(h0, w0)
-      plt.figure(figsize=(10, 10))
-      plt.imshow(attention_grid)
-      plt.title("Attention map")
-      plt.show()
+  def test_can_show_attention_map(self, selfAttentionMap, inputImage) -> None:
+
+    # Selection: attention head, batch, patchNi, patchNj.
+    cls_attention = selfAttentionMap[0, 0, 0, 1:] # dont include attention to self
+    w0 = inputImage.shape[-1] // 8 # 8 = num_patches
+    h0 = inputImage.shape[-2] // 8
+    attention_grid = cls_attention.reshape(h0, w0)
+    plt.figure(figsize=(10, 10))
+    plt.imshow(attention_grid)
+    plt.title("Attention map")
+    plt.show()
 
