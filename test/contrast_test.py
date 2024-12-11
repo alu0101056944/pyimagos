@@ -15,13 +15,17 @@ import torchvision.transforms as transforms
 
 import src.vision_transformer as vits
 
+from constants import (
+  MODEL_PATH
+)
+
 class TestAttentionMap:
 
   # copied from https://github.com/facebookresearch/dino/hubconf.py
   # Modification: local load for state_dict instead of url download
   # Original download url: https://dl.fbaipublicfiles.com/dino/dino_deitsmall8_pretrain/dino_deitsmall8_pretrain.pth
   # Modification: added patch_size parameter. Also added model.eval()
-  def dino_vits8(pretrained=True, patch_size=8, **kwargs):
+  def dino_vits8(pretrained=True, patch_size=8, **kwargs) -> vits.VisionTransformer:
     """
     ViT-Small/8x8 pre-trained with DINO.
     Achieves 78.3% top-1 accuracy on ImageNet with k-NN classification.
@@ -29,8 +33,7 @@ class TestAttentionMap:
     model = vits.__dict__["vit_small"](patch_size=patch_size, num_classes=0, **kwargs)
     if pretrained:
         absolutePath = os.path.dirname(__file__)
-        path = os.path.normpath(os.path.join(absolutePath,
-                                             '../model/dino_deitsmall8_pretrain.pth'))
+        path = os.path.normpath(os.path.join(absolutePath, MODEL_PATH))
         state_dict = torch.load(path, map_location="cpu")
         model.load_state_dict(state_dict, strict=True)
         model.eval()
@@ -70,16 +73,3 @@ class TestAttentionMap:
     assert selfAttentionMap.shape[-1] == expected_num_patches
     expected_num_heads = 6
     assert selfAttentionMap.shape[1] == expected_num_heads
-
-  def test_can_show_attention_map(self, selfAttentionMap, inputImage) -> None:
-
-    # Selection: attention head, batch, patchNi, patchNj.
-    cls_attention = selfAttentionMap[0, 0, 0, 1:] # dont include attention to self
-    w0 = inputImage.shape[-1] // 8 # 8 = num_patches
-    h0 = inputImage.shape[-2] // 8
-    attention_grid = cls_attention.reshape(h0, w0)
-    plt.figure(figsize=(10, 10))
-    plt.imshow(attention_grid)
-    plt.title("Attention map")
-    plt.show()
-
