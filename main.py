@@ -26,12 +26,14 @@ from constants import (
 )
 
 def loadInputImage(filename: str) -> torch.Tensor:
-  transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Lambda(lambda x : x.repeat(3, 1, 1)) # Model needs 3 channels.
-  ])
+
   image = Image.open(filename)
-  tensor_image = transform(image)
+  tensor_image = transforms.ToTensor()(image)
+  if tensor_image.shape[0] <= 3:
+    tensor_image = torch.cat(
+      [tensor_image for i in range(3 - tensor_image.shape[0] + 1)], dim=0)
+  elif tensor_image.shape[0] > 3:
+    tensor_image = tensor_image[:3, :, :]
   tensor_image = tensor_image.unsqueeze(0) # Makes it [1, C, H, W]
   return tensor_image
 
@@ -101,10 +103,10 @@ def main(filename: str) -> None:
   differenceImage = np.absolute(inputImage - outputImage)
 
   f, axs = plt.subplots(2, 2)
-  axs[0, 0].imshow(inputImage, cmap='gray')
+  axs[0, 0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
   axs[0, 0].set_title('Input image')
 
-  axs[0, 1].imshow(outputImage, cmap='gray')
+  axs[0, 1].imshow(outputImage, cmap='gray', vmin=0, vmax=1)
   axs[0, 1].set_title('Output image')
 
   im2 = axs[1, 0].imshow(differenceImage, cmap='gray')

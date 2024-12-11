@@ -33,7 +33,7 @@ class TestAttentionMap:
     model = vits.__dict__["vit_small"](patch_size=patch_size, num_classes=0, **kwargs)
     if pretrained:
         absolutePath = os.path.dirname(__file__)
-        path = os.path.normpath(os.path.join(absolutePath, MODEL_PATH))
+        path = os.path.normpath(os.path.join(absolutePath, '../model/dino_deitsmall8_pretrain.pth'))
         state_dict = torch.load(path, map_location="cpu")
         model.load_state_dict(state_dict, strict=True)
         model.eval()
