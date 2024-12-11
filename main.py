@@ -73,6 +73,7 @@ def getThresholdedNdarray(selfAttentionMap) -> np.ndarray:
 @click.argument('filename')
 def main(filename: str) -> None:
   inputImage = loadInputImage(filename)
+
   selfAttentionMapModel = dino_vits8()
   selfAttentionMap = getSelfAttentionMap(selfAttentionMapModel, inputImage)
   roughMask = getThresholdedNdarray(selfAttentionMap).astype(np.uint8)
@@ -86,20 +87,33 @@ def main(filename: str) -> None:
   scaleFactorY = inputImage.shape[-2] / cleanMask.shape[-2]
   scaledMask = cv.resize(cleanMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
                         interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
-  
-  maskedInputImage = inputImage.numpy(force=True)[0, 0] * scaledMask
+
+  inputImage = inputImage.numpy(force=True)[0, 0]
+
+  maskedInputImage = inputImage * scaledMask
   maskedInputImage = np.ma.masked_equal(maskedInputImage, 0)
+  maxValueWithinMask = maskedInputImage.max()
+  minValueWithinMask = maskedInputImage.min()
 
-  maskedInputImage = (maskedInputImage - maskedInputImage.min()) / (
-     maskedInputImage.max() - maskedInputImage.min())
-  maskedInputImage = np.ma.filled(maskedInputImage, 0)
-  maskedInputImage = np.add(maskedInputImage, (
-     np.invert(scaledMask.astype(bool)).astype(np.uint8) * inputImage.numpy(force=True)[0, 0]))
+  outputImage = np.clip((inputImage - minValueWithinMask) / (
+     maxValueWithinMask - minValueWithinMask), 0, 1)
 
-  f, axs = plt.subplots(1, 2, figsize=(10, 10))
-  plt.title("Attention map")
-  axs[0].imshow(inputImage.numpy()[0,0], cmap='gray')
-  axs[1].imshow(maskedInputImage, cmap='gray')
+  differenceImage = np.absolute(inputImage - outputImage)
+
+  f, axs = plt.subplots(2, 2)
+  axs[0, 0].imshow(inputImage, cmap='gray')
+  axs[0, 0].set_title('Input image')
+
+  axs[0, 1].imshow(outputImage, cmap='gray')
+  axs[0, 1].set_title('Output image')
+
+  im2 = axs[1, 0].imshow(differenceImage, cmap='gray')
+  axs[1, 0].set_title('Difference normalized')
+  plt.colorbar(im2, ax=axs[1, 0])
+
+  im3 = axs[1, 1].imshow(np.copy(differenceImage), cmap='gray', vmin=0, vmax=1)
+  axs[1, 1].set_title('Difference')
+  plt.colorbar(im3, ax=axs[1, 1])
   plt.show()
 
 
