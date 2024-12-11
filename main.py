@@ -16,6 +16,8 @@ import click
 import matplotlib.pyplot as plt
 import torch
 import torchvision.transforms as transforms
+import numpy as np
+import cv2 as cv
 
 import src.vision_transformer as vits
 
@@ -51,7 +53,7 @@ def dino_vits8(pretrained=True, patch_size=8, **kwargs) -> vits.VisionTransforme
       model.eval()
   return model
 
-def showSelfAttentionMap(model: vits.VisionTransformer, inputImage: torch.Tensor) -> None:
+def getSelfAttentionMap(model: vits.VisionTransformer, inputImage: torch.Tensor) -> None:
   with torch.no_grad():
     selfAttentionMap = model.get_last_selfattention(inputImage)
 
@@ -60,17 +62,46 @@ def showSelfAttentionMap(model: vits.VisionTransformer, inputImage: torch.Tensor
   w0 = inputImage.shape[-1] // 8 # 8 = num_patches
   h0 = inputImage.shape[-2] // 8
   attention_grid = cls_attention.reshape(h0, w0)
-  plt.figure(figsize=(10, 10))
-  plt.imshow(attention_grid)
-  plt.title("Attention map")
-  plt.show()
+  return attention_grid
+
+def getThresholdedNdarray(selfAttentionMap) -> np.ndarray:
+  selfAttentionMap = selfAttentionMap.numpy()
+  selfAttentionMap = (selfAttentionMap > np.percentile(selfAttentionMap, 70)).astype(int)
+  return selfAttentionMap
 
 @click.command()
 @click.argument('filename')
 def main(filename: str) -> None:
   inputImage = loadInputImage(filename)
   selfAttentionMapModel = dino_vits8()
-  showSelfAttentionMap(selfAttentionMapModel, inputImage)
+  selfAttentionMap = getSelfAttentionMap(selfAttentionMapModel, inputImage)
+  roughMask = getThresholdedNdarray(selfAttentionMap).astype(np.uint8)
+
+  erodeKernel = np.ones((4, 4), np.uint8)
+  cleanMask = cv.erode(roughMask, erodeKernel, iterations=1)
+  dilateKernel = np.ones((6, 6), np.uint8)
+  cleanMask = cv.dilate(cleanMask, dilateKernel, iterations=1)
+
+  scaleFactorX = inputImage.shape[-1] / cleanMask.shape[-1]
+  scaleFactorY = inputImage.shape[-2] / cleanMask.shape[-2]
+  scaledMask = cv.resize(cleanMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
+                        interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
+  
+  maskedInputImage = inputImage.numpy(force=True)[0, 0] * scaledMask
+  maskedInputImage = np.ma.masked_equal(maskedInputImage, 0)
+
+  maskedInputImage = (maskedInputImage - maskedInputImage.min()) / (
+     maskedInputImage.max() - maskedInputImage.min())
+  maskedInputImage = np.ma.filled(maskedInputImage, 0)
+  maskedInputImage = np.add(maskedInputImage, (
+     np.invert(scaledMask.astype(bool)).astype(np.uint8) * inputImage.numpy(force=True)[0, 0]))
+
+  f, axs = plt.subplots(1, 2, figsize=(10, 10))
+  plt.title("Attention map")
+  axs[0].imshow(inputImage.numpy()[0,0], cmap='gray')
+  axs[1].imshow(maskedInputImage, cmap='gray')
+  plt.show()
+
 
 if __name__ == '__main__':
     main()
