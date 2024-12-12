@@ -12,7 +12,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${file}",
-      "args": ["docs/bad_contrast.jpg"]
+      "args": ["docs/radiography.jpg"]
     }
   ]
 }

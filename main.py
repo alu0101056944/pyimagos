@@ -105,45 +105,87 @@ def main(filename: str) -> None:
   ## Border detection
   gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
     
-  block_size = (3, 3)
-  pad_size = block_size[0] // 2 #Same as padding used by the Gaussian Blur
-  padded_image = np.pad(gaussianBlurred, pad_size, mode='reflect')
+  blockSize = (3, 3)
+  padSize = blockSize[0] // 2 # Same padding than Gaussian Blur filter
+  paddedImage = np.pad(gaussianBlurred, padSize, mode='reflect')
   
-  bordersDetected = np.zeros_like(gaussianBlurred, dtype=np.float32) # Using a float32 type for storing max-min differences
+  bordersDetected = np.zeros_like(gaussianBlurred, dtype=np.float32)
 
   for y in range(gaussianBlurred.shape[0]):
     for x in range(gaussianBlurred.shape[1]):
-        window = padded_image[y:y + block_size[0], x:x + block_size[1]]
-        max_min_diff = window.max() - window.min()
-
-        bordersDetected[y, x] = max_min_diff
+        window = paddedImage[y:y + blockSize[0], x:x + blockSize[1]]
+        difference = window.max() - window.min()
+        bordersDetected[y, x] = difference
 
   # Normalize the image between 0 and 255 before showing to improve visualization.
   bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
   # showcase before and after
-  f, axs = plt.subplots(1, 8)
-  axs[0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
-  axs[0].set_title('Input image')
+  # f, axs = plt.subplots(1, 7)
+  # axs[0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
+  # axs[0].set_title('Input image')
 
-  axs[1].imshow(roughMask, cmap='gray', vmin=0, vmax=1)
-  axs[1].set_title('Unprocessed mask')
+  # axs[1].imshow(roughMask, cmap='gray', vmin=0, vmax=1)
+  # axs[1].set_title('Unprocessed mask')
 
-  axs[2].imshow(cleanMask, cmap='gray', vmin=0, vmax=1)
-  axs[2].set_title('Clean mask')
+  # axs[2].imshow(cleanMask, cmap='gray', vmin=0, vmax=1)
+  # axs[2].set_title('Clean mask')
 
-  axs[3].imshow(scaledMask, cmap='gray', vmin=0, vmax=1)
-  axs[3].set_title('Scaled up mask')
+  # axs[3].imshow(scaledMask, cmap='gray', vmin=0, vmax=1)
+  # axs[3].set_title('Scaled up mask')
 
-  axs[4].imshow(outputImage, cmap='gray')
-  axs[4].set_title('HE enchanced')
+  # axs[4].imshow(outputImage, cmap='gray')
+  # axs[4].set_title('HE enchanced')
   
-  axs[5].imshow(gaussianBlurred, cmap='gray')
-  axs[5].set_title('Gaussian blur')
+  # axs[5].imshow(gaussianBlurred, cmap='gray')
+  # axs[5].set_title('Gaussian blur')
 
-  axs[6].imshow(bordersDetected, cmap='gray')
-  axs[6].set_title('Border detection')
-  plt.show()
+  # axs[6].imshow(bordersDetected, cmap='gray')
+  # axs[6].set_title('Border detection')
+  # plt.show()
+
+  # _, bordersDetectedThresholded = cv.threshold(bordersDetected, 70, 255, cv.THRESH_BINARY)
+  # cv.imshow('binary', (bordersDetectedThresholded))
+
+  numMinThresholds = np.linspace(0, 255, 16)
+  f, axs = plt.subplots(4, 12)
+  for i in range(4):
+    for j in range(4):
+      minThreshold = numMinThresholds[i * 4 + j]
+
+      _, bordersDetectedThresholded = cv.threshold(bordersDetected, minThreshold, 255, cv.THRESH_BINARY)
+      numLabels, markers = cv.connectedComponents(bordersDetectedThresholded)
+      distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
+      distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
+
+      concatenated = np.concatenate(
+        (bordersDetectedThresholded, markers * (255 / numLabels), distanceTransform), axis=1)
+      cv.imwrite(f'docs/minThreshold{minThreshold}.jpg', concatenated)
+
+  # _, markers = cv.connectedComponents(bordersDetectedThresholded)
+  # cv.imshow('Markers', (markers * (255 / 3)).astype(np.uint8))
+  # distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
+  # distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
+  # cv.imshow('Distance transform', distanceTransform.astype(np.uint8))
+  # markers = markers.astype(np.int32)
+  # watershedImage = cv.watershed(distanceTransform, markers)
+  
+  # coloredImage = np.zeros((bordersDetected.shape[0], bordersDetected.shape[1], 3), dtype=np.uint8)
+  # uniqueLabels = np.unique(watershedImage)
+
+  # for label in uniqueLabels:
+  #    if label == 0:
+  #       continue
+     
+  #    mask = watershedImage == label
+  #    b, g, r = np.random.randint(0, 256, 3)
+  #    coloredImage[mask] = (b, g, r)
+
+  # cv.imshow('Original binary', bordersDetected)
+  # cv.imshow('Watershed segmentation', coloredImage)
+  cv.waitKey(0)
+  cv.destroyAllWindows()
+ 
 
 if __name__ == '__main__':
     main()
