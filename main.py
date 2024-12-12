@@ -80,10 +80,12 @@ def main(filename: str) -> None:
   selfAttentionMap = getSelfAttentionMap(selfAttentionMapModel, inputImage)
   roughMask = getThresholdedNdarray(selfAttentionMap).astype(np.uint8)
 
-  erodeKernel = np.ones((4, 4), np.uint8)
-  cleanMask = cv.erode(roughMask, erodeKernel, iterations=1)
-  dilateKernel = np.ones((6, 6), np.uint8)
-  cleanMask = cv.dilate(cleanMask, dilateKernel, iterations=1)
+  erode_kernel = np.ones(4, np.uint8)
+  cleanMask = cv.erode(roughMask, erode_kernel, iterations=1)
+  # dilate_kernel = np.ones(3, np.uint8)
+  # cleanMask = cv.dilate(roughMask, dilate_kernel, iterations=1)
+  # erodeKernel = np.ones((5, 5), np.uint8)
+  # cleanMask = cv.morphologyEx(np.copy(roughMask), cv.MORPH_OPEN, erodeKernel)
 
   scaleFactorX = inputImage.shape[-1] / cleanMask.shape[-1]
   scaleFactorY = inputImage.shape[-2] / cleanMask.shape[-2]
@@ -100,71 +102,47 @@ def main(filename: str) -> None:
   outputImage = np.clip((inputImage - minValueWithinMask) / (
      maxValueWithinMask - minValueWithinMask), 0, 1)
 
-  differenceImage = np.absolute(inputImage - outputImage)
-
-  # f, axs = plt.subplots(2, 2)
-  # axs[0, 0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
-  # axs[0, 0].set_title('Input image')
-
-  # axs[0, 1].imshow(outputImage, cmap='gray', vmin=0, vmax=1)
-  # axs[0, 1].set_title('Output image')
-
-  # im2 = axs[1, 0].imshow(differenceImage, cmap='gray')
-  # axs[1, 0].set_title('Difference normalized')
-  # plt.colorbar(im2, ax=axs[1, 0])
-
-  # im3 = axs[1, 1].imshow(np.copy(differenceImage), cmap='gray', vmin=0, vmax=1)
-  # axs[1, 1].set_title('Difference')
-  # plt.colorbar(im3, ax=axs[1, 1])
-  # plt.show()
-
-
   ## Border detection
-
   gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
-
+    
   block_size = (3, 3)
-  windows = np.lib.stride_tricks.sliding_window_view(
-      gaussianBlurred, 
-      window_shape=block_size
-  )
+  pad_size = block_size[0] // 2 #Same as padding used by the Gaussian Blur
+  padded_image = np.pad(gaussianBlurred, pad_size, mode='reflect')
   
-  # Reshape to make blocks contiguous
-  reshaped_windows = windows.reshape(-1, *block_size)
-  
-  # Calculate max and min for each block
-  max_min_diff = reshaped_windows.max(axis=(1, 2)) - reshaped_windows.min(axis=(1, 2))
-  
-  bordersDetected = np.copy(gaussianBlurred)
-  for i in range(windows.shape[0]):
-    for j in range(windows.shape[1] ):
-      # Calculate center indices
-      center_y = i + block_size[0] // 2
-      center_x = j + block_size[1] // 2
-      
-      # Replace center value with max-min difference
-      bordersDetected[center_y, center_x] = max_min_diff[i * windows.shape[1] + j]
-  
-  bordersDetectedHEEnchanced = np.copy(bordersDetected)
-  bordersDetectedHEEnchanced = (bordersDetectedHEEnchanced - bordersDetectedHEEnchanced.min()) / (
-     bordersDetectedHEEnchanced.max() - bordersDetectedHEEnchanced.min())
+  bordersDetected = np.zeros_like(gaussianBlurred, dtype=np.float32) # Using a float32 type for storing max-min differences
+
+  for y in range(gaussianBlurred.shape[0]):
+    for x in range(gaussianBlurred.shape[1]):
+        window = padded_image[y:y + block_size[0], x:x + block_size[1]]
+        max_min_diff = window.max() - window.min()
+
+        bordersDetected[y, x] = max_min_diff
+
+  # Normalize the image between 0 and 255 before showing to improve visualization.
+  bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
   # showcase before and after
-  f, axs = plt.subplots(1, 5)
+  f, axs = plt.subplots(1, 8)
   axs[0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
   axs[0].set_title('Input image')
 
-  axs[1].imshow(outputImage, cmap='gray', vmin=0, vmax=1)
-  axs[1].set_title('HE enchanced')
+  axs[1].imshow(roughMask, cmap='gray', vmin=0, vmax=1)
+  axs[1].set_title('Unprocessed mask')
+
+  axs[2].imshow(cleanMask, cmap='gray', vmin=0, vmax=1)
+  axs[2].set_title('Clean mask')
+
+  axs[3].imshow(scaledMask, cmap='gray', vmin=0, vmax=1)
+  axs[3].set_title('Scaled up mask')
+
+  axs[4].imshow(outputImage, cmap='gray')
+  axs[4].set_title('HE enchanced')
   
-  axs[2].imshow(gaussianBlurred, cmap='gray', vmin=0, vmax=1)
-  axs[2].set_title('Gaussian blur')
+  axs[5].imshow(gaussianBlurred, cmap='gray')
+  axs[5].set_title('Gaussian blur')
 
-  axs[3].imshow(bordersDetected, cmap='gray', vmin=0, vmax=1)
-  axs[3].set_title('Border detection')
-
-  axs[4].imshow(bordersDetectedHEEnchanced, cmap='gray', vmin=0, vmax=1)
-  axs[4].set_title('Border detection HE')
+  axs[6].imshow(bordersDetected, cmap='gray')
+  axs[6].set_title('Border detection')
   plt.show()
 
 if __name__ == '__main__':
