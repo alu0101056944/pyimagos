@@ -120,7 +120,7 @@ def main(filename: str) -> None:
   # Normalize the image between 0 and 255 before showing to improve visualization.
   bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
-  cv.imwrite(f'docs/{os.path.basename(filename)}_bordersDetected.jpg', bordersDetected)
+  # cv.imwrite(f'docs/{os.path.basename(filename)}_bordersDetected.jpg', bordersDetected)
 
   # showcase before and after
   # f, axs = plt.subplots(1, 7)
@@ -146,45 +146,51 @@ def main(filename: str) -> None:
   # axs[6].set_title('Border detection')
   # plt.show()
 
-  # _, bordersDetectedThresholded = cv.threshold(bordersDetected, 70, 255, cv.THRESH_BINARY)
-  # cv.imshow('binary', (bordersDetectedThresholded))
+  _, bordersDetectedThresholded = cv.threshold(bordersDetected, 51, 255, cv.THRESH_BINARY)
+  cv.imshow('binary', (bordersDetectedThresholded))
 
-  numMinThresholds = np.linspace(0, 255, 16)
-  f, axs = plt.subplots(4, 12)
-  for i in range(4):
-    for j in range(4):
-      minThreshold = numMinThresholds[i * 4 + j]
+  # numMinThresholds = np.linspace(0, 255, 16)
+  # f, axs = plt.subplots(4, 12)
+  # for i in range(4):
+  #   for j in range(4):
+  #     minThreshold = numMinThresholds[i * 4 + j]
 
-      _, bordersDetectedThresholded = cv.threshold(bordersDetected, minThreshold, 255, cv.THRESH_BINARY)
-      numLabels, markers = cv.connectedComponents(bordersDetectedThresholded)
-      distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
-      distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
+  #     _, bordersDetectedThresholded = cv.threshold(bordersDetected, minThreshold, 255, cv.THRESH_BINARY)
+  #     numLabels, markers = cv.connectedComponents(bordersDetectedThresholded)
+  #     distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
+  #     distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
 
-      concatenated = np.concatenate(
-        (bordersDetectedThresholded, markers * (255 / numLabels), distanceTransform), axis=1)
-      cv.imwrite(f'docs/{os.path.basename(filename)}_minThreshold{minThreshold}.jpg', concatenated)
+      # concatenated = np.concatenate(
+      #   (bordersDetectedThresholded, markers * (255 / numLabels), distanceTransform), axis=1)
+      # cv.imwrite(f'docs/{os.path.basename(filename)}_minThreshold{minThreshold}.jpg', concatenated)
 
-  # _, markers = cv.connectedComponents(bordersDetectedThresholded)
-  # cv.imshow('Markers', (markers * (255 / 3)).astype(np.uint8))
-  # distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
-  # distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
-  # cv.imshow('Distance transform', distanceTransform.astype(np.uint8))
-  # markers = markers.astype(np.int32)
-  # watershedImage = cv.watershed(distanceTransform, markers)
-  
-  # coloredImage = np.zeros((bordersDetected.shape[0], bordersDetected.shape[1], 3), dtype=np.uint8)
-  # uniqueLabels = np.unique(watershedImage)
+  _, markers = cv.connectedComponents(bordersDetectedThresholded)
+  cv.imshow('Markers', (markers * (255 / 3)).astype(np.uint8))
+  distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
+  distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
+  cv.imshow('Distance transform', distanceTransform.astype(np.uint8))
 
-  # for label in uniqueLabels:
-  #    if label == 0:
-  #       continue
+  markers = markers.astype(np.int32)
+  distanceTransform3Channel = cv.merge((distanceTransform, distanceTransform, distanceTransform))
+  watershedImage = cv.watershed(distanceTransform3Channel, markers)
+  watershedImage = watershedImage.astype(np.uint8)
+
+  coloredImage = np.zeros((bordersDetected.shape[0], bordersDetected.shape[1], 3), dtype=np.uint8)
+  uniqueLabels = np.unique(watershedImage)
+  for label in uniqueLabels:
+     if label == 0:
+        continue
      
-  #    mask = watershedImage == label
-  #    b, g, r = np.random.randint(0, 256, 3)
-  #    coloredImage[mask] = (b, g, r)
+     mask = watershedImage == label
+     b, g, r = np.random.randint(0, 256, 3)
+     coloredImage[mask] = (b, g, r)
 
-  # cv.imshow('Original binary', bordersDetected)
-  # cv.imshow('Watershed segmentation', coloredImage)
+  cv.imshow('Borders Detected', bordersDetected)
+  cv.imshow('Watershed segmentation', coloredImage)
+  
+  cv.waitKey(0)
+  cv.destroyAllWindows()
+
  
 
 if __name__ == '__main__':
