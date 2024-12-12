@@ -120,6 +120,8 @@ def main(filename: str) -> None:
   # Normalize the image between 0 and 255 before showing to improve visualization.
   bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
+  cv.imwrite(f'docs/{os.path.basename(filename)}_bordersDetected.jpg', bordersDetected)
+
   # showcase before and after
   # f, axs = plt.subplots(1, 7)
   # axs[0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
@@ -160,7 +162,7 @@ def main(filename: str) -> None:
 
       concatenated = np.concatenate(
         (bordersDetectedThresholded, markers * (255 / numLabels), distanceTransform), axis=1)
-      cv.imwrite(f'docs/minThreshold{minThreshold}.jpg', concatenated)
+      cv.imwrite(f'docs/{os.path.basename(filename)}_minThreshold{minThreshold}.jpg', concatenated)
 
   # _, markers = cv.connectedComponents(bordersDetectedThresholded)
   # cv.imshow('Markers', (markers * (255 / 3)).astype(np.uint8))
@@ -183,8 +185,6 @@ def main(filename: str) -> None:
 
   # cv.imshow('Original binary', bordersDetected)
   # cv.imshow('Watershed segmentation', coloredImage)
-  cv.waitKey(0)
-  cv.destroyAllWindows()
  
 
 if __name__ == '__main__':
