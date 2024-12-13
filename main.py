@@ -103,22 +103,33 @@ def main(filename: str) -> None:
      maxValueWithinMask - minValueWithinMask), 0, 1)
 
   ## Border detection
-  gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
+  # gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
+
+  gaussianSigmas = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  for i in range(11):
+    gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), gaussianSigmas[i])
+
+    blockSize = (3, 3)
+    padSize = blockSize[0] // 2 # Same padding than Gaussian Blur filter
+    paddedImage = np.pad(gaussianBlurred, padSize, mode='reflect')
     
-  blockSize = (3, 3)
-  padSize = blockSize[0] // 2 # Same padding than Gaussian Blur filter
-  paddedImage = np.pad(gaussianBlurred, padSize, mode='reflect')
-  
-  bordersDetected = np.zeros_like(gaussianBlurred, dtype=np.float32)
+    bordersDetected = np.zeros_like(gaussianBlurred, dtype=np.float32)
 
-  for y in range(gaussianBlurred.shape[0]):
-    for x in range(gaussianBlurred.shape[1]):
-        window = paddedImage[y:y + blockSize[0], x:x + blockSize[1]]
-        difference = window.max() - window.min()
-        bordersDetected[y, x] = difference
+    for y in range(gaussianBlurred.shape[0]):
+      for x in range(gaussianBlurred.shape[1]):
+          window = paddedImage[y:y + blockSize[0], x:x + blockSize[1]]
+          difference = window.max() - window.min()
+          bordersDetected[y, x] = difference
 
-  # Normalize the image between 0 and 255 before showing to improve visualization.
-  bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+    # Normalize the image between 0 and 255 before showing to improve visualization.
+    outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+    gaussianBlurred = cv.normalize(gaussianBlurred, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+    bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+
+    concatenated = np.concatenate((outputImage, gaussianBlurred, bordersDetected), axis=1)
+    cv.imwrite(f'docs/{os.path.basename(filename)}' + (
+                f'_bordersigma{gaussianSigmas[i]}.jpg'),
+                concatenated)
 
   # cv.imwrite(f'docs/{os.path.basename(filename)}_bordersDetected.jpg', bordersDetected)
 
@@ -146,8 +157,38 @@ def main(filename: str) -> None:
   # axs[6].set_title('Border detection')
   # plt.show()
 
-  _, bordersDetectedThresholded = cv.threshold(bordersDetected, 51, 255, cv.THRESH_BINARY)
+  _, bordersDetectedThresholded = cv.threshold(bordersDetected, 50, 255, cv.THRESH_BINARY)
   cv.imshow('binary', (bordersDetectedThresholded))
+
+  erosionSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  for i in range(9):
+    erosionKernel = np.ones(erosionSizes[i], np.uint8)
+    erosionResult = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=1)
+    erosionResult2 = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=2)
+    erosionResult3 = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=3)
+    concatenated = np.concatenate((bordersDetectedThresholded, erosionResult,
+                                   erosionResult2, erosionResult3), axis=1)
+    cv.imwrite(f'docs/{os.path.basename(filename)}' + (
+                f'_binarybordererosion{erosionSizes[i]}.jpg'),
+                concatenated)
+
+  openingSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  for i in range(9):
+    openKernel = np.ones(openingSizes[i], np.uint8)
+    openResult = cv.morphologyEx(bordersDetectedThresholded, cv.MORPH_OPEN, openKernel)
+    concatenated = np.concatenate((bordersDetectedThresholded, openResult), axis=1)
+    cv.imwrite(f'docs/{os.path.basename(filename)}' + (
+                f'_binaryborderopening{openingSizes[i]}.jpg'),
+                concatenated)
+
+  closingSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  for i in range(9):
+    closingKernel = np.ones(closingSizes[i], np.uint8)
+    closingResult = cv.morphologyEx(bordersDetectedThresholded, cv.MORPH_OPEN, closingKernel)
+    concatenated = np.concatenate((bordersDetectedThresholded, closingResult), axis=1)
+    cv.imwrite(f'docs/{os.path.basename(filename)}' + (
+                f'_binaryborderclosing{openingSizes[i]}.jpg'),
+                concatenated)
 
   # numMinThresholds = np.linspace(0, 255, 16)
   # f, axs = plt.subplots(4, 12)
