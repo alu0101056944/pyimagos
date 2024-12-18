@@ -10,68 +10,16 @@ Processing steps of the radiograph
 import os.path
 from PIL import Image
 
-import matplotlib.pyplot as plt
-import torch
 import torchvision.transforms as transforms
 import numpy as np
 import cv2 as cv
 
-import src.vision_transformer as vits
-
-from constants import MODEL_PATH
-
-def loadInputImage(filename: str) -> torch.Tensor:
-
-  image = Image.open(filename)
-  tensor_image = transforms.ToTensor()(image)
-  if tensor_image.shape[0] <= 3:
-    tensor_image = torch.cat(
-      [tensor_image for i in range(3 - tensor_image.shape[0] + 1)], dim=0)
-  elif tensor_image.shape[0] > 3:
-    tensor_image = tensor_image[:3, :, :]
-  tensor_image = tensor_image.unsqueeze(0) # Makes it [1, C, H, W]
-  return tensor_image
-
-# copied from https://github.com/facebookresearch/dino/hubconf.py
-# Modification: local load for state_dict instead of url download
-# Original download url: https://dl.fbaipublicfiles.com/dino/dino_deitsmall8_pretrain/dino_deitsmall8_pretrain.pth
-# Modification: added patch_size parameter. Also added model.eval()
-def dino_vits8(pretrained=True, patch_size=8, **kwargs) -> vits.VisionTransformer:
-  """
-  ViT-Small/8x8 pre-trained with DINO.
-  Achieves 78.3% top-1 accuracy on ImageNet with k-NN classification.
-  """
-  model = vits.__dict__["vit_small"](patch_size=patch_size, num_classes=0, **kwargs)
-  if pretrained:
-      absolutePath = os.path.dirname(__file__)
-      path = os.path.normpath(os.path.join(absolutePath, MODEL_PATH))
-      state_dict = torch.load(path, map_location="cpu")
-      model.load_state_dict(state_dict, strict=True)
-      model.eval()
-  return model
-
-def getSelfAttentionMap(model: vits.VisionTransformer, inputImage: torch.Tensor) -> None:
-  with torch.no_grad():
-    selfAttentionMap = model.get_last_selfattention(inputImage)
-
-  # Selection: [attention head, batch, patchNi, patchNj]
-  cls_attention = selfAttentionMap[0, 0, 0, 1:] # dont include attention to self
-  w0 = inputImage.shape[-1] // 8 # 8 = num_patches
-  h0 = inputImage.shape[-2] // 8
-  attention_grid = cls_attention.reshape(h0, w0)
-  return attention_grid
-
-def getThresholdedNdarray(selfAttentionMap) -> np.ndarray:
-  selfAttentionMap = selfAttentionMap.numpy()
-  selfAttentionMap = (selfAttentionMap > np.percentile(selfAttentionMap, 70)).astype(int)
-  return selfAttentionMap
+from src.image_filters.contrast_enhancement import ContrastEnhancement
 
 def process_radiograph(filename: str) -> None:
-  inputImage = loadInputImage(filename)
-
-  selfAttentionMapModel = dino_vits8()
-  selfAttentionMap = getSelfAttentionMap(selfAttentionMapModel, inputImage)
-  roughMask = getThresholdedNdarray(selfAttentionMap).astype(np.uint8)
+  inputImage = Image.open(filename)
+  inputImage = transforms.ToTensor()(inputImage)
+  roughMask = ContrastEnhancement().process(inputImage)
 
   erode_kernel = np.ones(4, np.uint8)
   cleanMask = cv.erode(roughMask, erode_kernel, iterations=1)
