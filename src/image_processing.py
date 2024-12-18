@@ -15,6 +15,9 @@ import numpy as np
 import cv2 as cv
 
 from src.image_filters.contrast_enhancement import ContrastEnhancement
+from src.image_filters.border_detection_statistical_range import (
+  BorderDetectionStatisticalRange
+)
 
 def process_radiograph(filename: str) -> None:
   inputImage = Image.open(filename)
@@ -33,7 +36,7 @@ def process_radiograph(filename: str) -> None:
   scaledMask = cv.resize(cleanMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
                         interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
 
-  inputImage = inputImage.numpy(force=True)[0, 0]
+  inputImage = inputImage.numpy(force=True)[0]
 
   maskedInputImage = inputImage * scaledMask
   maskedInputImage = np.ma.masked_equal(maskedInputImage, 0)
@@ -44,33 +47,23 @@ def process_radiograph(filename: str) -> None:
      maxValueWithinMask - minValueWithinMask), 0, 1)
 
   ## Border detection
-  # gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
+  gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
 
-  # gaussianSigmas = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  # for i in range(11):
-  #   gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), gaussianSigmas[i])
+  gaussianSigmas = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  for i in range(11):
+    gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), gaussianSigmas[i])
 
-  #   blockSize = (3, 3)
-  #   padSize = blockSize[0] // 2 # Same padding than Gaussian Blur filter
-  #   paddedImage = np.pad(gaussianBlurred, padSize, mode='reflect')
-    
-  #   bordersDetected = np.zeros_like(gaussianBlurred, dtype=np.float32)
+    bordersDetected = BorderDetectionStatisticalRange(5 // 2).process(gaussianBlurred)
 
-  #   for y in range(gaussianBlurred.shape[0]):
-  #     for x in range(gaussianBlurred.shape[1]):
-  #         window = paddedImage[y:y + blockSize[0], x:x + blockSize[1]]
-  #         difference = window.max() - window.min()
-  #         bordersDetected[y, x] = difference
+    # Normalize the image between 0 and 255 before showing to improve visualization.
+    outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+    gaussianBlurred = cv.normalize(gaussianBlurred, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+    bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
-  #   # Normalize the image between 0 and 255 before showing to improve visualization.
-  #   outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-  #   gaussianBlurred = cv.normalize(gaussianBlurred, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-  #   bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-
-  #   concatenated = np.concatenate((outputImage, gaussianBlurred, bordersDetected), axis=1)
-  #   cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
-  #               f'_bordersigma{gaussianSigmas[i]}.jpg'),
-  #               concatenated)
+    concatenated = np.concatenate((outputImage, gaussianBlurred, bordersDetected), axis=1)
+    cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
+                f'_bordersigma{gaussianSigmas[i]}.jpg'),
+                concatenated)
 
   ## Border detection, statistical range method
   kernelSizes = [3, 5, 7, 9]

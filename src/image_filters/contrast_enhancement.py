@@ -4,7 +4,8 @@ Máster en Ingeniería Informática
 Trabajo de Final de Máster
 Pyimagos development
 
-Image processing step representation for the GUI.
+Image processing step representation for the GUI. Uses visual transformer
+  DINOViTS/8's self attention mask as a mask to contraste enchance.
 '''
 
 from typing import Union
