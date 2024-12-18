@@ -105,9 +105,36 @@ def main(filename: str) -> None:
   ## Border detection
   # gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
 
-  gaussianSigmas = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-  for i in range(11):
-    gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), gaussianSigmas[i])
+  # gaussianSigmas = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  # for i in range(11):
+  #   gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), gaussianSigmas[i])
+
+  #   blockSize = (3, 3)
+  #   padSize = blockSize[0] // 2 # Same padding than Gaussian Blur filter
+  #   paddedImage = np.pad(gaussianBlurred, padSize, mode='reflect')
+    
+  #   bordersDetected = np.zeros_like(gaussianBlurred, dtype=np.float32)
+
+  #   for y in range(gaussianBlurred.shape[0]):
+  #     for x in range(gaussianBlurred.shape[1]):
+  #         window = paddedImage[y:y + blockSize[0], x:x + blockSize[1]]
+  #         difference = window.max() - window.min()
+  #         bordersDetected[y, x] = difference
+
+  #   # Normalize the image between 0 and 255 before showing to improve visualization.
+  #   outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+  #   gaussianBlurred = cv.normalize(gaussianBlurred, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+  #   bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+
+  #   concatenated = np.concatenate((outputImage, gaussianBlurred, bordersDetected), axis=1)
+  #   cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
+  #               f'_bordersigma{gaussianSigmas[i]}.jpg'),
+  #               concatenated)
+
+  ## Border detection, statistical range method
+  kernelSizes = [3, 5, 7, 9]
+  for i in range(4):
+    gaussianBlurred = cv.GaussianBlur(outputImage, (kernelSizes[i], kernelSizes[i]), 0)
 
     blockSize = (3, 3)
     padSize = blockSize[0] // 2 # Same padding than Gaussian Blur filter
@@ -125,13 +152,73 @@ def main(filename: str) -> None:
     outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
     gaussianBlurred = cv.normalize(gaussianBlurred, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
     bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+  
+  ## Border detection, canny edge detector
+  minThresholds = [30, 51, 70]
+  maxThresholds = [135, 150, 165]
+  kernelSizes = [3, 5, 7, 9]
+  for minThreshold  in minThresholds:
+    for maxThreshold in maxThresholds:
+      for kernelSize in kernelSizes:
+        gaussianBlurred = cv.GaussianBlur(outputImage, (kernelSize, kernelSize), 0)
+        gaussianBlurred = cv.normalize(gaussianBlurred, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
-    concatenated = np.concatenate((outputImage, gaussianBlurred, bordersDetected), axis=1)
-    cv.imwrite(f'docs/{os.path.basename(filename)}' + (
-                f'_bordersigma{gaussianSigmas[i]}.jpg'),
-                concatenated)
+        bordersDetected = cv.Canny(gaussianBlurred, minThreshold, maxThreshold)
+        bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
-  # cv.imwrite(f'docs/{os.path.basename(filename)}_bordersDetected.jpg', bordersDetected)
+        # contours, _ = cv.findContours(bordersDetected, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        # largest_contour = max(contours, key=cv.contourArea)
+        # mask = np.zeros_like(bordersDetected, dtype=np.uint8)
+        # cv.drawContours(mask, [largest_contour], -1, 255, thickness=cv.FILLED)
+        # mask = cv.bitwise_not(mask)
+        # bordersDetected = cv.bitwise_and(bordersDetected, bordersDetected, mask=mask)
+
+        numLabels, markers = cv.connectedComponents(bordersDetected)
+
+        kernel = np.ones((kernelSize, kernelSize), np.uint8)
+        closed_image = cv.morphologyEx(bordersDetected,
+            cv.MORPH_CLOSE, kernel, iterations=1)
+
+        distanceTransform = cv.distanceTransform(bordersDetected, cv.DIST_L2, 5)
+        distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
+
+        markers = markers.astype(np.int32)
+        distanceTransform3Channel = cv.merge((distanceTransform, distanceTransform, distanceTransform))
+        watershedImage = cv.watershed(distanceTransform3Channel, markers)
+        watershedImage = watershedImage.astype(np.uint8)
+
+        coloredImage = np.zeros((bordersDetected.shape[0], bordersDetected.shape[1], 3), dtype=np.uint8)
+        uniqueLabels = np.unique(watershedImage)
+        for label in uniqueLabels:
+           if label == 0:
+              continue
+          
+           mask = watershedImage == label
+           b, g, r = np.random.randint(0, 256, 3)
+           coloredImage[mask] = (b, g, r)
+
+        # if numLabels > 1:
+        #   cmap = plt.cm.get_cmap('hsv', numLabels)  
+        #   colored_markers = np.zeros((markers.shape[0], markers.shape[1], 3), dtype=np.uint8)
+        #   for label in range(1, numLabels): # Skip background label 0
+        #       color = np.array(cmap(label)[:3]) * 255 # Get RGB color and convert to 0-255 range
+        #       colored_markers[markers == label] = color.astype(np.uint8)
+        # else:
+        #     colored_markers = np.zeros_like(outputImage, dtype=np.uint8)
+
+        concatenated = np.concatenate((cv.cvtColor(outputImage, cv.COLOR_GRAY2BGR),
+                                                    cv.cvtColor(gaussianBlurred, cv.COLOR_GRAY2BGR),
+                                                    cv.cvtColor(bordersDetected, cv.COLOR_GRAY2BGR),
+                                                    cv.cvtColor(closed_image, cv.COLOR_GRAY2BGR),
+                                                    coloredImage,
+                                                    ), axis=1)
+        cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
+                    f'_bordercanny_withfill_minThresh{minThreshold}' \
+                    f'_maxThresh{maxThreshold}_kernelSize{kernelSize}' \
+                    f'.jpg',
+                    concatenated)
+
+  # cv.imwrite(f'docs/local_images/{os.path.basename(filename)}_bordersDetected.jpg', bordersDetected)
 
   # showcase before and after
   # f, axs = plt.subplots(1, 7)
@@ -157,38 +244,38 @@ def main(filename: str) -> None:
   # axs[6].set_title('Border detection')
   # plt.show()
 
-  _, bordersDetectedThresholded = cv.threshold(bordersDetected, 50, 255, cv.THRESH_BINARY)
-  cv.imshow('binary', (bordersDetectedThresholded))
+  # _, bordersDetectedThresholded = cv.threshold(bordersDetected, 50, 255, cv.THRESH_BINARY)
+  # cv.imshow('binary', (bordersDetectedThresholded))
 
-  erosionSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-  for i in range(9):
-    erosionKernel = np.ones(erosionSizes[i], np.uint8)
-    erosionResult = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=1)
-    erosionResult2 = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=2)
-    erosionResult3 = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=3)
-    concatenated = np.concatenate((bordersDetectedThresholded, erosionResult,
-                                   erosionResult2, erosionResult3), axis=1)
-    cv.imwrite(f'docs/{os.path.basename(filename)}' + (
-                f'_binarybordererosion{erosionSizes[i]}.jpg'),
-                concatenated)
+  # erosionSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  # for i in range(9):
+  #   erosionKernel = np.ones(erosionSizes[i], np.uint8)
+  #   erosionResult = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=1)
+  #   erosionResult2 = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=2)
+  #   erosionResult3 = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=3)
+  #   concatenated = np.concatenate((bordersDetectedThresholded, erosionResult,
+  #                                  erosionResult2, erosionResult3), axis=1)
+  #   cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
+  #               f'_binarybordererosion{erosionSizes[i]}.jpg'),
+  #               concatenated)
 
-  openingSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-  for i in range(9):
-    openKernel = np.ones(openingSizes[i], np.uint8)
-    openResult = cv.morphologyEx(bordersDetectedThresholded, cv.MORPH_OPEN, openKernel)
-    concatenated = np.concatenate((bordersDetectedThresholded, openResult), axis=1)
-    cv.imwrite(f'docs/{os.path.basename(filename)}' + (
-                f'_binaryborderopening{openingSizes[i]}.jpg'),
-                concatenated)
+  # openingSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  # for i in range(9):
+  #   openKernel = np.ones(openingSizes[i], np.uint8)
+  #   openResult = cv.morphologyEx(bordersDetectedThresholded, cv.MORPH_OPEN, openKernel)
+  #   concatenated = np.concatenate((bordersDetectedThresholded, openResult), axis=1)
+  #   cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
+  #               f'_binaryborderopening{openingSizes[i]}.jpg'),
+  #               concatenated)
 
-  closingSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-  for i in range(9):
-    closingKernel = np.ones(closingSizes[i], np.uint8)
-    closingResult = cv.morphologyEx(bordersDetectedThresholded, cv.MORPH_OPEN, closingKernel)
-    concatenated = np.concatenate((bordersDetectedThresholded, closingResult), axis=1)
-    cv.imwrite(f'docs/{os.path.basename(filename)}' + (
-                f'_binaryborderclosing{openingSizes[i]}.jpg'),
-                concatenated)
+  # closingSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
+  # for i in range(9):
+  #   closingKernel = np.ones(closingSizes[i], np.uint8)
+  #   closingResult = cv.morphologyEx(bordersDetectedThresholded, cv.MORPH_OPEN, closingKernel)
+  #   concatenated = np.concatenate((bordersDetectedThresholded, closingResult), axis=1)
+  #   cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
+  #               f'_binaryborderclosing{openingSizes[i]}.jpg'),
+  #               concatenated)
 
   # numMinThresholds = np.linspace(0, 255, 16)
   # f, axs = plt.subplots(4, 12)
@@ -203,34 +290,34 @@ def main(filename: str) -> None:
 
       # concatenated = np.concatenate(
       #   (bordersDetectedThresholded, markers * (255 / numLabels), distanceTransform), axis=1)
-      # cv.imwrite(f'docs/{os.path.basename(filename)}_minThreshold{minThreshold}.jpg', concatenated)
+      # cv.imwrite(f'docs/local_images/{os.path.basename(filename)}_minThreshold{minThreshold}.jpg', concatenated)
 
-  _, markers = cv.connectedComponents(bordersDetectedThresholded)
-  cv.imshow('Markers', (markers * (255 / 3)).astype(np.uint8))
-  distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
-  distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
-  cv.imshow('Distance transform', distanceTransform.astype(np.uint8))
+  # _, markers = cv.connectedComponents(bordersDetectedThresholded)
+  # cv.imshow('Markers', (markers * (255 / 3)).astype(np.uint8))
+  # distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
+  # distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
+  # cv.imshow('Distance transform', distanceTransform.astype(np.uint8))
 
-  markers = markers.astype(np.int32)
-  distanceTransform3Channel = cv.merge((distanceTransform, distanceTransform, distanceTransform))
-  watershedImage = cv.watershed(distanceTransform3Channel, markers)
-  watershedImage = watershedImage.astype(np.uint8)
+  # markers = markers.astype(np.int32)
+  # distanceTransform3Channel = cv.merge((distanceTransform, distanceTransform, distanceTransform))
+  # watershedImage = cv.watershed(distanceTransform3Channel, markers)
+  # watershedImage = watershedImage.astype(np.uint8)
 
-  coloredImage = np.zeros((bordersDetected.shape[0], bordersDetected.shape[1], 3), dtype=np.uint8)
-  uniqueLabels = np.unique(watershedImage)
-  for label in uniqueLabels:
-     if label == 0:
-        continue
+  # coloredImage = np.zeros((bordersDetected.shape[0], bordersDetected.shape[1], 3), dtype=np.uint8)
+  # uniqueLabels = np.unique(watershedImage)
+  # for label in uniqueLabels:
+  #    if label == 0:
+  #       continue
      
-     mask = watershedImage == label
-     b, g, r = np.random.randint(0, 256, 3)
-     coloredImage[mask] = (b, g, r)
+  #    mask = watershedImage == label
+  #    b, g, r = np.random.randint(0, 256, 3)
+  #    coloredImage[mask] = (b, g, r)
 
-  cv.imshow('Borders Detected', bordersDetected)
-  cv.imshow('Watershed segmentation', coloredImage)
+  # cv.imshow('Borders Detected', bordersDetected)
+  # cv.imshow('Watershed segmentation', coloredImage)
   
-  cv.waitKey(0)
-  cv.destroyAllWindows()
+  # cv.waitKey(0)
+  # cv.destroyAllWindows()
 
  
 
