@@ -155,6 +155,8 @@ class ImageFilterApp:
         add_filter_button = ttk.Button(filter_frame, text="Add Filter", command=self.add_filter_dialog)
         add_filter_button.pack(pady=5)
 
+        remove_filter_button = ttk.Button(filter_frame, text="Remove Filter", command=self.remove_filter)
+        remove_filter_button.pack(pady=5)
 
     def load_image_dialog(self):
       file_path = filedialog.askopenfilename(title="Select Image", filetypes=(("Image files", "*.jpg *.jpeg *.png"), ("All files", "*.*")))
@@ -278,6 +280,15 @@ class ImageFilterApp:
         ok_button.pack(pady=5)
 
 
+    def remove_filter(self):
+      selected_index = self.filter_list.curselection()
+      if selected_index:
+        index = int(selected_index[0])
+        self.pipeline.remove_step(index)
+        self.update_filter_list()
+        self.update_image_display()
+      else:
+        tk.messagebox.showwarning(title="Warning", message="No filter selected.")
 
     def update_filter_list(self):
        self.filter_list.delete(0, tk.END) # remove all elements
