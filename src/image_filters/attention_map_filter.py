@@ -5,7 +5,8 @@ Trabajo de Final de Máster
 Pyimagos development
 
 Image processing step representation for the GUI. Uses visual transformer
-  DINOViTS/8's self attention mask as a mask to contraste enchance.
+  DINOViTS/8's self attention mask as a mask to contraste enchance. Outputs
+  the self attention map scaled up.
 '''
 
 from typing import Union
@@ -21,7 +22,7 @@ import cv2 as cv
 from src.image_filters.image_filter import ImageFilter
 import src.vision_transformer as vits
 
-class ContrastEnhancement(ImageFilter):
+class AttentionMap(ImageFilter):
     def __init__(self):
         pass
 
@@ -80,34 +81,28 @@ class ContrastEnhancement(ImageFilter):
           image = transforms.ToTensor()(image)
       tensorImage = self.loadInputImage_(image)
       selfAttentionMapModel = self.dino_vits8_()
-      selfAttentionMap = self.getSelfAttentionMap_(selfAttentionMapModel, tensorImage)
+      selfAttentionMap = self.getSelfAttentionMap_(selfAttentionMapModel,
+                                                   tensorImage)
       roughMask = self.getThresholdedNdarray_(selfAttentionMap).astype(np.uint8)
 
       erode_kernel = np.ones(4, np.uint8)
       cleanMask = cv.erode(roughMask, erode_kernel, iterations=1)
+      # dilate_kernel = np.ones(3, np.uint8)
+      # cleanMask = cv.dilate(roughMask, dilate_kernel, iterations=1)
+      # erodeKernel = np.ones((5, 5), np.uint8)
+      # cleanMask = cv.morphologyEx(np.copy(roughMask), cv.MORPH_OPEN, erodeKernel)
 
       scaleFactorX = tensorImage.shape[-1] / cleanMask.shape[-1]
       scaleFactorY = tensorImage.shape[-2] / cleanMask.shape[-2]
       scaledMask = cv.resize(cleanMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
                             interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
-      
-      tensorImage = tensorImage.numpy(force=True)[0]
 
-      # Histogram equalization
-      maskedInputImage = tensorImage * scaledMask
-      maskedInputImage = np.ma.masked_equal(maskedInputImage, 0)
-      maxValueWithinMask = maskedInputImage.max()
-      minValueWithinMask = maskedInputImage.min()
-  
-      outputImage = np.clip((tensorImage - minValueWithinMask) / (
-        maxValueWithinMask - minValueWithinMask), 0, 1)
-  
-      outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX,
+      scaledMask = cv.normalize(scaledMask, None, 0, 255, cv.NORM_MINMAX,
                                cv.CV_8U)
-      return outputImage[0]
+      return scaledMask
 
     def get_name(self):
-        return 'ContrastEnhancement'
+        return 'AttentionMap'
 
     def get_params(self):
         return {"kernel_size": self.kernel_size, "sigma": self.sigma}

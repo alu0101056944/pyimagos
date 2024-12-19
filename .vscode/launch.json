@@ -11,8 +11,8 @@
       "name": "Python Debugger: Python File",
       "type": "debugpy",
       "request": "launch",
-      "program": "${file}",
-      "args": ["process", "docs/radiography.jpg"]
+      "program": "${workspaceFolder}/main.py",
+      "args": ["experiment", "docs/radiography.jpg"]
     }
   ]
 }
