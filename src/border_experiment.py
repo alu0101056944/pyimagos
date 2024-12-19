@@ -21,6 +21,9 @@ from src.image_filters.image_filter import ImageFilter
 from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.image_filters.attention_map_filter import AttentionMap
 from src.image_filters.gaussian_filter import GaussianBlurFilter
+from src.image_filters.erosion import ErosionFilter
+from src.image_filters.opening import OpeningFilter
+from src.image_filters.dilation import DilationFilter
 from src.image_filters.border_detection_statistical_range import (
   BorderDetectionStatisticalRange
 )
@@ -34,6 +37,26 @@ class NoFilter(ImageFilter):
         return {}
 
 available_filters = {
+   "OpeningFilter": {
+      "class": OpeningFilter,
+      "params": {
+        "kernel_size": {"type": "int", "min": 3, "max": 11, "default": 3, "step": 2},
+      }
+    },
+   "ErosionFilter": {
+      "class": ErosionFilter,
+      "params": {
+        "kernel_size": {"type": "int", "min": 3, "max": 11, "default": 3, "step": 2},
+        "iterations": {"type": "int", "min": 1, "max": 5, "default": 1, "step": 1},
+      }
+    },
+   "DilationFilter": {
+      "class": DilationFilter,
+      "params": {
+        "kernel_size": {"type": "int", "min": 3, "max": 11, "default": 3, "step": 2},
+        "iterations": {"type": "int", "min": 1, "max": 5, "default": 1, "step": 1},
+      }
+    },
     "GaussianBlurFilter": {
       "class": GaussianBlurFilter,
       "params": {
@@ -103,25 +126,21 @@ class ImagePipeline:
 
 
 class ImageFilterApp:
-    def __init__(self, root):
+    def __init__(self, root, filename: str = None):
         self.root = root
-        self.root.title("Image Filter App")
+        self.filename = filename
 
         self.pipeline = ImagePipeline()
-        self.image_path = None
+        self.root.title("Image Filter App")
         self.original_image = None
         self.processed_image = None
 
         self.create_widgets()
-        self.load_default_image()
 
+        if os.path.exists(self.filename):
+          self.load_image_from_path()
+          self.update_image_display()
 
-    def load_default_image(self):
-      default_image_path = "docs/radiography.jpg"
-      if os.path.exists(default_image_path):
-        self.image_path = default_image_path
-        self.load_image_from_path()
-        self.update_image_display()
 
     def create_widgets(self):
         # --- Image Frame ---
@@ -161,12 +180,12 @@ class ImageFilterApp:
     def load_image_dialog(self):
       file_path = filedialog.askopenfilename(title="Select Image", filetypes=(("Image files", "*.jpg *.jpeg *.png"), ("All files", "*.*")))
       if file_path:
-        self.image_path = file_path
+        self.filename = file_path
         self.load_image_from_path()
         self.update_image_display()
 
     def load_image_from_path(self):
-        self.original_image = cv.imread(self.image_path, cv.IMREAD_GRAYSCALE)
+        self.original_image = cv.imread(self.filename, cv.IMREAD_GRAYSCALE)
         if self.original_image is None:
             tk.messagebox.showerror("Error", "Failed to load image.")
             self.original_image = None
@@ -297,5 +316,5 @@ class ImageFilterApp:
 
 def execute_ui(filename: str) -> None:
   root = tk.Tk()
-  app = ImageFilterApp(root)
+  app = ImageFilterApp(root, filename)
   root.mainloop()

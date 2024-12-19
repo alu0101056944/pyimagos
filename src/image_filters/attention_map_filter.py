@@ -85,16 +85,9 @@ class AttentionMap(ImageFilter):
                                                    tensorImage)
       roughMask = self.getThresholdedNdarray_(selfAttentionMap).astype(np.uint8)
 
-      erode_kernel = np.ones(4, np.uint8)
-      cleanMask = cv.erode(roughMask, erode_kernel, iterations=1)
-      # dilate_kernel = np.ones(3, np.uint8)
-      # cleanMask = cv.dilate(roughMask, dilate_kernel, iterations=1)
-      # erodeKernel = np.ones((5, 5), np.uint8)
-      # cleanMask = cv.morphologyEx(np.copy(roughMask), cv.MORPH_OPEN, erodeKernel)
-
-      scaleFactorX = tensorImage.shape[-1] / cleanMask.shape[-1]
-      scaleFactorY = tensorImage.shape[-2] / cleanMask.shape[-2]
-      scaledMask = cv.resize(cleanMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
+      scaleFactorX = tensorImage.shape[-1] / roughMask.shape[-1]
+      scaleFactorY = tensorImage.shape[-2] / roughMask.shape[-2]
+      scaledMask = cv.resize(roughMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
                             interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
 
       scaledMask = cv.normalize(scaledMask, None, 0, 255, cv.NORM_MINMAX,
