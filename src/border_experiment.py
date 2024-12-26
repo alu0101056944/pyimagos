@@ -27,6 +27,7 @@ from src.image_filters.dilation import DilationFilter
 from src.image_filters.border_detection_statistical_range import (
   BorderDetectionStatisticalRange
 )
+from src.image_filters.scale import ScaleFilter
 
 class NoFilter(ImageFilter):
    def process(self, image: Union[np.ndarray, torch.Tensor]) -> np.ndarray:
@@ -80,6 +81,15 @@ available_filters = {
             "padding": {"type": "int", "min": 1, "max": 11, "default": 2, "step": 1},
          }
     },
+    "ScaleFilter": {
+       "class": ScaleFilter,
+       "params": {
+          "scale_factor_x": {"type": "float", "min": 0.1, "max": 100.0,
+                             "default": 1.0, "step": 0.1},
+          "scale_factor_y": {"type": "float", "min": 0.1, "max": 100.0,
+                             "default": 1.0, "step": 0.1}
+       }
+    }
 }
 
 class ImagePipeline:
