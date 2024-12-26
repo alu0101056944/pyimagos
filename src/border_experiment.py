@@ -70,7 +70,9 @@ available_filters = {
     },
     "AttentionMap": {
         "class": AttentionMap,
-        "params": {}
+        "params": {
+           "scale_up": {"type": "bool", "min": 0, "max": 1, "default": 0, "step": 1}
+        }
     },
     "BorderDetectionStatisticalRange": {
         "class": BorderDetectionStatisticalRange,
@@ -259,6 +261,8 @@ class ImageFilterApp:
                      value = int(value)
                    elif available_filters[selected_filter_name]['params'][name]['type'] == "float":
                        value = float(value)
+                   elif available_filters[selected_filter_name]['params'][name]['type'] == "bool":
+                       value = False if value == '0' else True
                    params[name] = value
                  filter_instance = filter_class(**params)
                  self.pipeline.add_step(filter_instance, selected_index)
@@ -278,6 +282,10 @@ class ImageFilterApp:
                    widget = tk.Spinbox(filter_dialog, from_= data['min'], to=data['max'], increment=data.get('step',0.1))
                    widget.delete(0,"end")
                    widget.insert(0, data.get('default', 0.0))
+                 elif data['type'] == 'bool':
+                   widget = tk.Spinbox(filter_dialog, from_= data['min'], to=data['max'], increment=data.get('step', 1))
+                   widget.delete(0,"end")
+                   widget.insert(0, data.get('default', 0))
                  else:
                      widget = ttk.Entry(filter_dialog)
                  widget.pack()

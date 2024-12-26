@@ -23,8 +23,8 @@ from src.image_filters.image_filter import ImageFilter
 import src.vision_transformer as vits
 
 class AttentionMap(ImageFilter):
-    def __init__(self):
-        pass
+    def __init__(self, scale_up : bool = False):
+      self.scale_up = scale_up
 
     def loadInputImage_(self, tensor_image: torch.Tensor) -> torch.Tensor:
       if tensor_image.ndim < 3:
@@ -73,7 +73,7 @@ class AttentionMap(ImageFilter):
 
     def getThresholdedNdarray_(self, selfAttentionMap: np.array) -> np.ndarray:
       selfAttentionMap = selfAttentionMap.numpy()
-      selfAttentionMap = (selfAttentionMap > np.percentile(selfAttentionMap, 70)).astype(int)
+      selfAttentionMap = (selfAttentionMap > np.percentile(selfAttentionMap, 70)).astype(np.uint8)
       return selfAttentionMap
 
     def process(self, image: Union[np.array, torch.Tensor]) -> np.array:
@@ -83,16 +83,21 @@ class AttentionMap(ImageFilter):
       selfAttentionMapModel = self.dino_vits8_()
       selfAttentionMap = self.getSelfAttentionMap_(selfAttentionMapModel,
                                                    tensorImage)
-      roughMask = self.getThresholdedNdarray_(selfAttentionMap).astype(np.uint8)
+      roughMask = self.getThresholdedNdarray_(selfAttentionMap)
 
-      scaleFactorX = tensorImage.shape[-1] / roughMask.shape[-1]
-      scaleFactorY = tensorImage.shape[-2] / roughMask.shape[-2]
-      scaledMask = cv.resize(roughMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
-                            interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
+      if self.scale_up:
+        scaleFactorX = tensorImage.shape[-1] / roughMask.shape[-1]
+        scaleFactorY = tensorImage.shape[-2] / roughMask.shape[-2]
+        scaledMask = cv.resize(roughMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
+                              interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
 
-      scaledMask = cv.normalize(scaledMask, None, 0, 255, cv.NORM_MINMAX,
+        scaledMask = cv.normalize(scaledMask, None, 0, 255, cv.NORM_MINMAX,
                                cv.CV_8U)
-      return scaledMask
+        return scaledMask
+      else:
+        roughMask = cv.normalize(roughMask, None, 0, 255, cv.NORM_MINMAX,
+                               cv.CV_8U)
+        return roughMask
 
     def get_name(self):
         return 'AttentionMap'

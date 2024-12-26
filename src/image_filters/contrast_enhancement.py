@@ -72,7 +72,7 @@ class ContrastEnhancement(ImageFilter):
 
     def getThresholdedNdarray_(self, selfAttentionMap: np.array) -> np.ndarray:
       selfAttentionMap = selfAttentionMap.numpy()
-      selfAttentionMap = (selfAttentionMap > np.percentile(selfAttentionMap, 70)).astype(int)
+      selfAttentionMap = (selfAttentionMap > np.percentile(selfAttentionMap, 70)).astype(np.uint8)
       return selfAttentionMap
 
     def process(self, image: Union[np.array, torch.Tensor]) -> np.array:
@@ -81,7 +81,7 @@ class ContrastEnhancement(ImageFilter):
       tensorImage = self.loadInputImage_(image)
       selfAttentionMapModel = self.dino_vits8_()
       selfAttentionMap = self.getSelfAttentionMap_(selfAttentionMapModel, tensorImage)
-      roughMask = self.getThresholdedNdarray_(selfAttentionMap).astype(np.uint8)
+      roughMask = self.getThresholdedNdarray_(selfAttentionMap)
 
       erode_kernel = np.ones(4, np.uint8)
       cleanMask = cv.erode(roughMask, erode_kernel, iterations=1)
