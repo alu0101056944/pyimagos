@@ -19,32 +19,13 @@ from src.image_filters.border_detection_statistical_range import (
   BorderDetectionStatisticalRange
 )
 
-def process_radiograph(filename: str) -> None:
+def process_radiograph(filename: str, write_images: bool = False,
+                       show_images: bool = True) -> None:
   inputImage = Image.open(filename)
   inputImage = transforms.ToTensor()(inputImage)
-  roughMask = ContrastEnhancement().process(inputImage)
 
-  erode_kernel = np.ones(4, np.uint8)
-  cleanMask = cv.erode(roughMask, erode_kernel, iterations=1)
-  # dilate_kernel = np.ones(3, np.uint8)
-  # cleanMask = cv.dilate(roughMask, dilate_kernel, iterations=1)
-  # erodeKernel = np.ones((5, 5), np.uint8)
-  # cleanMask = cv.morphologyEx(np.copy(roughMask), cv.MORPH_OPEN, erodeKernel)
-
-  scaleFactorX = inputImage.shape[-1] / cleanMask.shape[-1]
-  scaleFactorY = inputImage.shape[-2] / cleanMask.shape[-2]
-  scaledMask = cv.resize(cleanMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
-                        interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
-
-  inputImage = inputImage.numpy(force=True)[0]
-
-  maskedInputImage = inputImage * scaledMask
-  maskedInputImage = np.ma.masked_equal(maskedInputImage, 0)
-  maxValueWithinMask = maskedInputImage.max()
-  minValueWithinMask = maskedInputImage.min()
-
-  outputImage = np.clip((inputImage - minValueWithinMask) / (
-     maxValueWithinMask - minValueWithinMask), 0, 1)
+  outputImage = ContrastEnhancement().process(inputImage)
+  outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
   ## Border detection
   gaussianBlurred = cv.GaussianBlur(outputImage, (5, 5), 0)
@@ -56,42 +37,29 @@ def process_radiograph(filename: str) -> None:
     bordersDetected = BorderDetectionStatisticalRange(5 // 2).process(gaussianBlurred)
 
     # Normalize the image between 0 and 255 before showing to improve visualization.
-    outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
     gaussianBlurred = cv.normalize(gaussianBlurred, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
     bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
     concatenated = np.concatenate((outputImage, gaussianBlurred, bordersDetected), axis=1)
-    cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
-                f'_bordersigma{gaussianSigmas[i]}.jpg'),
-                concatenated)
-
-  ## Border detection, statistical range method
-  kernelSizes = [3, 5, 7, 9]
-  for i in range(4):
-    gaussianBlurred = cv.GaussianBlur(outputImage, (kernelSizes[i], kernelSizes[i]), 0)
-
-    blockSize = (3, 3)
-    padSize = blockSize[0] // 2 # Same padding than Gaussian Blur filter
-    paddedImage = np.pad(gaussianBlurred, padSize, mode='reflect')
-    
-    bordersDetected = np.zeros_like(gaussianBlurred, dtype=np.float32)
-
-    for y in range(gaussianBlurred.shape[0]):
-      for x in range(gaussianBlurred.shape[1]):
-          window = paddedImage[y:y + blockSize[0], x:x + blockSize[1]]
-          difference = window.max() - window.min()
-          bordersDetected[y, x] = difference
-
-    # Normalize the image between 0 and 255 before showing to improve visualization.
-    outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-    gaussianBlurred = cv.normalize(gaussianBlurred, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
-    bordersDetected = cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+    if write_images:
+      cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
+                  f'_bordersigma{gaussianSigmas[i]}.jpg',
+                  concatenated)
+    else:
+      if show_images and i == 2:
+        cv.imshow(f'{os.path.basename(filename)}_bordersigma{gaussianSigmas[i]}.jpg',
+                  concatenated)
+        cv.waitKey(0)
+        cv.destroyAllWindows()
+      else:
+        continue
   
   ## Border detection, canny edge detector
   minThresholds = [30, 51, 70]
   maxThresholds = [135, 150, 165]
   kernelSizes = [3, 5, 7, 9]
   for minThreshold  in minThresholds:
+    showedImage = False
     for maxThreshold in maxThresholds:
       for kernelSize in kernelSizes:
         gaussianBlurred = cv.GaussianBlur(outputImage, (kernelSize, kernelSize), 0)
@@ -146,109 +114,20 @@ def process_radiograph(filename: str) -> None:
                                                     cv.cvtColor(closed_image, cv.COLOR_GRAY2BGR),
                                                     coloredImage,
                                                     ), axis=1)
-        cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
-                    f'_bordercanny_withfill_minThresh{minThreshold}' \
-                    f'_maxThresh{maxThreshold}_kernelSize{kernelSize}' \
-                    f'.jpg',
-                    concatenated)
+        if write_images:
+          cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
+            f'_bordercanny_withfill_minThresh{minThreshold}' \
+            f'_maxThresh{maxThreshold}_kernelSize{kernelSize}' \
+            f'.jpg',
+            concatenated)
+        else:
+          if show_images and not showedImage:
+            showedImage = True
+            cv.imshow(f'{os.path.basename(filename)}' \
+              f'_bordercanny_withfill_minThresh{minThreshold}' \
+              f'_maxThresh{maxThreshold}_kernelSize{kernelSize}' \
+              f'.jpg', concatenated)
+            cv.waitKey(0)
+            cv.destroyAllWindows()
 
-  # cv.imwrite(f'docs/local_images/{os.path.basename(filename)}_bordersDetected.jpg', bordersDetected)
-
-  # showcase before and after
-  # f, axs = plt.subplots(1, 7)
-  # axs[0].imshow(inputImage, cmap='gray', vmin=0, vmax=1)
-  # axs[0].set_title('Input image')
-
-  # axs[1].imshow(roughMask, cmap='gray', vmin=0, vmax=1)
-  # axs[1].set_title('Unprocessed mask')
-
-  # axs[2].imshow(cleanMask, cmap='gray', vmin=0, vmax=1)
-  # axs[2].set_title('Clean mask')
-
-  # axs[3].imshow(scaledMask, cmap='gray', vmin=0, vmax=1)
-  # axs[3].set_title('Scaled up mask')
-
-  # axs[4].imshow(outputImage, cmap='gray')
-  # axs[4].set_title('HE enchanced')
-  
-  # axs[5].imshow(gaussianBlurred, cmap='gray')
-  # axs[5].set_title('Gaussian blur')
-
-  # axs[6].imshow(bordersDetected, cmap='gray')
-  # axs[6].set_title('Border detection')
-  # plt.show()
-
-  # _, bordersDetectedThresholded = cv.threshold(bordersDetected, 50, 255, cv.THRESH_BINARY)
-  # cv.imshow('binary', (bordersDetectedThresholded))
-
-  # erosionSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-  # for i in range(9):
-  #   erosionKernel = np.ones(erosionSizes[i], np.uint8)
-  #   erosionResult = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=1)
-  #   erosionResult2 = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=2)
-  #   erosionResult3 = cv.erode(bordersDetectedThresholded, erosionKernel, iterations=3)
-  #   concatenated = np.concatenate((bordersDetectedThresholded, erosionResult,
-  #                                  erosionResult2, erosionResult3), axis=1)
-  #   cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
-  #               f'_binarybordererosion{erosionSizes[i]}.jpg'),
-  #               concatenated)
-
-  # openingSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-  # for i in range(9):
-  #   openKernel = np.ones(openingSizes[i], np.uint8)
-  #   openResult = cv.morphologyEx(bordersDetectedThresholded, cv.MORPH_OPEN, openKernel)
-  #   concatenated = np.concatenate((bordersDetectedThresholded, openResult), axis=1)
-  #   cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
-  #               f'_binaryborderopening{openingSizes[i]}.jpg'),
-  #               concatenated)
-
-  # closingSizes = [2, 3, 4, 5, 6, 7, 8, 9, 10]
-  # for i in range(9):
-  #   closingKernel = np.ones(closingSizes[i], np.uint8)
-  #   closingResult = cv.morphologyEx(bordersDetectedThresholded, cv.MORPH_OPEN, closingKernel)
-  #   concatenated = np.concatenate((bordersDetectedThresholded, closingResult), axis=1)
-  #   cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' + (
-  #               f'_binaryborderclosing{openingSizes[i]}.jpg'),
-  #               concatenated)
-
-  # numMinThresholds = np.linspace(0, 255, 16)
-  # f, axs = plt.subplots(4, 12)
-  # for i in range(4):
-  #   for j in range(4):
-  #     minThreshold = numMinThresholds[i * 4 + j]
-
-  #     _, bordersDetectedThresholded = cv.threshold(bordersDetected, minThreshold, 255, cv.THRESH_BINARY)
-  #     numLabels, markers = cv.connectedComponents(bordersDetectedThresholded)
-  #     distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
-  #     distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
-
-      # concatenated = np.concatenate(
-      #   (bordersDetectedThresholded, markers * (255 / numLabels), distanceTransform), axis=1)
-      # cv.imwrite(f'docs/local_images/{os.path.basename(filename)}_minThreshold{minThreshold}.jpg', concatenated)
-
-  # _, markers = cv.connectedComponents(bordersDetectedThresholded)
-  # cv.imshow('Markers', (markers * (255 / 3)).astype(np.uint8))
-  # distanceTransform = cv.distanceTransform(bordersDetectedThresholded, cv.DIST_L2, 5)
-  # distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
-  # cv.imshow('Distance transform', distanceTransform.astype(np.uint8))
-
-  # markers = markers.astype(np.int32)
-  # distanceTransform3Channel = cv.merge((distanceTransform, distanceTransform, distanceTransform))
-  # watershedImage = cv.watershed(distanceTransform3Channel, markers)
-  # watershedImage = watershedImage.astype(np.uint8)
-
-  # coloredImage = np.zeros((bordersDetected.shape[0], bordersDetected.shape[1], 3), dtype=np.uint8)
-  # uniqueLabels = np.unique(watershedImage)
-  # for label in uniqueLabels:
-  #    if label == 0:
-  #       continue
-     
-  #    mask = watershedImage == label
-  #    b, g, r = np.random.randint(0, 256, 3)
-  #    coloredImage[mask] = (b, g, r)
-
-  # cv.imshow('Borders Detected', bordersDetected)
-  # cv.imshow('Watershed segmentation', coloredImage)
-  
-  # cv.waitKey(0)
-  # cv.destroyAllWindows()
+    showedImage = False

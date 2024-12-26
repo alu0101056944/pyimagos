@@ -30,8 +30,13 @@ def cli() -> None:
 
 @cli.command()
 @click.argument('filename')
-def process(filename: str) -> None:
-  process_radiograph(filename)
+@click.option('--write_files', is_flag=True, default=False,
+              help='Enable writing processed images to disk.')
+@click.option('--noshow', is_flag=True, default=False,
+              help='Skip image showing through new windows.')
+def process(filename: str, write_files: bool, noshow: bool) -> None:
+    process_radiograph(filename, write_images=write_files,
+                       show_images=not noshow)
 
 @cli.command()
 @click.argument('filename')
