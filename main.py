@@ -21,7 +21,7 @@ import click
 
 from src.main_execute import process_radiograph
 from src.main_gui import execute_ui
-from src.main_develop_border_analysis import border_filter_alternatives_analysis
+from src.main_develop_border_analysis import borderFilterAlternativesAnalysis
 from src.image_filters.attention_map_filter import AttentionMap
 
 @click.group()
@@ -78,7 +78,7 @@ def develop() -> None:
               help='Skip image showing through new windows.')
 def border_analysis(filename: str, write_files: bool, noshow: bool) -> None:
   '''Show/write images border detection intermediate results.'''
-  border_filter_alternatives_analysis(filename, write_images=write_files,
+  borderFilterAlternativesAnalysis(filename, write_images=write_files,
                        show_images=not noshow)
 
 if __name__ == '__main__':

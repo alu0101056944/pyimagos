@@ -19,30 +19,36 @@ from src.image_filters.border_detection_statistical_range import (
   BorderDetectionStatisticalRange
 )
 
-def calculate_watershed(borderImage: np.array) -> np.array:
-  numLabels, markers = cv.connectedComponents(borderImage)
-
-  distanceTransform = cv.distanceTransform(borderImage, cv.DIST_L2, 5)
-  distanceTransform = cv.normalize(distanceTransform, None, 255, 0, cv.NORM_MINMAX, cv.CV_8U)
-
-  markers = markers.astype(np.int32)
-  distanceTransform3Channel = cv.merge((distanceTransform, distanceTransform, distanceTransform))
-  watershedImage = cv.watershed(distanceTransform3Channel, markers)
-  watershedImage = watershedImage.astype(np.uint8)
-
-  coloredImage = np.zeros((borderImage.shape[0], borderImage.shape[1], 3), dtype=np.uint8)
-  uniqueLabels = np.unique(watershedImage)
-  for label in uniqueLabels:
-    if label == 0:
+def markerToColor(image: np.array, unique_labels: np.array) -> np.array:
+  colored_image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
+  for label in unique_labels:
+    if label <= 0:
         continue
     
-    mask = watershedImage == label
-    b, g, r = np.random.randint(0, 256, 3)
-    coloredImage[mask] = (b, g, r)
+    mask = image == label
+    label = int(label)
+    color = (label * 123 % 256, label * 456 % 256, label * 789 % 256)
+    while color == (0, 0, 0): # save (0, 0, 0) for the background)
+      color = (label * 123 % 256, label * 456 % 256, label * 789 % 256)
+    b, g, r = color
+    colored_image[mask] = (b, g, r)
 
-  return coloredImage
+  return colored_image
 
-def border_filter_alternatives_analysis(filename: str,
+def calculateWatershed(border_image: np.array, markers: np.array) -> np.array:
+  markers_local = np.copy(markers)
+  markers_local = markers_local + 1 # to avoid 0 label which is unknown for watershed.
+
+  border_image = cv.cvtColor(border_image, cv.COLOR_GRAY2BGR)
+
+  watershed_image = cv.watershed(border_image, markers_local)
+  watershed_image = watershed_image.astype(np.uint8)
+
+  unique_labels = np.unique(watershed_image)
+  colored_image = markerToColor(watershed_image, unique_labels)
+  return colored_image
+
+def borderFilterAlternativesAnalysis(filename: str,
                                         write_images: bool = False,
                                         show_images: bool = True) -> None:
   input_image = Image.open(filename)
@@ -63,10 +69,17 @@ def border_filter_alternatives_analysis(filename: str,
             padding=(5 // 2)
           ).process(gaussian_blurred)
 
+      numLabels, markers = cv.connectedComponents(borders_detected)
+      markers = markers.astype(np.int32)
+      
+      watershed_image = calculateWatershed(borders_detected, markers)
+      markers = markerToColor(markers, np.unique(markers))
+
       concatenated = np.concatenate((cv.cvtColor(output_image, cv.COLOR_GRAY2BGR),
                                     cv.cvtColor(gaussian_blurred, cv.COLOR_GRAY2BGR),
                                     cv.cvtColor(borders_detected, cv.COLOR_GRAY2BGR),
-                                    calculate_watershed(borders_detected),
+                                    markers,
+                                    watershed_image,
                                     ), axis=1)
 
       if write_images:
@@ -103,16 +116,22 @@ def border_filter_alternatives_analysis(filename: str,
           borders_detected = cv.normalize(borders_detected, None, 0, 255,
                                           cv.NORM_MINMAX, cv.CV_8U)
 
-          watershed_image = calculate_watershed(borders_detected)
+          numLabels, markers = cv.connectedComponents(borders_detected)
+          markers = markers.astype(np.int32)
+
+          watershed_image = calculateWatershed(borders_detected, markers)
+          markers = markerToColor(markers, np.unique(markers))
+
           concatenated = np.concatenate((cv.cvtColor(output_image, cv.COLOR_GRAY2BGR),
                                          cv.cvtColor(gaussian_blurred, cv.COLOR_GRAY2BGR),
                                          cv.cvtColor(borders_detected, cv.COLOR_GRAY2BGR),
+                                         markers,
                                          watershed_image,
                                          ), axis=1)
           if write_images:
             cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
-                       f'_statrange_border_sigma{gaussian_sigma}.jpg' \
-                       f'canny_border' \
+                       f'_canny_border' \
+                       f'_sigma{gaussian_sigma}' \
                        f'_sigma{gaussian_sigma}' \
                        f'_kernelsize{kernel_size}' \
                        f'_minThresh{min_threshold}' \
@@ -122,7 +141,7 @@ def border_filter_alternatives_analysis(filename: str,
           else:
             if show_images:
               cv.imshow(f'{os.path.basename(filename)}' \
-                        f'canny_border' \
+                        f'_canny_border' \
                         f'_sigma{gaussian_sigma}' \
                         f'_kernelsize{kernel_size}' \
                         f'_minThresh{min_threshold}' \

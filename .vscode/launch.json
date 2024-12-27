@@ -12,7 +12,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
-      "args": ["develop", "border-analysis", ".\\docs\\bad_contrast.jpg", "--write_files"]
+      "args": ["develop", "border-analysis", ".\\docs\\radiography.jpg", "--noshow"]
     }
   ]
 }
