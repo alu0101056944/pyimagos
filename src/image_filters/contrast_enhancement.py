@@ -51,60 +51,63 @@ class ContrastEnhancement(ImageFilter):
       """
       model = vits.__dict__["vit_small"](patch_size=patch_size, num_classes=0, **kwargs)
       if pretrained:
-          absolutePath = os.path.dirname(__file__)
-          path = os.path.normpath(os.path.join(absolutePath, '../../model/dino_deitsmall8_pretrain.pth'))
+          absolute_path = os.path.dirname(__file__)
+          path = os.path.normpath(os.path.join(absolute_path, '../../model/dino_deitsmall8_pretrain.pth'))
           state_dict = torch.load(path, map_location="cpu")
           model.load_state_dict(state_dict, strict=True)
           model.eval()
       return model
 
     def getSelfAttentionMap_(self, model: vits.VisionTransformer,
-                             inputImage: torch.Tensor) -> torch.Tensor:
+                             input_image: torch.Tensor) -> torch.Tensor:
       with torch.no_grad():
-        selfAttentionMap = model.get_last_selfattention(inputImage)
+        self_attention_map = model.get_last_selfattention(input_image)
 
       # Selection: [attention head, batch, patchNi, patchNj]
-      cls_attention = selfAttentionMap[0, 0, 0, 1:] # dont include attention to self
-      w0 = inputImage.shape[-1] // 8 # 8 = num_patches
-      h0 = inputImage.shape[-2] // 8
+      cls_attention = self_attention_map[0, 0, 0, 1:] # dont include attention to self
+      w0 = input_image.shape[-1] // 8 # 8 = num_patches
+      h0 = input_image.shape[-2] // 8
       attention_grid = cls_attention.reshape(h0, w0)
       return attention_grid
 
-    def getThresholdedNdarray_(self, selfAttentionMap: np.array) -> np.ndarray:
-      selfAttentionMap = selfAttentionMap.numpy()
-      selfAttentionMap = (selfAttentionMap > np.percentile(selfAttentionMap, 70)).astype(np.uint8)
-      return selfAttentionMap
+    def getThresholdedNdarray_(self, self_attention_map: np.array) -> np.ndarray:
+      self_attention_map = self_attention_map.numpy()
+      self_attention_map = (
+         self_attention_map > np.percentile(self_attention_map, 70)
+         ).astype(np.uint8)
+      return self_attention_map
 
     def process(self, image: Union[np.array, torch.Tensor]) -> np.array:
       if not isinstance(image, torch.Tensor):
           image = transforms.ToTensor()(image)
-      tensorImage = self.loadInputImage_(image)
-      selfAttentionMapModel = self.dino_vits8_()
-      selfAttentionMap = self.getSelfAttentionMap_(selfAttentionMapModel, tensorImage)
-      roughMask = self.getThresholdedNdarray_(selfAttentionMap)
+      tensor_image = self.loadInputImage_(image)
+      model = self.dino_vits8_()
+      self_attention_map = self.getSelfAttentionMap_(model, tensor_image)
+      rough_mask = self.getThresholdedNdarray_(self_attention_map)
 
       erode_kernel = np.ones(4, np.uint8)
-      cleanMask = cv.erode(roughMask, erode_kernel, iterations=1)
+      clean_mask = cv.erode(rough_mask, erode_kernel, iterations=1)
 
-      scaleFactorX = tensorImage.shape[-1] / cleanMask.shape[-1]
-      scaleFactorY = tensorImage.shape[-2] / cleanMask.shape[-2]
-      scaledMask = cv.resize(cleanMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
-                            interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
+      scale_factor_x = tensor_image.shape[-1] / clean_mask.shape[-1]
+      scale_factor_y = tensor_image.shape[-2] / clean_mask.shape[-2]
+      scaled_mask = cv.resize(clean_mask, (0, 0), fx=scale_factor_x,
+                              fy=scale_factor_y,
+                              interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
       
-      tensorImage = tensorImage.numpy(force=True)[0]
+      tensor_image = tensor_image.numpy(force=True)[0]
 
       # Histogram equalization
-      maskedInputImage = tensorImage * scaledMask
-      maskedInputImage = np.ma.masked_equal(maskedInputImage, 0)
-      maxValueWithinMask = maskedInputImage.max()
-      minValueWithinMask = maskedInputImage.min()
+      masked_input_image = tensor_image * scaled_mask
+      masked_input_image = np.ma.masked_equal(masked_input_image, 0)
+      max_value_withinmask = masked_input_image.max()
+      min_value_within_mask = masked_input_image.min()
   
-      outputImage = np.clip((tensorImage - minValueWithinMask) / (
-        maxValueWithinMask - minValueWithinMask), 0, 1)
+      output_image = np.clip((tensor_image - min_value_within_mask) / (
+        max_value_withinmask - min_value_within_mask), 0, 1)
   
-      outputImage = cv.normalize(outputImage, None, 0, 255, cv.NORM_MINMAX,
+      output_image = cv.normalize(output_image, None, 0, 255, cv.NORM_MINMAX,
                                cv.CV_8U)
-      return outputImage[0]
+      return output_image[0]
 
     def get_name(self):
         return 'ContrastEnhancement'

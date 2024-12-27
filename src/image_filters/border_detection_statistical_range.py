@@ -20,18 +20,18 @@ class BorderDetectionStatisticalRange(ImageFilter):
         self.padding = padding
 
     def process(self, image: Union[np.array, Tensor]) -> np.array:
-      blockSize = (3, 3)
-      paddedImage = np.pad(image, self.padding, mode='reflect')
+      block_size = (3, 3)
+      padded_image = np.pad(image, self.padding, mode='reflect')
       
-      bordersDetected = np.zeros_like(image, dtype=np.float32)
+      borders_detected = np.zeros_like(image, dtype=np.float32)
 
       for y in range(image.shape[0]):
         for x in range(image.shape[1]):
-            window = paddedImage[y:y + blockSize[0], x:x + blockSize[1]]
+            window = padded_image[y:y + block_size[0], x:x + block_size[1]]
             statisticalRange = window.max() - window.min()
-            bordersDetected[y, x] = statisticalRange
+            borders_detected[y, x] = statisticalRange
 
-      return cv.normalize(bordersDetected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+      return cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
     def get_name(self):
         return f'BorderDetectionCanny(pad={self.padding})'

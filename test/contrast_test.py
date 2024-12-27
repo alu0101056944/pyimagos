@@ -44,7 +44,7 @@ class TestAttentionMap:
     yield self.dino_vits8(patch_size=8)
 
   @pytest.fixture(scope='class')
-  def inputImage(self):
+  def input_image(self):
     transform = transforms.Compose([
       transforms.ToTensor(),
       transforms.Lambda(lambda x : x.repeat(3, 1, 1)) # Model needs 3 channels.
@@ -55,16 +55,16 @@ class TestAttentionMap:
     yield tensorImage
 
   @pytest.fixture(scope='class')
-  def selfAttentionMap(self, model, inputImage):
+  def selfAttentionMap(self, model, input_image):
     with torch.no_grad():
-      attention_maps = model.get_last_selfattention(inputImage)
+      attention_maps = model.get_last_selfattention(input_image)
     return attention_maps
   
   def test_can_load_pretrained_model(self, model) -> None:
     assert isinstance(model, vits.VisionTransformer)
 
-  def test_can_transform_input_image_to_tensor(self, inputImage) -> None:
-    assert isinstance(inputImage, torch.Tensor)
+  def test_can_transform_input_image_to_tensor(self, input_image) -> None:
+    assert isinstance(input_image, torch.Tensor)
 
   def test_can_get_attention_map(self, selfAttentionMap) -> None:
     assert isinstance(selfAttentionMap, torch.Tensor)

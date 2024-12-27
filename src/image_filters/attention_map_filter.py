@@ -52,52 +52,54 @@ class AttentionMap(ImageFilter):
       """
       model = vits.__dict__["vit_small"](patch_size=patch_size, num_classes=0, **kwargs)
       if pretrained:
-          absolutePath = os.path.dirname(__file__)
-          path = os.path.normpath(os.path.join(absolutePath, '../../model/dino_deitsmall8_pretrain.pth'))
+          absolute_path = os.path.dirname(__file__)
+          path = os.path.normpath(os.path.join(absolute_path, '../../model/dino_deitsmall8_pretrain.pth'))
           state_dict = torch.load(path, map_location="cpu")
           model.load_state_dict(state_dict, strict=True)
           model.eval()
       return model
 
     def getSelfAttentionMap_(self, model: vits.VisionTransformer,
-                             inputImage: torch.Tensor) -> torch.Tensor:
+                             input_image: torch.Tensor) -> torch.Tensor:
       with torch.no_grad():
-        selfAttentionMap = model.get_last_selfattention(inputImage)
+        self_attention_map = model.get_last_selfattention(input_image)
 
       # Selection: [attention head, batch, patchNi, patchNj]
-      cls_attention = selfAttentionMap[0, 0, 0, 1:] # dont include attention to self
-      w0 = inputImage.shape[-1] // 8 # 8 = num_patches
-      h0 = inputImage.shape[-2] // 8
+      cls_attention = self_attention_map[0, 0, 0, 1:] # dont include attention to self
+      w0 = input_image.shape[-1] // 8 # 8 = num_patches
+      h0 = input_image.shape[-2] // 8
       attention_grid = cls_attention.reshape(h0, w0)
       return attention_grid
 
-    def getThresholdedNdarray_(self, selfAttentionMap: np.array) -> np.ndarray:
-      selfAttentionMap = selfAttentionMap.numpy()
-      selfAttentionMap = (selfAttentionMap > np.percentile(selfAttentionMap, 70)).astype(np.uint8)
-      return selfAttentionMap
+    def getThresholdedNdarray_(self, self_attention_map: np.array) -> np.ndarray:
+      self_attention_map = self_attention_map.numpy()
+      self_attention_map = (
+         self_attention_map > np.percentile(self_attention_map, 70)
+         ).astype(np.uint8)
+      return self_attention_map
 
     def process(self, image: Union[np.array, torch.Tensor]) -> np.array:
       if not isinstance(image, torch.Tensor):
           image = transforms.ToTensor()(image)
-      tensorImage = self.loadInputImage_(image)
-      selfAttentionMapModel = self.dino_vits8_()
-      selfAttentionMap = self.getSelfAttentionMap_(selfAttentionMapModel,
-                                                   tensorImage)
-      roughMask = self.getThresholdedNdarray_(selfAttentionMap)
+      tensor_image = self.loadInputImage_(image)
+      model = self.dino_vits8_()
+      self_attention_map = self.getSelfAttentionMap_(model, tensor_image)
+      rough_mask = self.getThresholdedNdarray_(self_attention_map)
 
       if self.scale_up:
-        scaleFactorX = tensorImage.shape[-1] / roughMask.shape[-1]
-        scaleFactorY = tensorImage.shape[-2] / roughMask.shape[-2]
-        scaledMask = cv.resize(roughMask, (0, 0), fx=scaleFactorX, fy=scaleFactorY,
-                              interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
+        scale_factor_x = tensor_image.shape[-1] / rough_mask.shape[-1]
+        scale_factor_y = tensor_image.shape[-2] / rough_mask.shape[-2]
+        scaled_mask = cv.resize(rough_mask, (0, 0), fx=scale_factor_x,
+                                fy=scale_factor_y,
+                                interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
 
-        scaledMask = cv.normalize(scaledMask, None, 0, 255, cv.NORM_MINMAX,
+        scaled_mask = cv.normalize(scaled_mask, None, 0, 255, cv.NORM_MINMAX,
                                cv.CV_8U)
-        return scaledMask
+        return scaled_mask
       else:
-        roughMask = cv.normalize(roughMask, None, 0, 255, cv.NORM_MINMAX,
+        rough_mask = cv.normalize(rough_mask, None, 0, 255, cv.NORM_MINMAX,
                                cv.CV_8U)
-        return roughMask
+        return rough_mask
 
     def get_name(self):
         return 'AttentionMap'
