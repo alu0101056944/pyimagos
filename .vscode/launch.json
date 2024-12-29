@@ -12,7 +12,7 @@
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
-      "args": ["develop", "border-analysis", ".\\docs\\radiography.jpg", "--noshow"]
+      "args": ["develop", "contours-gui", ".\\docs\\local_images\\radiography_processed_he_enhanced.jpg"]
     }
   ]
 }

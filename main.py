@@ -22,6 +22,7 @@ import click
 from src.main_execute import process_radiograph
 from src.main_gui import execute_ui
 from src.main_develop_border_analysis import borderFilterAlternativesAnalysis
+from src.main_develop_contours import visualize_contours
 from src.image_filters.attention_map_filter import AttentionMap
 
 @click.group()
@@ -80,6 +81,12 @@ def border_analysis(filename: str, write_files: bool, noshow: bool) -> None:
   '''Show/write images border detection intermediate results.'''
   borderFilterAlternativesAnalysis(filename, write_images=write_files,
                        show_images=not noshow)
+
+@develop.command()
+@click.argument("filename")
+def contours_gui(filename: str) -> None:
+  '''Open a GUI that allows visualizing contours and step history.'''
+  visualize_contours(filename)
 
 if __name__ == '__main__':
     cli()

@@ -19,6 +19,10 @@ from src.image_filters.border_detection_statistical_range import (
   BorderDetectionStatisticalRange
 )
 
+# TODO: review marker color related code and that the objective of 
+# showing marker contour colors and then watershed areas both with
+# black borders. Last review it seemed to be wrong in that watershed
+# image did not have black borders (which represent boundaries)
 def markerToColor(image: np.array, unique_labels: np.array) -> np.array:
   colored_image = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
   for label in unique_labels:

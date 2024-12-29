@@ -29,16 +29,18 @@ def process_radiograph(filename: str, write_images: bool = False,
   input_image = Image.open(filename)
   input_image = transforms.ToTensor()(input_image)
 
-  output_image = ContrastEnhancement().process(input_image)
-  output_image = cv.normalize(output_image, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+  he_enchanced = ContrastEnhancement().process(input_image)
+  he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
-  gaussian_blurred = cv.GaussianBlur(output_image, (5, 5), 0)
+  gaussian_blurred = cv.GaussianBlur(he_enchanced, (5, 5), 0)
   borders_detected = cv.Canny(gaussian_blurred, 40, 135)
-  borders_detected = cv.normalize(output_image, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
+  borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
   # Segmentation
 
-  # initialize an origin coordinate
+  # num_markers, markers = cv.connectedComponents(borders_detected)
+
+  # initialize an origin coordinate (old)
   non_zeros = np.nonzero(borders_detected)
   row_indices = non_zeros[0]
   col_indices = non_zeros[1]
@@ -48,13 +50,11 @@ def process_radiograph(filename: str, write_images: bool = False,
 
   AMOUNT_OF_CONTOURS_TO_SAVE = 5
 
-  # Initialize a contour
-  contour_image = np.copy(borders_detected)
-  contour_image[origin] = 255
-  contour = {
-    'image': contour_image,
-    'position': origin
-  }
+  all_contours = [
+    []
+  ]
+
+  # old
 
   # state_stack = [contour]
   # def advance_contour(contour, state_stack):
@@ -64,7 +64,7 @@ def process_radiograph(filename: str, write_images: bool = False,
   #   window = 
   #   return new_contour
 
-  while origin != None:
+  # while origin != None:
     # While contour non completely explored:
 
     #   Apply ruleset to discard/include and calculate a difference value.
@@ -77,9 +77,6 @@ def process_radiograph(filename: str, write_images: bool = False,
     # then update origin to the next relative position
     # or stop if no relative position is possible due to
     # all remaining valued as 0
-    pass
-
-
 
   if write_images:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
