@@ -12,7 +12,7 @@ GUI for contour work visualization:
 from PIL import Image, ImageTk
 from tkinter import (
   Tk, Checkbutton, Scale, HORIZONTAL, IntVar, BooleanVar,
-  Canvas, NW, Y, X, Scrollbar
+  Canvas, NW, Y, X, Scrollbar, Frame, Label, Button, LEFT
 )
 
 import numpy as np
@@ -59,11 +59,11 @@ def draw_contours(image: np.array, contours: np.array,
   return colored_image
 
 class ContourViewer:
-  def __init__(self, image: np.array):
+  def __init__(self, image: np.array, contour_history: np.ndarray):
     self.input_image = image
-    contours, _ = cv.findContours(self.input_image, cv.RETR_EXTERNAL,
-                                  cv.CHAIN_APPROX_SIMPLE)
-    self.contours = contours
+  
+    self.contour_history = contour_history
+    self.step_index = 0
 
     self.root = Tk()
     self.root.title("Contour visualization")
@@ -82,7 +82,11 @@ class ContourViewer:
     self.root.mainloop()
 
   def _setup_gui(self):
-    self.canvas = Canvas(self.root, width=self.input_image.shape[1],
+    canvas_frame = Frame(self.root)
+
+    canvas_frame.pack(side='left', expand="yes", fill="both")
+
+    self.canvas = Canvas(canvas_frame, width=self.input_image.shape[1],
                          height=self.input_image.shape[0], bg="white")
     self.canvas.pack(side='left', expand="yes", fill="both")
 
@@ -96,38 +100,91 @@ class ContourViewer:
     self.canvas.config(yscrollcommand=self.scrollbar_y.set,
                        xscrollcommand=self.scrollbar_x.set)
 
+    controls_frame = Frame(self.root)
+    controls_frame.pack(side='right', fill=Y, padx=10)
+
     # Zoom slider
-    zoom_scale = Scale(self.root, label="Zoom %", from_=10, to=500,
+    zoom_scale = Scale(controls_frame, label="Zoom %", from_=10, to=500,
                        orient=HORIZONTAL, variable=self.zoom_var,
                        command=self._change_zoom)
-    zoom_scale.pack()
+    zoom_scale.pack(pady=5)
 
-    points_check = Checkbutton(self.root, text="Show Points",
+    points_check = Checkbutton(controls_frame, text="Show Points",
                                variable=self.show_points,
                                command=self.update_image)
-    points_check.pack()
+    points_check.pack(pady=5)
 
-    contours_check = Checkbutton(self.root, text="Draw Contours",
+    contours_check = Checkbutton(controls_frame, text="Draw Contours",
                                  variable=self.draw_contours_var,
                                  command=self.update_image)
-    contours_check.pack()
+    contours_check.pack(pady=5)
+
+    contour_frame = Frame(controls_frame)
+    contour_frame.pack(pady=10, fill=X)
+
+    self.contour_info_label = Label(
+      contour_frame,
+      text=f"Step: {self.step_index + 1}/{len(self.contour_history)}"
+    )
+    self.contour_info_label.pack()
+
+    # Step History Scale
+    self.step_scale = Scale(contour_frame, from_=0,
+                            to=max(0, len(self.contour_history) - 1),
+                            orient=HORIZONTAL,
+                            command=self._change_step)
+    self.step_scale.pack(fill=X)
+
+    button_frame = Frame(contour_frame)
+    button_frame.pack(fill=X)
+    
+    prev_button = Button(button_frame, text="<", command=self._prev_step)
+    prev_button.pack(side=LEFT)
+
+    next_button = Button(button_frame, text=">", command=self._next_step)
+    next_button.pack(side=LEFT)
+
 
   def _change_zoom(self, zoom_value):
     self.zoom_level = int(zoom_value) / 100
     self.update_image()
 
+  def _update_contour_info(self):
+    self.contour_info_label.config(
+      text=f"Step: {self.step_index + 1}/{len(self.contour_history)}")
+    self.step_scale.config(to=max(0, len(self.contour_history) - 1))
+    self.step_scale.set(self.step_index)
+
+  def _change_step(self, step_value: int):
+    self.step_index = step_value
+    self._update_contour_info()
+    self.update_image()
+
+  def _prev_step(self):
+    if self.step_index > 0:
+      self.step_index -= 1
+      self._update_contour_info()
+      self.update_image()
+
+  def _next_step(self):
+    if self.step_index < len(self.contour_history) - 1:
+      self.step_index += 1
+      self._update_contour_info()
+      self.update_image()
+
   def update_image(self):
     display_image = cv.cvtColor(self.input_image, cv.COLOR_RGB2BGR)
-    
+    contours = self.contour_history[self.step_index]
+
     if self.show_points.get() and not self.draw_contours_var.get():
-      display_image, _ = draw_contour_points(display_image, self.contours)
+      display_image, _ = draw_contour_points(display_image, contours)
     elif self.draw_contours_var.get():
       display_image, contour_colors = draw_contour_points(
         display_image,
-        self.contours,
+        contours,
         draw_points=True if self.show_points.get() else False
       )
-      display_image = draw_contours(display_image, self.contours, contour_colors)
+      display_image = draw_contours(display_image, contours, contour_colors)
 
     # Scale Image
     pil_image = Image.fromarray(display_image)
@@ -148,4 +205,7 @@ def visualize_contours(filename: str) -> None:
   borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,
                                   cv.CV_8U)
 
-  visualizer = ContourViewer(borders_detected)
+  contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
+                                cv.CHAIN_APPROX_SIMPLE)
+
+  visualizer = ContourViewer(borders_detected, [contours])
