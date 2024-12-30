@@ -76,6 +76,7 @@ class ContourViewer:
     
     self.show_points = BooleanVar(value=True)
     self.draw_contours_var = BooleanVar(value=False)
+    self.show_changes = BooleanVar(value=False)
 
     self._setup_gui()
     self.update_image()
@@ -144,6 +145,11 @@ class ContourViewer:
     next_button = Button(button_frame, text=">", command=self._next_step)
     next_button.pack(side=LEFT)
 
+    show_changes_check = Checkbutton(controls_frame, text="Highlight changes",
+                              variable=self.show_changes,
+                              command=self.update_image)
+    show_changes_check.pack(pady=5)
+
 
   def _change_zoom(self, zoom_value):
     self.zoom_level = int(zoom_value) / 100
@@ -156,7 +162,7 @@ class ContourViewer:
     self.step_scale.set(self.step_index)
 
   def _change_step(self, step_value: int):
-    self.step_index = step_value
+    self.step_index = int(step_value)
     self._update_contour_info()
     self.update_image()
 
@@ -186,6 +192,36 @@ class ContourViewer:
       )
       display_image = draw_contours(display_image, contours, contour_colors)
 
+    if self.show_changes.get() and len(self.contour_history) > 1 and (
+      self.step_index > 0
+    ):
+      def __to_structured(a: np.array):
+        '''Each row is treated as a single element so that np.isin() works
+        correctly'''
+        return a.view(f"i{a.dtype.itemsize * a.shape[1]}")
+
+      def __set_difference(a: np.array, b: np.array):
+        a1 = __to_structured(a)
+        a2 = __to_structured(b)
+        mask = ~np.isin(a1, a2)
+        mask = np.reshape(np.stack([mask, mask], axis=-1), (-1, 2))
+        return np.reshape(a[mask], (-1, 2))
+
+      original = np.concatenate([np.reshape(contour, (-1, 2)) for contour in contours],
+                                axis=0)
+      previous_contours = self.contour_history[self.step_index - 1]
+      new = np.concatenate([np.reshape(contour, (-1, 2)) for contour in previous_contours],
+                                axis=0)
+      removed_points = __set_difference(original, new)
+      added_points = __set_difference(new, original)
+
+      for removed_point in removed_points:
+        (x, y) = removed_point
+        cv.circle(display_image, (x, y), 1, (0, 0, 255), 6)
+      for added_point in added_points:
+        x, y = added_point
+        cv.circle(display_image, (x, y), 1, (255, 0, 0), 6)
+
     # Scale Image
     pil_image = Image.fromarray(display_image)
     scaled_size = (int(pil_image.width * self.zoom_level),
@@ -208,4 +244,7 @@ def visualize_contours(filename: str) -> None:
   contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
                                 cv.CHAIN_APPROX_SIMPLE)
 
-  visualizer = ContourViewer(borders_detected, [contours])
+  contours2 = [np.copy(contour) for contour in contours]
+  contours2[0] = contours2[0][:-25]
+
+  visualizer = ContourViewer(borders_detected, [contours, contours2])
