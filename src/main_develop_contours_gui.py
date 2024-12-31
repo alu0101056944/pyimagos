@@ -196,9 +196,8 @@ class ContourViewer:
       self.step_index > 0
     ):
       def __to_structured(a: np.array):
-        '''Each row is treated as a single element so that np.isin() works
-        correctly'''
-        n_rows = a.shape[0]
+        '''So that each row is treated as a single element so that np.isin() 
+        works correctly'''
         points_array = np.dtype(list([('x', a.dtype), ('y', a.dtype)]))
         return a.view(points_array)
 
@@ -249,7 +248,8 @@ def visualize_contours(filename: str) -> None:
   contours2 = [np.copy(contour) for contour in contours]
   contours2[0] = contours2[0][:-25]
 
-  box_contour = [np.array([[[4, 4]], [[20, 20]], [[4, 20]], [[20, 4]]])]
+  box_contour = [np.array([[[4, 4]], [[20, 20]], [[4, 20]], [[20, 4]], [[20, 8]],
+                           [[24, 8]], [[24, 4]]])]
 
   def cutContour(contour: np.array, point):
     pass

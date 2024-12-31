@@ -27,9 +27,9 @@ class BorderDetectionStatisticalRange(ImageFilter):
 
       for y in range(image.shape[0]):
         for x in range(image.shape[1]):
-            window = padded_image[y:y + block_size[0], x:x + block_size[1]]
-            statisticalRange = window.max() - window.min()
-            borders_detected[y, x] = statisticalRange
+          window = padded_image[y:y + block_size[0], x:x + block_size[1]]
+          statisticalRange = window.max() - window.min()
+          borders_detected[y, x] = statisticalRange
 
       return cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 

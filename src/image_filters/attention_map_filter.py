@@ -18,7 +18,6 @@ import torch
 import torchvision.transforms as transforms
 import cv2 as cv
 
-# from constants import MODEL_PATH
 from src.image_filters.image_filter import ImageFilter
 import src.vision_transformer as vits
 
@@ -31,12 +30,12 @@ class AttentionMap(ImageFilter):
         tensor_image = tensor_image.unsqueeze(0)
         tensor_image = torch.cat((tensor_image, tensor_image, tensor_image), dim=-2)
       elif tensor_image.ndim >= 3:
-          if tensor_image.shape[0] < 3:
-            tensor_image = tensor_image.flatten(0, -3)
-            tensor_image = torch.cat((
-               tensor_image, tensor_image, tensor_image), dim=0)
-          elif tensor_image.shape[0] > 3:
-            tensor_image = tensor_image.flatten(0, -3)[:3]
+        if tensor_image.shape[0] < 3:
+          tensor_image = tensor_image.flatten(0, -3)
+          tensor_image = torch.cat((
+              tensor_image, tensor_image, tensor_image), dim=0)
+        elif tensor_image.shape[0] > 3:
+          tensor_image = tensor_image.flatten(0, -3)[:3]
       tensor_image = tensor_image.unsqueeze(0) # Makes it [1, C, H, W]
       return tensor_image
 
@@ -50,13 +49,17 @@ class AttentionMap(ImageFilter):
       ViT-Small/8x8 pre-trained with DINO.
       Achieves 78.3% top-1 accuracy on ImageNet with k-NN classification.
       """
-      model = vits.__dict__["vit_small"](patch_size=patch_size, num_classes=0, **kwargs)
+      model = vits.__dict__["vit_small"](patch_size=patch_size, num_classes=0,
+                                         **kwargs)
       if pretrained:
-          absolute_path = os.path.dirname(__file__)
-          path = os.path.normpath(os.path.join(absolute_path, '../../model/dino_deitsmall8_pretrain.pth'))
-          state_dict = torch.load(path, map_location="cpu")
-          model.load_state_dict(state_dict, strict=True)
-          model.eval()
+        absolute_path = os.path.dirname(__file__)
+        path = os.path.normpath(os.path.join(
+          absolute_path,
+          '../../model/dino_deitsmall8_pretrain.pth'
+        ))
+        state_dict = torch.load(path, map_location="cpu")
+        model.load_state_dict(state_dict, strict=True)
+        model.eval()
       return model
 
     def _getSelfAttentionMap(self, model: vits.VisionTransformer,
@@ -75,12 +78,12 @@ class AttentionMap(ImageFilter):
       self_attention_map = self_attention_map.numpy()
       self_attention_map = (
          self_attention_map > np.percentile(self_attention_map, 70)
-         ).astype(np.uint8)
+      ).astype(np.uint8)
       return self_attention_map
 
     def process(self, image: Union[np.array, torch.Tensor]) -> np.array:
       if not isinstance(image, torch.Tensor):
-          image = transforms.ToTensor()(image)
+        image = transforms.ToTensor()(image)
       tensor_image = self._loadInputImage(image)
       model = self._dino_vits8()
       self_attention_map = self._getSelfAttentionMap(model, tensor_image)
@@ -94,11 +97,11 @@ class AttentionMap(ImageFilter):
                                 interpolation=cv.INTER_NEAREST) # to avoid non 0s and 1s
 
         scaled_mask = cv.normalize(scaled_mask, None, 0, 255, cv.NORM_MINMAX,
-                               cv.CV_8U)
+                                   cv.CV_8U)
         return scaled_mask
       else:
         rough_mask = cv.normalize(rough_mask, None, 0, 255, cv.NORM_MINMAX,
-                               cv.CV_8U)
+                                  cv.CV_8U)
         return rough_mask
 
     def get_name(self):
