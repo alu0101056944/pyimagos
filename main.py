@@ -40,13 +40,12 @@ def execute(filename: str, write_files: bool, noshow: bool) -> None:
     process_radiograph(filename, write_images=write_files,
                        show_images=not noshow)
 
-@cli.command()
-@click.argument('filename')
-def gui(filename: str) -> None:
-  '''GUI for filter application to an image.'''
-  execute_ui(filename)
+@cli.group()
+def develop() -> None:
+   '''Developer-focused commands'''
+   pass
 
-@cli.command()
+@develop.command()
 @click.argument('filename')
 @click.option('--write_files', is_flag=True, default=False,
               help='Enable writing processed images to disk.')
@@ -66,10 +65,11 @@ def attmap(filename: str, write_files: bool, noshow: bool) -> None:
         cv.waitKey(0)
         cv.destroyAllWindows()
 
-@cli.group()
-def develop() -> None:
-   '''Developer-focused commands'''
-   pass
+@develop.command()
+@click.argument('filename')
+def filters_gui(filename: str) -> None:
+  '''GUI for filter application to an image.'''
+  execute_ui(filename)
 
 @develop.command()
 @click.argument("filename")

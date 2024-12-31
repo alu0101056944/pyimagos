@@ -34,7 +34,7 @@ class BorderDetectionStatisticalRange(ImageFilter):
       return cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
     def get_name(self):
-        return f'BorderDetectionCanny(pad={self.padding})'
+        return f'BorderDetectionStatisticalRange(pad={self.padding})'
 
     def get_params(self):
         return {"kernel_size": self.kernel_size, "sigma": self.sigma}
