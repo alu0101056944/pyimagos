@@ -198,7 +198,9 @@ class ContourViewer:
       def __to_structured(a: np.array):
         '''Each row is treated as a single element so that np.isin() works
         correctly'''
-        return a.view(f"i{a.dtype.itemsize * a.shape[1]}")
+        n_rows = a.shape[0]
+        points_array = np.dtype(list([('x', a.dtype), ('y', a.dtype)]))
+        return a.view(points_array)
 
       def __set_difference(a: np.array, b: np.array):
         a1 = __to_structured(a)
@@ -212,14 +214,14 @@ class ContourViewer:
       previous_contours = self.contour_history[self.step_index - 1]
       new = np.concatenate([np.reshape(contour, (-1, 2)) for contour in previous_contours],
                                 axis=0)
-      removed_points = __set_difference(original, new)
-      added_points = __set_difference(new, original)
+      added_points = __set_difference(original, new)
+      removed_points = __set_difference(new, original)
 
-      for removed_point in removed_points:
-        (x, y) = removed_point
-        cv.circle(display_image, (x, y), 1, (0, 0, 255), 6)
       for added_point in added_points:
-        x, y = added_point
+        (x, y) = added_point
+        cv.circle(display_image, (x, y), 1, (0, 255, 0), 6)
+      for removed_point in removed_points:
+        x, y = removed_point
         cv.circle(display_image, (x, y), 1, (255, 0, 0), 6)
 
     # Scale Image
@@ -247,4 +249,10 @@ def visualize_contours(filename: str) -> None:
   contours2 = [np.copy(contour) for contour in contours]
   contours2[0] = contours2[0][:-25]
 
-  visualizer = ContourViewer(borders_detected, [contours, contours2])
+  box_contour = [np.array([[[4, 4]], [[20, 20]], [[4, 20]], [[20, 4]]])]
+
+  def cutContour(contour: np.array, point):
+    pass
+    
+
+  visualizer = ContourViewer(borders_detected, [contours, contours2, box_contour])
