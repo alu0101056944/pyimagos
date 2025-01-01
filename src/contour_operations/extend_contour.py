@@ -84,9 +84,9 @@ class ExtendContour(ContourOperation):
     # concatenate the different subsequences (tracks) and insert it
     # into the contour a, so that the closest center has at one side
     # the - i track, at the other the + i track, same for opposite.
-    opposite_point_track_a = [contour_b[opposite_index_b]]
+    opposite_point_track_a = [opposite_index_b]
     opposite_point_track_b = []
-    closest_point_track_a = [contour_b[closest_index]]
+    closest_point_track_a = [closest_index]
     closest_point_track_b = []
     matched_at_a = False
     looped_at_a = False
@@ -131,42 +131,37 @@ class ExtendContour(ContourOperation):
 
       if not matched_at_a and not looped_at_a:
         if direction_result_match_a:
-          closest_point_track_a.insert(0, closest_direction_result_a)
+          closest_point_track_a.insert(0, (closest_index + i) % len(contour_b))
           matched_at_a = True
         elif direction_result_loop_a:
           looped_at_a = True
         else:
-          closest_point_track_a.insert(0, closest_direction_result_a)
-          opposite_point_track_a.insert(0, opposite_direction_result_a)
+          closest_point_track_a.insert(0, (closest_index + i) % len(contour_b))
+          opposite_point_track_a.insert(0, (opposite_index_b + i) % len(contour_b))
         
       if not matched_at_b and not looped_at_b:
         if direction_result_match_b:
-          closest_point_track_b.append(closest_direction_result_b)
+          closest_point_track_b.append((closest_index - i) % len(contour_b))
           matched_at_b = True
         elif direction_result_loop_b:
           looped_at_b = True
         else:
-          closest_point_track_b.append(closest_direction_result_b)
-          opposite_point_track_b.append(opposite_direction_result_b)
+          closest_point_track_b.append((closest_index - i) % len(contour_b))
+          opposite_point_track_b.append((opposite_index_b - i) % len(contour_b))
 
-    # TODO improve efficiency, too many copies here
-    contours[self.contour_id1] = np.insert(
-      contours[self.contour_id1], closest_index + 1, closest_point_track_a
+    contour_b_partial_indices = np.concatenate(
+      (
+        closest_point_track_b,
+        opposite_point_track_b,
+        opposite_point_track_a,
+        closest_point_track_a
+      )
     )
+    contour_b_partial = [contour_b[i] for i in contour_b_partial_indices]
     contours[self.contour_id1] = np.insert(
-      contours[self.contour_id1], closest_index + 1, opposite_point_track_a
-    )
-    contours[self.contour_id1] = np.insert(
-      contours[self.contour_id1], closest_index + 1, opposite_point_track_b
-    )
-    contours[self.contour_id1] = np.insert(
-      contours[self.contour_id1], closest_index + 1, closest_point_track_b
+      contours[self.contour_id1], closest_index + 1, contour_b_partial
     )
 
-    # TODO work in either separating the contour b or to keep it connected
-    indices_to_delete = np.s_[:]
-    contours[self.contour_id2] = np.concatenate(
-      (contours[self.contour_id2][0:]), axis=0
-    )
+    contour_b = np.delete(contour_b, contour_b_partial_indices, axis=0)
 
     return contours
