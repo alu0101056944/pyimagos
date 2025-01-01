@@ -4,7 +4,13 @@ Máster en Ingeniería Informática
 Trabajo de Final de Máster
 Pyimagos development
 
+Find closest point from contour a to contour b and invade contour b from
+the first point and one neighbour of it (which is +i or -i or = depending on the
+id of the point within contour a) by taking <invasion_count> amount of neighbor
+points in the contour b besides the closest point and the opposite to it.
 
+The result can be visualized as a straight "bridge" that penetrates contour b
+up to the opposite side and extends <invasion_count> laterally.
 '''
 
 import numpy as np
@@ -61,7 +67,7 @@ class ExtendContour(ContourOperation):
       fixed_contour_b
     )
 
-    if len(contour_b) < 3:
+    if len(contour_b) <= 3:
       # Three points is just short of minimum 4 to be able to calculate the normal
       # because the normal needs the start point and next point and previous
       # point and because those are exactly three points then the normal will
