@@ -90,9 +90,9 @@ class ExtendContour(ContourOperation):
     # concatenate the different subsequences (tracks) and insert it
     # into the contour a, so that the closest center has at one side
     # the - i track, at the other the + i track, same for opposite.
-    opposite_point_track_a = [opposite_index_b]
+    opposite_point_track_a = []
     opposite_point_track_b = []
-    closest_point_track_a = [closest_index]
+    closest_point_track_a = []
     closest_point_track_b = []
     matched_at_a = False
     looped_at_a = False
@@ -155,19 +155,48 @@ class ExtendContour(ContourOperation):
           closest_point_track_b.append((closest_index - i) % len(contour_b))
           opposite_point_track_b.append((opposite_index_b - i) % len(contour_b))
 
-    contour_b_partial_indices = np.concatenate(
-      (
-        closest_point_track_b,
-        opposite_point_track_b,
-        opposite_point_track_a,
-        closest_point_track_a
+    # To avoid cross bridge, calculate which track to insert first
+    # so that neighbor_a - 1 to first track point in b does not cross bridge
+    # with index_a to closest_point.
+    neighbor_a_index = (index_a - 1) % len(contour_a)
+    neighbor_b_index = (closest_index - 1) % len(contour_b)
+    x1, y1 = fixed_contour_a[neighbor_a_index]
+    x2, y2 = fixed_contour_b[neighbor_b_index]
+    intersection = self._segments_intersect(x1, y1, x2, y2)
+    is_positive_direction = closest_index - 1 < 0
+    if intersection:
+      neighbor_b_index = (closest_index + 1) % len(contour_b)
+      is_positive_direction = closest_index < len(contour_b)
+
+    if is_positive_direction:
+      contour_b_partial_indices = np.concatenate(
+        (
+          closest_point_track_a,
+          opposite_point_track_a,
+          opposite_index_b,
+          opposite_point_track_b,
+          closest_point_track_b,
+          closest_index
+        )
       )
-    )
+    else: 
+      contour_b_partial_indices = np.concatenate(
+        (
+          closest_point_track_b,
+          opposite_point_track_b,
+          opposite_index_b,
+          opposite_point_track_a,
+          closest_point_track_a,
+          closest_index
+        )
+      )
+
     contour_b_partial = [contour_b[i] for i in contour_b_partial_indices]
     contours[self.contour_id1] = np.insert(
       contours[self.contour_id1], closest_index + 1, contour_b_partial
     )
 
+    # Contour b will have the invaded points deleted
     contour_b = np.delete(contour_b, contour_b_partial_indices, axis=0)
 
     return contours
