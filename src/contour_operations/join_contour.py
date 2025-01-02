@@ -11,6 +11,7 @@ opposite side, so that the whole contour b is added to contour a
 import numpy as np
 
 from src.contour_operations.contour_operation import ContourOperation
+from src.contour_operations.utils import segments_intersect
 
 class JoinContour(ContourOperation):
   def __init__(self, contour_id1: int, contour_id2: int, invasion_count: int,
@@ -20,11 +21,11 @@ class JoinContour(ContourOperation):
     self.invasion_count = invasion_count
     self.projection_distance = projection_distance
 
-  def _find_closest_pair(contour_a: list, contour_b: list):
+  def _find_closest_pair(self, contour_a: list, contour_b: list):
     overall_min_distance = float('inf')
     overall_closest_pair = None
 
-    for point_a, i in enumerate(contour_a):
+    for i, point_a in enumerate(contour_a):
       distances = np.sqrt(np.sum((contour_b - point_a) ** 2, axis=1))
 
       sorted_indices = np.argsort(distances)
@@ -44,28 +45,9 @@ class JoinContour(ContourOperation):
       return index_a, min_index, second_min_index
     else:
       return None
-    
-  def _segments_intersect(self, seg1_p1, seg1_p2, seg2_p1, seg2_p2):
-    """Checks if two line segments intersect."""
-    x1, y1 = seg1_p1
-    x2, y2 = seg1_p2
-    x3, y3 = seg2_p1
-    x4, y4 = seg2_p2
-
-    denom = (x2 - x1) * (y4 - y3) - (y2 - y1) * (x4 - x3)
-
-    if denom == 0: # Parallel
-        return False
-
-    t_num = (x3 - x1) * (y4 - y3) - (y3 - y1) * (x4 - x3)
-    u_num = (x3 - x1) * (y2 - y1) - (y3 - y1) * (x2 - x1)
-
-    t = t_num / denom
-    u = u_num / denom
-    return 0 <= t <= 1 and 0 <= u <= 1
 
   def generate_new_contour(self, contours: list) -> list:
-    contours = np.copy(contours)
+    contours = [np.copy(array) for array in contours]
 
     contour_a = contours[self.contour_id1]
     contour_b = contours[self.contour_id2]
@@ -98,9 +80,12 @@ class JoinContour(ContourOperation):
     # significant index by default (axis=None).
     neighbor_a_index = (index_a - 1) % len(contour_a)
     neighbor_b_index = (closest_index - 1) % len(contour_b)
-    x1, y1 = fixed_contour_a[neighbor_a_index]
-    x2, y2 = fixed_contour_b[neighbor_b_index]
-    intersection = self._segments_intersect(x1, y1, x2, y2)
+    intersection = segments_intersect(
+      fixed_contour_a[index_a],
+      fixed_contour_b[closest_index],
+      fixed_contour_a[neighbor_a_index],
+      fixed_contour_b[neighbor_b_index]
+    )
     is_positive_direction = closest_index - 1 < 0
     if intersection:
       neighbor_b_index = (closest_index + 1) % len(contour_b)
@@ -108,22 +93,23 @@ class JoinContour(ContourOperation):
     
     # If neighbor b direction is positive then 
     if is_positive_direction:
-      contours[self.contour_id1] = np.insert(
-        contours[self.contour_id1],
-        index_a - 1,
+      contours[self.contour_id1] = np.concatenate(
         (
+          contours[self.contour_id1][:index_a - 1],
           contours[self.contour_id2][closest_index + 1:],
-          contours[self.contour_id2][:closest_index + 1]
+          contours[self.contour_id2][:closest_index + 1],
+          contours[self.contour_id1][index_a - 1:],
         )
       )
     else:
-      contours[self.contour_id1] = np.insert(
-        contours[self.contour_id1],
-        index_a - 1,
+      contours[self.contour_id1] = np.concatenate(
         (
+          contours[self.contour_id1][:index_a - 1],
           contours[self.contour_id2][0:closest_index:-1],
-          contours[self.contour_id2][:closest_index + 1:-1]
-        )
+          contours[self.contour_id2][:closest_index + 1:-1],
+          contours[self.contour_id1][index_a - 1:],
+        ),
+        axis=0
       )
 
     return contours

@@ -100,3 +100,45 @@ def find_opposite_point_with_normals(self, contour, start_point_idx,
     opposite_point_idx = np.argmin(dists)
     
   return opposite_point_idx
+
+def segments_intersect(seg1_p1, seg1_p2, seg2_p1, seg2_p2):
+  """Checks if two line segments intersect."""
+  x1, y1 = seg1_p1
+  x2, y2 = seg1_p2
+  x3, y3 = seg2_p1
+  x4, y4 = seg2_p2
+
+  denom = (x2 - x1) * (y4 - y3) - (y2 - y1) * (x4 - x3)
+
+  if denom == 0: # Parallel
+      return False
+
+  t_num = (x3 - x1) * (y4 - y3) - (y3 - y1) * (x4 - x3)
+  u_num = (x3 - x1) * (y2 - y1) - (y3 - y1) * (x2 - x1)
+
+  t = t_num / denom
+  u = u_num / denom
+  return 0 <= t <= 1 and 0 <= u <= 1
+
+
+def blend_colors_with_alpha(background_color: np.array,
+                            foreground_color: np.array) -> tuple:
+  background_color = background_color.astype(np.float32)
+  foreground_color = foreground_color.astype(np.float32)
+
+  alpha_new = foreground_color[3] / 255.0
+  alpha_current = background_color[3] / 255.0
+
+  blended_alpha = alpha_new + alpha_current * (1 - alpha_new)
+  blended_color = (
+      (
+        alpha_new * foreground_color[:3] +
+        (alpha_current * (1 - alpha_new) ) * background_color[:3] 
+      ) / blended_alpha
+      if blended_alpha != 0 else [0, 0, 0]
+  )
+
+  blended_color = blended_color.astype(np.uint8)
+  blended_alpha = (blended_alpha * 255).astype(np.uint8)
+
+  return blended_color, blended_alpha

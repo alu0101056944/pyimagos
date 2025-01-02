@@ -8,16 +8,11 @@ Pyimagos development
 import os.path
 from PIL import Image
 
-import matplotlib.pyplot as plt
 import pytest
 import torch
 import torchvision.transforms as transforms
 
 import src.vision_transformer as vits
-
-from constants import (
-  MODEL_PATH
-)
 
 class TestAttentionMap:
 

@@ -2,17 +2,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Pytest",
+      "name": "Pytest test",
       "type": "debugpy",
       "request": "launch",
-      "module": "pytest"
+      "module": "pytest",
+      "args": ["test/utils_test.py"]
     },
     {
       "name": "Python Debugger: Python File",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
-      "args": ["develop", "contours-gui", ".\\docs\\local_images\\radiography_processed_he_enhanced.jpg"]
+      "args": ["develop", "test-join"]
     }
   ]
 }

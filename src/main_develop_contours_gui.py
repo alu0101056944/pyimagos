@@ -18,6 +18,7 @@ from tkinter import (
 import numpy as np
 import cv2 as cv
 
+from src.contour_operations.join_contour import JoinContour
 import src.rulesets.distal_phalanx as dist_phalanx
 
 expected_contours = [
@@ -67,8 +68,8 @@ class ContourViewer:
 
     self.root = Tk()
     self.root.title("Contour visualization")
-    initial_width = self.input_image.shape[1] + 25
-    initial_height = self.input_image.shape[0]
+    initial_width = self.input_image.shape[1] + 250
+    initial_height = self.input_image.shape[0] + 100
     self.root.geometry(f"{initial_width}x{initial_height}")
 
     self.zoom_level = 1.0
@@ -234,25 +235,46 @@ class ContourViewer:
     self.canvas.config(scrollregion=self.canvas.bbox('all'))
 
 def visualize_contours(filename: str) -> None:
-  input_image = Image.open(filename)
-  input_image = np.asarray(input_image)
-  gaussian_blurred = cv.GaussianBlur(input_image, (5, 5), 0)
+  # input_image = Image.open(filename)
+  # input_image = np.asarray(input_image)
+  # gaussian_blurred = cv.GaussianBlur(input_image, (5, 5), 0)
 
-  borders_detected = cv.Canny(gaussian_blurred, 40, 135)
-  borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,
-                                  cv.CV_8U)
+  # borders_detected = cv.Canny(gaussian_blurred, 40, 135)
+  # borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,
+  #                                 cv.CV_8U)
 
-  contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
+  # contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
+  #                               cv.CHAIN_APPROX_SIMPLE)
+
+  # contours2 = [np.copy(contour) for contour in contours]
+  # contours2[0] = contours2[0][:-25]
+
+  # box_contour = [np.array([[[4, 4]], [[20, 20]], [[4, 20]], [[20, 4]], [[20, 8]],
+  #                          [[24, 8]], [[24, 4]]])]
+
+  size = 200
+  line_spacing = 50
+  line_thickness = 10
+
+  image = np.zeros((size, size), dtype=np.uint8)
+
+  # Calculate line positions (center)
+  line1_center = size // 2 - line_spacing // 2
+  line2_center = size // 2 + line_spacing // 2
+
+  # Draw the lines
+  cv.line(image, (line1_center, 25), (line1_center, size - 25),
+      155, line_thickness)
+  cv.line(image, (line2_center, 25), (line2_center, size - 25),
+      155, line_thickness)
+
+  contours, _ = cv.findContours(image, cv.RETR_EXTERNAL,
                                 cv.CHAIN_APPROX_SIMPLE)
+  
+  projection_distance = size // 2
+  joinOperation = JoinContour(0, 1, 4, projection_distance)
+  contours2 = joinOperation.generate_new_contour(contours)
+  joinOperation = JoinContour(0, 1, 25, projection_distance)
+  contours3 = joinOperation.generate_new_contour(contours2)
 
-  contours2 = [np.copy(contour) for contour in contours]
-  contours2[0] = contours2[0][:-25]
-
-  box_contour = [np.array([[[4, 4]], [[20, 20]], [[4, 20]], [[20, 4]], [[20, 8]],
-                           [[24, 8]], [[24, 4]]])]
-
-  def cutContour(contour: np.array, point):
-    pass
-    
-
-  visualizer = ContourViewer(borders_detected, [contours, contours2, box_contour])
+  visualizer = ContourViewer(image, [contours, contours2, contours3])
