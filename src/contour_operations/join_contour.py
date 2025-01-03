@@ -53,20 +53,13 @@ class JoinContour(ContourOperation):
     fixed_contour_b = np.reshape(contour_b, (-1, 2))
 
     if len(contour_b) < 1:
+      del contours[self.contour_id2]
       return contours
 
     index_a, closest_index, second_index = self._find_closest_pair(
       fixed_contour_a,
       fixed_contour_b
     )
-
-    if len(contour_b) < 3:
-      # Three points is just short of minimum 3 to be able to calculate the normal
-      # because the normal needs the start point and next point and previous
-      # point and because those are exactly three points then the normal will
-      # not intersect
-      # TODO fix this, it's most likely wrong, unit test it.
-      return np.insert(contour_a, index_a + 1, contour_b, axis=0)
 
     contour_a = np.insert(contour_a, index_a + 1, fixed_contour_a[index_a], axis=0)
     contour_b = np.insert(contour_b, closest_index + 1,
