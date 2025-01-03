@@ -16,27 +16,30 @@ from src.contour_operations.utils import find_opposite_point_with_normals
 from src.contour_operations.contour_operation import ContourOperation
 
 class CutContour(ContourOperation):
-  def __init__(self, contour_id: int, cut_point_id: int, projection_distance: int):
+  def __init__(self, contour_id: int, cut_point_id: int, image_width: int,
+               image_height):
     self.contour_id = contour_id
     self.cut_point_id = cut_point_id
-    self.projection_distance = projection_distance
+    self.image_width = image_width
+    self.image_height = image_height
     
   def _split_contour_by_indices(self, contour, start_point_idx,
                                 opposite_point_idx):
     split_indices = sorted([start_point_idx, opposite_point_idx])
     
-    contour_1 = np.concatenate((contour[split_indices[1]:0],
-                                contour[0:split_indices[0]]))
-    contour_2 = contour[split_indices[0]:split_indices[1]]
+    contour_1 = np.concatenate((contour[0:split_indices[0] + 1],
+                                contour[split_indices[1]:]))
+    contour_2 = contour[split_indices[0]:split_indices[1] + 1]
     return contour_1, contour_2
 
   def generate_new_contour(self, contours: list) -> list:
-    contours = np.copy(contours)
+    contours = list(contours)
 
     opposite_point_idx = find_opposite_point_with_normals(
       contours[self.contour_id],
       self.cut_point_id,
-      self.projection_distance
+      self.image_width,
+      self.image_height
     )
 
     contour_1, contour_2 = self._split_contour_by_indices(
@@ -46,5 +49,5 @@ class CutContour(ContourOperation):
     )
 
     contours[self.contour_id] = contour_1
-    contours.append(contour_2)
+    contours.insert(self.contour_id + 1, contour_2)
     return contours

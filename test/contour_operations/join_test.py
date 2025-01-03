@@ -26,7 +26,7 @@ class TestJoinOperation:
       np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
       np.array([])
     ]
-    joinOperation = JoinContour(0, 1, 1)
+    joinOperation = JoinContour(0, 1)
     contours = joinOperation.generate_new_contour(contours)
     assert len(contours) == 1
 
@@ -38,7 +38,7 @@ class TestJoinOperation:
       np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
       np.array([[16, 4]])
     ]
-    joinOperation = JoinContour(0, 1, 1)
+    joinOperation = JoinContour(0, 1)
     contours = joinOperation.generate_new_contour(contours)
     assert len(contours[1]) == 0
 
@@ -54,7 +54,7 @@ class TestJoinOperation:
       np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
       np.array([[16, 4], [20, 4]])
     ]
-    joinOperation = JoinContour(0, 1, 1)
+    joinOperation = JoinContour(0, 1)
     contours = joinOperation.generate_new_contour(contours)
     assert len(contours[1]) == 0
 
@@ -66,7 +66,7 @@ class TestJoinOperation:
 
   
   def test_join_two_squares(self, contours):
-    joinOperation = JoinContour(0, 1, 1)
+    joinOperation = JoinContour(0, 1)
     contours = joinOperation.generate_new_contour(contours)
     assert len(contours[1]) == 0
 
@@ -89,7 +89,7 @@ class TestJoinOperation:
       np.array([[7, 7], [8, 8], [6, 8]]),
       np.array([[10, 10], [8, 10], [6, 10], [8, 12]])
     ]
-    joinOperation = JoinContour(0, 1, 1)
+    joinOperation = JoinContour(0, 1)
     contours = joinOperation.generate_new_contour(contours)
     assert len(contours[1]) == 0
 

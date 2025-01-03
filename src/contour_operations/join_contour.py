@@ -11,13 +11,11 @@ opposite side, so that the whole contour b is added to contour a
 import numpy as np
 
 from src.contour_operations.contour_operation import ContourOperation
-from src.contour_operations.utils import segments_intersect
 
 class JoinContour(ContourOperation):
-  def __init__(self, contour_id1: int, contour_id2: int, invasion_count: int):
+  def __init__(self, contour_id1: int, contour_id2: int):
     self.contour_id1 = contour_id1
     self.contour_id2 = contour_id2
-    self.invasion_count = invasion_count
 
   def _find_closest_pair(self, contour_a: list, contour_b: list):
     overall_min_distance = float('inf')

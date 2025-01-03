@@ -271,10 +271,9 @@ def visualize_contours(filename: str) -> None:
   contours, _ = cv.findContours(image, cv.RETR_EXTERNAL,
                                 cv.CHAIN_APPROX_SIMPLE)
   
-  projection_distance = size // 2
-  joinOperation = JoinContour(0, 1, 4, projection_distance)
+  joinOperation = JoinContour(0, 1)
   contours2 = joinOperation.generate_new_contour(contours)
-  joinOperation = JoinContour(0, 1, 25, projection_distance)
+  joinOperation = JoinContour(0, 1)
   contours3 = joinOperation.generate_new_contour(contours2)
 
   visualizer = ContourViewer(image, [contours, contours2, contours3])

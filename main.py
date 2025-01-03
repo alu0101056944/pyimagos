@@ -27,6 +27,7 @@ from src.image_filters.attention_map_filter import AttentionMap
 from src.main_develop_test_intersection import visualize_tests_intersection
 from src.main_develop_test_normals import visualize_tests_normals
 from src.main_develop_test_join import visualize_tests_join
+from src.main_develop_test_cut import visualize_tests_cut
 
 @click.group()
 def cli() -> None:
@@ -105,6 +106,11 @@ def test_normals() -> None:
 def test_join() -> None:
   '''Show image representations for each join contour operation test.'''
   visualize_tests_join()
+
+@develop.command()
+def test_cut() -> None:
+  '''Show image representations for each cut contour operation test.'''
+  visualize_tests_cut()
 
 if __name__ == '__main__':
     cli()

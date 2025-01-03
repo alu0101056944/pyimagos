@@ -12,9 +12,9 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 
-from src.contour_operations.join_contour import JoinContour
+from src.contour_operations.cut_contour import CutContour
 
-def prepare_image_showing_join(contours_a, contours_b, image_size, title):
+def prepare_image_showing_cut(contours_a, contours_b, image_size, title):
   image = np.zeros((image_size, image_size, 3), dtype=np.uint8)
   image_after_operation = np.copy(image)
 
@@ -60,52 +60,18 @@ def prepare_image_showing_join(contours_a, contours_b, image_size, title):
   fig.canvas.manager.set_window_title(title)
 
 
-def test_join():
+def test_cut():
   contours = [
     np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
     np.array([[16, 4], [16, 8], [20, 8], [20, 4]])
   ]
-  joinOperation = JoinContour(0, 1)
+  joinOperation = CutContour(0, 1, 30, 30)
   contours_new = joinOperation.generate_new_contour(contours)
-  prepare_image_showing_join(contours, contours_new, 30,
-                               'Two squares join (before, after)')
+  prepare_image_showing_cut(contours, contours_new, 30,
+                               'Cut top left edge of left square ' \
+                                '(before, after)')
   
-  contours = [
-    np.array([[7, 7], [8, 8], [6, 8]]),
-    np.array([[10, 10], [8, 10], [6, 10], [8, 12]])
-  ]
-  joinOperation = JoinContour(0, 1)
-  contours_new = joinOperation.generate_new_contour(contours)
-  prepare_image_showing_join(contours, contours_new, 30,
-                            'Weird shaped join(before, after)')
-
-  contours = [
-    np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
-    np.array([])
-  ]
-  joinOperation = JoinContour(0, 1)
-  contours_new = joinOperation.generate_new_contour(contours)
-  prepare_image_showing_join(contours, contours_new, 30,
-                              'Join with empty(before, after)')
-  
-  contours = [
-    np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
-    np.array([[16, 4]])
-  ]
-  joinOperation = JoinContour(0, 1)
-  contours_new = joinOperation.generate_new_contour(contours)
-  prepare_image_showing_join(contours, contours_new, 30,
-                            'Join with one point(before, after)')
-
-  contours = [
-    np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
-    np.array([[16, 4], [20, 4]])
-  ]
-  joinOperation = JoinContour(0, 1)
-  contours_new = joinOperation.generate_new_contour(contours)
-  prepare_image_showing_join(contours, contours_new, 30,
-                          'Join with two points (before, after)')
   plt.show()
 
-def visualize_tests_join() -> None:
-  test_join()
+def visualize_tests_cut() -> None:
+  test_cut()
