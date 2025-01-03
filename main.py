@@ -26,6 +26,7 @@ from src.main_develop_contours_gui import visualize_contours
 from src.image_filters.attention_map_filter import AttentionMap
 from src.main_develop_test_intersection import visualize_tests_intersection
 from src.main_develop_test_normals import visualize_tests_normals
+from src.main_develop_test_join import visualize_tests_join
 
 @click.group()
 def cli() -> None:
@@ -97,8 +98,13 @@ def test_intersection() -> None:
 
 @develop.command()
 def test_normals() -> None:
-  '''Show image representations for each segment normal test.'''
+  '''Show image representations for each normal test.'''
   visualize_tests_normals()
+
+@develop.command()
+def test_join() -> None:
+  '''Show image representations for each join contour operation test.'''
+  visualize_tests_join()
 
 if __name__ == '__main__':
     cli()

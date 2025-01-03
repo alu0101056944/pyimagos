@@ -6,14 +6,14 @@
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["test/utils_test.py"]
+      "args": ["test/contour_operations/join_test.py"]
     },
     {
       "name": "Python Debugger: Python File",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
-      "args": ["develop", "test-normals"]
+      "args": ["develop", "test-join"]
     }
   ]
 }

@@ -45,14 +45,6 @@ class TestContourUtils:
       np.array([[16, 4], [16, 8], [20, 8], [20, 4]])
     ]
 
-  @pytest.fixture(scope='class')
-  def contours_(self):
-    '''Two squares next to each other'''
-    yield [
-      np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
-      np.array([[16, 16], [16, 20], [20, 20], [20, 16]])
-    ]
-
   def test_intersection_square_case_a(self, contours: list) -> None:
     point_a = tuple(contours[0][3])
     closest_point = tuple(contours[1][0])

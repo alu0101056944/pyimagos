@@ -14,12 +14,10 @@ from src.contour_operations.contour_operation import ContourOperation
 from src.contour_operations.utils import segments_intersect
 
 class JoinContour(ContourOperation):
-  def __init__(self, contour_id1: int, contour_id2: int, invasion_count: int,
-               projection_distance: int):
+  def __init__(self, contour_id1: int, contour_id2: int, invasion_count: int):
     self.contour_id1 = contour_id1
     self.contour_id2 = contour_id2
     self.invasion_count = invasion_count
-    self.projection_distance = projection_distance
 
   def _find_closest_pair(self, contour_a: list, contour_b: list):
     overall_min_distance = float('inf')
@@ -62,54 +60,83 @@ class JoinContour(ContourOperation):
       fixed_contour_b
     )
 
-    if len(contour_b) <= 3:
-      # Three points is just short of minimum 4 to be able to calculate the normal
+    if len(contour_b) < 3:
+      # Three points is just short of minimum 3 to be able to calculate the normal
       # because the normal needs the start point and next point and previous
       # point and because those are exactly three points then the normal will
       # not intersect
+      # TODO fix this, it's most likely wrong, unit test it.
       return np.insert(contour_a, index_a + 1, contour_b)
 
     # Calculate contour b neighbor such that the connection between contour a
-    # and b is straight and not crossed. Also register direction because
-    # at the time of inserting contour b into a if the neighbor b direction
-    # is negative (-1) then to be able to insert first index as last point
-    # to visit the contour b array in the correct order then it must be
-    # inserted from neighbour b to 0 first, then from len() to closest point.
-    # Or From neighbor b to len() and from 0 to closest point if direction is
-    # positive. Because np.insert() adds least significant index as most
-    # significant index by default (axis=None).
-    neighbor_a_index = (index_a - 1) % len(contour_a)
-    neighbor_b_index = (closest_index - 1) % len(contour_b)
-    intersection, _, _ = segments_intersect(
-      fixed_contour_a[index_a],
-      fixed_contour_b[closest_index],
-      fixed_contour_a[neighbor_a_index],
-      fixed_contour_b[neighbor_b_index]
-    )
-    is_positive_direction = closest_index - 1 < 0
-    if intersection:
-      neighbor_b_index = (closest_index + 1) % len(contour_b)
-      is_positive_direction = closest_index < len(contour_b)
-    
-    # If neighbor b direction is positive then 
-    if is_positive_direction:
+    # and b is straight and not crossed. Choose neighbor direction for both
+    # a and b such that it doesn't happen. The direction is important
+    # for concatenating b into a while keeping the point sequence intact
+    possible_directions = [(-1, -1), (1, -1), (1, 1), (-1, 1)]
+    bridge_intersection = True
+    own_contour_intersection = True
+    neighbor_a_index = None
+    neighbor_b_index = None
+    neighbor_a_is_positive = None
+    neighbor_b_is_positive = None
+    for possible_direction in possible_directions:
+      direction_a, direction_b = possible_direction
+      if not bridge_intersection and not own_contour_intersection:
+        neighbor_a_is_positive = (
+          (index_a + direction_a) % len(contour_a) > index_a
+        )
+        neighbor_b_is_positive = (
+          (closest_index + direction_b) % len(contour_b) > closest_index
+        )
+
+      neighbor_a_index = (index_a + direction_a) % len(contour_a)
+      neighbor_b_index = (closest_index + direction_b) % len(contour_b)
+      bridge_intersection, _, _ = segments_intersect(
+        fixed_contour_a[index_a],
+        fixed_contour_b[closest_index],
+        fixed_contour_a[neighbor_a_index],
+        fixed_contour_b[neighbor_b_index]
+      )
+
+      if bridge_intersection:
+        continue
+
+    if neighbor_a_is_positive and neighbor_b_is_positive:
       contours[self.contour_id1] = np.concatenate(
         (
-          contours[self.contour_id1][:index_a - 1],
+          contours[self.contour_id1][:index_a + 1],
+          contours[self.contour_id2][closest_index::-1],
+          contours[self.contour_id2][:neighbor_b_index + 1:-1],
+          contours[self.contour_id1][neighbor_a_index:],
+        )
+      )
+      contours[self.contour_id2] = np.array([], np.int32)
+    elif neighbor_a_is_positive and not neighbor_b_is_positive:
+      pass
+    elif not neighbor_a_is_positive and neighbor_b_is_positive:
+      pass
+    elif not neighbor_a_is_positive and not neighbor_b_is_positive:
+      pass
+
+      contours[self.contour_id1] = np.concatenate(
+        (
+          contours[self.contour_id1][:index_a],
           contours[self.contour_id2][closest_index + 1:],
           contours[self.contour_id2][:closest_index + 1],
           contours[self.contour_id1][index_a - 1:],
         )
       )
+      contours[self.contour_id2] = np.array([], np.int32)
     else:
       contours[self.contour_id1] = np.concatenate(
         (
-          contours[self.contour_id1][:index_a - 1],
-          contours[self.contour_id2][0:closest_index:-1],
-          contours[self.contour_id2][:closest_index + 1:-1],
-          contours[self.contour_id1][index_a - 1:],
+          contours[self.contour_id1][:index_a],
+          contours[self.contour_id2][:closest_index],
+          contours[self.contour_id2][:closest_index - 1:-1],
+          contours[self.contour_id1][index_a:],
         ),
         axis=0
       )
+      contours[self.contour_id2] = np.array([], np.int32)
 
     return contours
