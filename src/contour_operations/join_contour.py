@@ -80,7 +80,7 @@ class JoinContour(ContourOperation):
     # significant index by default (axis=None).
     neighbor_a_index = (index_a - 1) % len(contour_a)
     neighbor_b_index = (closest_index - 1) % len(contour_b)
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       fixed_contour_a[index_a],
       fixed_contour_b[closest_index],
       fixed_contour_a[neighbor_a_index],

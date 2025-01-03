@@ -11,6 +11,8 @@ import numpy as np
 
 from src.contour_operations.utils import blend_colors_with_alpha
 from src.contour_operations.utils import segments_intersect
+from src.contour_operations.utils import line_segment_intersection
+from src.contour_operations.utils import find_opposite_point_with_normals
 
 class TestContourUtils:
 
@@ -40,7 +42,7 @@ class TestContourUtils:
     '''Two squares next to each other'''
     yield [
       np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
-      np.array([[16, 16], [16, 20], [20, 20], [20, 16]])
+      np.array([[16, 4], [16, 8], [20, 8], [20, 4]])
     ]
 
   @pytest.fixture(scope='class')
@@ -56,7 +58,7 @@ class TestContourUtils:
     closest_point = tuple(contours[1][0])
     neighbour_a = tuple(contours[0][2])
     neighbour_b = tuple(contours[1][1])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -69,13 +71,13 @@ class TestContourUtils:
     closest_point = tuple(contours[1][0])
     neighbour_a = tuple(contours[0][2])
     neighbour_b = tuple(contours[1][3])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
       neighbour_b
     )
-    assert intersection == True
+    assert intersection == False
 
   def test_intersection_square_case_c_parallel_touching(self,
                                                         contours: list) -> None:
@@ -83,20 +85,20 @@ class TestContourUtils:
     closest_point = tuple(contours[1][0])
     neighbour_a = tuple(contours[0][0])
     neighbour_b = tuple(contours[1][0])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
       neighbour_b
     )
-    assert intersection == True
+    assert intersection == False
 
   def test_intersection_square_case_d(self, contours: list) -> None:
     point_a = tuple(contours[0][3])
     closest_point = tuple(contours[1][0])
     neighbour_a = tuple(contours[0][2])
     neighbour_b = tuple(contours[1][0])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -110,7 +112,7 @@ class TestContourUtils:
     closest_point = tuple(contours[1][0])
     neighbour_a = tuple(contours[0][3])
     neighbour_b = tuple(contours[1][1])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -124,7 +126,7 @@ class TestContourUtils:
     neighbour_a = list(contours[0][3])
     neighbour_a[1] = neighbour_a[1] + 1
     neighbour_b = tuple(contours[1][1])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -138,15 +140,15 @@ class TestContourUtils:
     neighbour_a = list(contours[0][2])
     neighbour_a[1] = neighbour_a[1] + 1
     neighbour_b = tuple(contours[1][3])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
       neighbour_b
     )
-    assert intersection == True
+    assert intersection == False
 
-  def test_intersection_no_intersection_due_to_lengths_parallel(
+  def test_intersection_no_intersection_parallel_no_touching(
     self,
     contours
   ) -> None:
@@ -155,7 +157,7 @@ class TestContourUtils:
     neighbour_a = tuple(contours[0][0])
     neighbour_b = list(neighbour_a)
     neighbour_b[0] = neighbour_a[0] + 2
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -170,7 +172,7 @@ class TestContourUtils:
     neighbour_a[1] = neighbour_a[1] + 1
     neighbour_b = list(contours[1][0])
     neighbour_b[1] = neighbour_b[1] + 1
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -178,38 +180,23 @@ class TestContourUtils:
     )
     assert intersection == False
 
-  def test_intersection_intersection_parallel_no_touching(self,
-                                                          contours) -> None:
-    point_a = tuple(contours[0][3])
-    closest_point = tuple(contours[1][0])
-    neighbour_a = list(contours[0][3])
-    neighbour_a[1] = neighbour_a[1] + 1
-    neighbour_b = list(contours[1][0])
-    neighbour_b[1] = neighbour_b[1] + 1
-    intersection = segments_intersect(
-      point_a,
-      closest_point,
-      neighbour_a,
-      neighbour_b
-    )
-    assert intersection == False
-
-  def test_intersection_no_intersection_due_to_lengths_parallel_lower(
+  def test_intersection_no_intersection_due_to_lengths_lower(
     self,
     contours
   ) -> None:
-    point_a = tuple(contours[0][3])
-    closest_point = tuple(contours[1][0])
-    neighbour_a = list(contours[0][2])
-    neighbour_b = list(contours[1][3])
+    point_a = np.array(contours[0][3], dtype=np.float32)
+    closest_point = np.array(contours[1][0], dtype=np.float32)
+    neighbour_a = np.array(contours[0][2], dtype=np.float32)
+    neighbour_b = np.array(contours[1][3], dtype=np.float32)
     neighbour_b[1] = neighbour_b[1] + 2
-    intersection = segments_intersect(
+    u, t = line_segment_intersection(
       point_a,
       closest_point,
       neighbour_a,
       neighbour_b
     )
-    assert intersection == True
+    no_intersection = not (u and t)
+    assert no_intersection
 
   def test_intersection_no_intersection_due_to_advanced_origin(
     self,
@@ -220,7 +207,7 @@ class TestContourUtils:
     neighbour_a = list(contours[0][2])
     neighbour_b = list(contours[1][2])
     neighbour_b[1] = neighbour_b[1] + 6
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -237,7 +224,7 @@ class TestContourUtils:
     neighbour_a = list(contours[1][2]) 
     neighbour_a[1] = neighbour_a[1] + 6
     neighbour_b = list(contours[0][2])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -254,7 +241,7 @@ class TestContourUtils:
     neighbour_a = tuple(contours[0][2])
     neighbour_b = list(contours[1][2])
     neighbour_b[1] = neighbour_b[1] + 6
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       neighbour_a,
       neighbour_b,
       point_a,
@@ -271,7 +258,7 @@ class TestContourUtils:
     neighbour_a = list(contours[1][2]) 
     neighbour_a[1] = neighbour_a[1] + 6
     neighbour_b = tuple(contours[0][2])
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       neighbour_a,
       neighbour_b,
       point_a,
@@ -290,13 +277,13 @@ class TestContourUtils:
     neighbour_b = list(contours[1][0])
     neighbour_b[0] = neighbour_b[0] - 4
     neighbour_b[1] = neighbour_b[1] - 4
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
       neighbour_b,
     )
-    assert intersection == False
+    assert intersection == True
 
   def test_intersection_intersection_crossed_further_x(
     self,
@@ -309,7 +296,7 @@ class TestContourUtils:
     neighbour_b = list(contours[1][0])
     neighbour_b[0] = neighbour_b[0] - 4
     neighbour_b[1] = neighbour_b[1] - 4
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -328,13 +315,13 @@ class TestContourUtils:
     neighbour_b = list(contours[1][0])
     neighbour_b[0] = neighbour_b[0] - 4
     neighbour_b[1] = neighbour_b[1] - 4
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
       neighbour_b,
     )
-    assert intersection == False
+    assert intersection == True
 
   def test_intersection_intersection_crossed_even_further_x(
     self,
@@ -347,7 +334,7 @@ class TestContourUtils:
     neighbour_b = list(contours[1][0])
     neighbour_b[0] = neighbour_b[0] - 4
     neighbour_b[1] = neighbour_b[1] - 4
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
@@ -355,7 +342,7 @@ class TestContourUtils:
     )
     assert intersection == True
 
-  def test_intersection_intersection_crossed_inversed_x(
+  def test_intersection_intersection_crossed_other_side_x(
     self,
     contours
   ) -> None:
@@ -366,10 +353,23 @@ class TestContourUtils:
     neighbour_b = list(contours[1][0])
     neighbour_b[0] = neighbour_b[0] - 4
     neighbour_b[1] = neighbour_b[1] - 4
-    intersection = segments_intersect(
+    intersection, _, _ = segments_intersect(
       point_a,
       closest_point,
       neighbour_a,
       neighbour_b,
     )
     assert intersection == True
+
+  def test_normal_square(self, contours):
+    contour = contours[0]
+
+    image_size = 30
+    opposite_point_index = find_opposite_point_with_normals(
+      contour,
+      0,
+      image_size,
+      image_size
+    )
+    
+    assert opposite_point_index == 2

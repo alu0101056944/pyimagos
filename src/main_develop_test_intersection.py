@@ -4,17 +4,13 @@ Máster en Ingeniería Informática
 Trabajo de Final de Máster
 Pyimagos development
 
-Main for visualizing the tests present in /test/join_test.py
+Main for visualizing the tests present in /test/utils_test.py (segment
+intersection)
 '''
 
 import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
-
-from src.main_develop_contours_gui import ContourViewer
-
-from src.contour_operations.join_contour import JoinContour
-from src.contour_operations.utils import segments_intersect
 
 from src.contour_operations.utils import  blend_colors_with_alpha
 
@@ -99,7 +95,7 @@ def test_intersection_square():
   neighbour_a = tuple(contours[0][2])
   neighbour_b = tuple(contours[1][3])
   draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
-                               neighbour_b, title='Case b. Intersection')
+                               neighbour_b, title='Case b. No intersection')
 
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])
@@ -107,7 +103,7 @@ def test_intersection_square():
   neighbour_b = tuple(contours[1][0])
   draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
                                neighbour_b, title='Case c parallel touching. ' \
-                                'Intersection')
+                                'No intersection')
 
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])
@@ -139,8 +135,18 @@ def test_intersection_square():
   neighbour_b = tuple(contours[1][3])
   draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
                               neighbour_b, title='No intersection due to ' \
-                                'lengths. Intersection')
+                                'lengths. No intersection')
 
+  point_a = tuple(contours[0][3])
+  closest_point = tuple(contours[1][0])
+  neighbour_a = tuple(contours[0][0])
+  neighbour_b = list(neighbour_a)
+  neighbour_b[0] = neighbour_a[0] + 2
+  draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
+                              neighbour_b, title='Parallel no touching. ' \
+                                'No intersection')
+  
+  
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])
   neighbour_a = list(contours[0][3])
@@ -153,21 +159,12 @@ def test_intersection_square():
   
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])
-  neighbour_a = tuple(contours[0][0])
-  neighbour_b = list(neighbour_a)
-  neighbour_b[0] = neighbour_a[0] + 2
-  draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
-                              neighbour_b, title='Parallel no touching. No ' \
-                                'intersection')
-  
-  point_a = tuple(contours[0][3])
-  closest_point = tuple(contours[1][0])
   neighbour_a = tuple(contours[0][2])
   neighbour_b = list(contours[1][3])
   neighbour_b[1] = neighbour_b[1] + 2
   draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
                               neighbour_b, title='No intersection due to ' \
-                                'lengths. Lower. Intersection')
+                                'lengths. Lower. No intersection')
   
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])
@@ -194,8 +191,8 @@ def test_intersection_square():
   neighbour_b[1] = neighbour_b[1] + 6
   draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
                           neighbour_b, title='No intersection due to ' \
-                            'advanced origin b. Inverse arguments. No ' \
-                              'intersection')
+                            'advanced origin b. Inverse arguments. ' \
+                              'No intersection')
   
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])
@@ -205,7 +202,7 @@ def test_intersection_square():
   draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
                         neighbour_b, title='No intersection due to ' \
                           'advanced origin b. Inverse arguments. Reversed. ' \
-                            'Intersection')
+                            'No intersection')
   
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])
@@ -215,7 +212,7 @@ def test_intersection_square():
   neighbour_b[1] = neighbour_b[1] - 4
   draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
                       neighbour_b, title='Crossed intersection. ' \
-                        'No intersection')
+                        'Intersection')
   
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])
@@ -237,7 +234,7 @@ def test_intersection_square():
   neighbour_b[1] = neighbour_b[1] - 4
   draw_points_and_two_segments(contours, point_a, closest_point, neighbour_a,
                   neighbour_b, title='Crossed intersection. Further on x. ' \
-                    ' from +4 to +2 (x). No intersection')
+                    ' from +4 to +2 (x). Intersection')
   
   point_a = tuple(contours[0][3])
   closest_point = tuple(contours[1][0])

@@ -162,7 +162,7 @@ class ExtendContour(ContourOperation):
     neighbor_b_index = (closest_index - 1) % len(contour_b)
     x1, y1 = fixed_contour_a[neighbor_a_index]
     x2, y2 = fixed_contour_b[neighbor_b_index]
-    intersection = self._segments_intersect(x1, y1, x2, y2)
+    intersection, _, _ = self._segments_intersect(x1, y1, x2, y2)
     is_positive_direction = closest_index - 1 < 0
     if intersection:
       neighbor_b_index = (closest_index + 1) % len(contour_b)

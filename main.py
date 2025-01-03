@@ -24,7 +24,7 @@ from src.main__develop_filter_gui import execute_ui
 from src.main_develop_border_analysis import borderFilterAlternativesAnalysis
 from src.main_develop_contours_gui import visualize_contours
 from src.image_filters.attention_map_filter import AttentionMap
-from src.main_develop_test_jointest import visualize_tests
+from src.main_develop_test_intersection import visualize_tests
 
 @click.group()
 def cli() -> None:
@@ -90,8 +90,8 @@ def contours_gui(filename: str) -> None:
   visualize_contours(filename)
 
 @develop.command()
-def test_join() -> None:
-  '''Show image representations for each contour join operation test'''
+def test_intersection() -> None:
+  '''Show image representations for each segment intersection test.'''
   visualize_tests()
 
 if __name__ == '__main__':
