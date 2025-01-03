@@ -34,6 +34,9 @@ def line_segment_intersection(line_start, line_end, segment_start,
 
 def find_opposite_point_with_normals(contour, start_point_idx,
                                       image_width, image_height):
+  if len(contour) < 3:
+    return None
+  
   '''Finds the 'opposite' point using normal vector and intersection checks.'''
   start_point = contour[start_point_idx]
   num_points = len(contour)

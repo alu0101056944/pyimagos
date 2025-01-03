@@ -361,6 +361,42 @@ class TestContourUtils:
     )
     assert intersection == True
 
+  def test_normal_one_point(self):
+    contour = np.array([[15, 15]], dtype=np.int32)
+    image_size = 30
+    opposite_point_index = find_opposite_point_with_normals(
+      contour,
+      0,
+      image_size,
+      image_size
+    )
+    assert opposite_point_index == None
+
+  def test_normal_two_point(self):
+    contour = np.array([[15, 15], [20, 15]], dtype=np.int32)
+    image_size = 30
+    opposite_point_index = find_opposite_point_with_normals(
+      contour,
+      0,
+      image_size,
+      image_size
+    )
+    assert opposite_point_index == None
+
+  def test_normal_triangle(self):
+    contours = [
+        np.array([[5, 5], [10, 15], [15, 5]]),
+    ]
+    contour = contours[0]
+    image_size = 30
+    opposite_point_index = find_opposite_point_with_normals(
+      contour,
+      0,
+      image_size,
+      image_size
+    )
+    assert opposite_point_index == 2
+
   def test_normal_square(self, contours):
     contour = contours[0]
 
@@ -373,3 +409,47 @@ class TestContourUtils:
     )
     
     assert opposite_point_index == 2
+
+  def test_normal_concave(self):
+    contours = [
+        np.array([[5,5], [10, 3], [13, 8], [5, 12], [1, 10], [1, 8]]),
+    ]
+    contour = contours[0]
+
+    image_size = 30
+    opposite_point_index = find_opposite_point_with_normals(
+      contour,
+      0,
+      image_size,
+      image_size
+    )
+    
+    assert opposite_point_index == 3
+
+  def test_normal_circle(self):
+    radius = 7
+    center = (15, 15)
+    num_points = 30
+    angles = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
+
+    points = []
+    for angle in angles:
+      x = int(center[0] + radius * np.cos(angle))
+      y = int(center[1] + radius * np.sin(angle))
+      points.append([x,y])
+
+    contours = [
+        np.array(points)
+    ]
+
+    contour = contours[0]
+
+    image_size = 30
+    opposite_point_index = find_opposite_point_with_normals(
+      contour,
+      0,
+      image_size,
+      image_size
+    )
+    
+    assert opposite_point_index == 15

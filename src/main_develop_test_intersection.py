@@ -259,5 +259,5 @@ def test_intersection_square():
                 'Intersection')
   plt.show()
 
-def visualize_tests() -> None:
+def visualize_tests_intersection() -> None:
   test_intersection_square()
