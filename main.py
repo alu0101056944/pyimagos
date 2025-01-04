@@ -28,6 +28,7 @@ from src.main_develop_test_intersection import visualize_tests_intersection
 from src.main_develop_test_normals import visualize_tests_normals
 from src.main_develop_test_join import visualize_tests_join
 from src.main_develop_test_cut import visualize_tests_cut
+from src.main_develop_test_extend import visualize_tests_extend
 
 @click.group()
 def cli() -> None:
@@ -111,6 +112,11 @@ def test_join() -> None:
 def test_cut() -> None:
   '''Show image representations for each cut contour operation test.'''
   visualize_tests_cut()
+
+@develop.command()
+def test_extend() -> None:
+  '''Show image representations for each extend contour operation test.'''
+  visualize_tests_extend()
 
 if __name__ == '__main__':
     cli()

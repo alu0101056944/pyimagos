@@ -17,20 +17,22 @@ import numpy as np
 
 from src.contour_operations.utils import find_opposite_point_with_normals
 from src.contour_operations.contour_operation import ContourOperation
+from src.contour_operations.utils import segments_intersect
 
 class ExtendContour(ContourOperation):
-  def __init__(self, contour_id1: int, contour_id2: int, invasion_count: int,
-               projection_distance: int):
+  def __init__(self, contour_id1: int, contour_id2: int, image_width: int,
+               image_height: int, invasion_count: int):
     self.contour_id1 = contour_id1
     self.contour_id2 = contour_id2
+    self.image_width = image_width
+    self.image_height = image_height
     self.invasion_count = invasion_count
-    self.projection_distance = projection_distance
 
-  def _find_closest_pair(contour_a: list, contour_b: list):
+  def _find_closest_pair(self, contour_a: list, contour_b: list):
     overall_min_distance = float('inf')
     overall_closest_pair = None
 
-    for point_a, i in enumerate(contour_a):
+    for i, point_a in enumerate(contour_a):
       distances = np.sqrt(np.sum((contour_b - point_a) ** 2, axis=1))
 
       sorted_indices = np.argsort(distances)
@@ -52,7 +54,7 @@ class ExtendContour(ContourOperation):
       return None
 
   def generate_new_contour(self, contours: list) -> list:
-    contours = np.copy(contours)
+    contours = list(contours)
 
     contour_a = contours[self.contour_id1]
     contour_b = contours[self.contour_id2]
@@ -60,6 +62,7 @@ class ExtendContour(ContourOperation):
     fixed_contour_b = np.reshape(contour_b, (-1, 2))
 
     if len(contour_b) < 1:
+      del contours[self.contour_id2]
       return contours
 
     index_a, closest_index, second_index = self._find_closest_pair(
@@ -67,136 +70,153 @@ class ExtendContour(ContourOperation):
       fixed_contour_b
     )
 
-    if len(contour_b) <= 3:
-      # Three points is just short of minimum 4 to be able to calculate the normal
+    # duplicate index_a so that one is start and the other is end
+    contour_a = np.insert(
+      contour_a,
+      index_a + 1,
+      contour_a[index_a],
+      axis=0
+    )
+
+    if len(contour_b) < 3:
+      # Three points is just short of minimum 3 to be able to calculate the normal
       # because the normal needs the start point and next point and previous
       # point and because those are exactly three points then the normal will
       # not intersect
-      return np.insert(contour_a, index_a + 1, contour_b)
+
+      contour_b = np.insert(
+        contour_b,
+        closest_index + 1,
+        contour_b[closest_index],
+        axis=0
+      )
+      
+      contour_b_new = [
+        *contour_b[closest_index::-1].tolist(),
+        *contour_b[closest_index + 1:].tolist(),
+      ],
+
+      contour_a = np.insert(contour_a, index_a + 1, *contour_b_new, axis=0)
+      
+      del contours[self.contour_id2]
+      contours[self.contour_id1] = contour_a
+      return contours
 
     opposite_index_b = find_opposite_point_with_normals(
-      fixed_contour_a,
+      fixed_contour_b,
       closest_index,
-      self.projection_distance
+      self.image_width,
+      self.image_height
     )
 
-    if not opposite_index_b:
-      # probably a rect contour, very rare, because if there are more than three
-      # points and no opposite is found then all points are parallel
-      return np.insert(contour_a, index_a + 1, contour_b)
+    # track 1 is opposite negative and closest positive
+    # track 2 is opposite positive and closest negative
+    # if they keep their direction and the invasion count is big enough they
+    # will match or cross.
+    track_1_opposite_negative = []
+    track_1_closest_positive = []
+    track_2_opposite_positive = []
+    track_2_closest_negative = []
+    match_at_track_1 = False
+    cross_at_track_1 = False
+    match_at_track_2 = False
+    cross_at_track_2 = False
+    for i in range(1, self.invasion_count + 1):
+      if (match_at_track_1 or cross_at_track_1) and (
+          match_at_track_2 or cross_at_track_2):
+        break
 
-    # From the pov of the closest_b being the center, it's opposite
-    # being the center on the opposite side. The idea is to
-    # concatenate the different subsequences (tracks) and insert it
-    # into the contour a, so that the closest center has at one side
-    # the - i track, at the other the + i track, same for opposite.
-    opposite_point_track_a = []
-    opposite_point_track_b = []
-    closest_point_track_a = []
-    closest_point_track_b = []
-    matched_at_a = False
-    looped_at_a = False
-    matched_at_b = False
-    looped_at_b = False
-    for i in range(self.invasion_count):
-      opposite_direction_result_a = (
-        contour_b[(opposite_index_b + i) % len(contour_b)]
-      )
-      opposite_direction_result_b = (
-        contour_b[(opposite_index_b - i) % len(contour_b)]
-      )
+      opposite_positive_next = fixed_contour_b[(opposite_index_b + i) % len(fixed_contour_b)]
+      opposite_negative_next = fixed_contour_b[(opposite_index_b - i) % len(fixed_contour_b)]
 
-      closest_direction_result_a = (
-        contour_b[(closest_index + i) % len(contour_b)]
+      closest_positive_next = fixed_contour_b[(closest_index + i) % len(fixed_contour_b)]
+      closest_negative_next = fixed_contour_b[(closest_index - i) % len(fixed_contour_b)]
+
+      # When the result in the same track is the same point
+      result_match_track_1 = (
+        np.array_equal(opposite_negative_next, closest_positive_next)
       )
-      closest_direction_result_b = (
-        contour_b[(closest_index - i) % len(contour_b)]
+      result_match_track_2 = (
+        np.array_equal(opposite_positive_next, closest_negative_next)
       )
 
-      # When the -i or +i will end up in the same point (so only one point
-      # inbetween)
-      direction_result_match_a = (
-        opposite_direction_result_a == (
-          closest_direction_result_a or closest_direction_result_b
+      result_cross_track_1 = (
+        (opposite_index_b - i) % len(fixed_contour_b) < (
+          (closest_index + i) % len(fixed_contour_b)
         )
       )
-      direction_result_match_b = (
-        opposite_direction_result_b == (
-          closest_direction_result_a or closest_direction_result_b
+      result_cross_track_2 = (
+        (opposite_index_b + i) % len(fixed_contour_b) < (
+          (closest_index - i) % len(fixed_contour_b)
         )
       )
 
-      # When the -i or +i reach the respective opposite (closest reaches
-      # opposite and viceversa), so there are no points inbetween them.
-      direction_result_loop_a = (
-        opposite_direction_result_a == contour_b[closest_index]
-      )
-      direction_result_loop_b = (
-        opposite_direction_result_b == contour_b[closest_index]
-      )
-
-      if not matched_at_a and not looped_at_a:
-        if direction_result_match_a:
-          closest_point_track_a.insert(0, (closest_index + i) % len(contour_b))
-          matched_at_a = True
-        elif direction_result_loop_a:
-          looped_at_a = True
+      if not match_at_track_1 and not cross_at_track_1:
+        if result_match_track_1:
+          track_1_closest_positive.append(
+            (closest_index + i) % len(fixed_contour_b)
+          )
+          match_at_track_1 = True
+        elif result_cross_track_1:
+          cross_at_track_1 = True
         else:
-          closest_point_track_a.insert(0, (closest_index + i) % len(contour_b))
-          opposite_point_track_a.insert(0, (opposite_index_b + i) % len(contour_b))
-        
-      if not matched_at_b and not looped_at_b:
-        if direction_result_match_b:
-          closest_point_track_b.append((closest_index - i) % len(contour_b))
-          matched_at_b = True
-        elif direction_result_loop_b:
-          looped_at_b = True
+          track_1_opposite_negative.insert(
+            0,
+            (opposite_index_b - i) % len(fixed_contour_b)
+          )
+          track_1_closest_positive.append(
+            (closest_index + i) % len(fixed_contour_b)
+          )
+
+      if not match_at_track_2 and not cross_at_track_2:
+        if result_match_track_2:
+          track_2_opposite_positive.append(
+            (closest_index - i) % len(fixed_contour_b)
+          )
+          match_at_track_2 = True
+        elif result_cross_track_2:
+          cross_at_track_2 = True
         else:
-          closest_point_track_b.append((closest_index - i) % len(contour_b))
-          opposite_point_track_b.append((opposite_index_b - i) % len(contour_b))
+          track_2_closest_negative.insert(
+            0,
+            (closest_index - i) % len(fixed_contour_b)
+          )
+          track_2_opposite_positive.append(
+            (opposite_index_b + i) % len(fixed_contour_b)
+          )
 
-    # To avoid cross bridge, calculate which track to insert first
-    # so that neighbor_a - 1 to first track point in b does not cross bridge
-    # with index_a to closest_point.
-    neighbor_a_index = (index_a - 1) % len(contour_a)
-    neighbor_b_index = (closest_index - 1) % len(contour_b)
-    x1, y1 = fixed_contour_a[neighbor_a_index]
-    x2, y2 = fixed_contour_b[neighbor_b_index]
-    intersection, _, _ = self._segments_intersect(x1, y1, x2, y2)
-    is_positive_direction = closest_index - 1 < 0
-    if intersection:
-      neighbor_b_index = (closest_index + 1) % len(contour_b)
-      is_positive_direction = closest_index < len(contour_b)
+    contour_b_partial_indices = [
+      closest_index,
+      *track_1_closest_positive,
+      *track_1_opposite_negative,
+      opposite_index_b,
+      *track_2_opposite_positive,
+      *track_2_closest_negative,
+    ]
 
-    if is_positive_direction:
-      contour_b_partial_indices = np.concatenate(
-        (
-          closest_point_track_a,
-          opposite_point_track_a,
-          opposite_index_b,
-          opposite_point_track_b,
-          closest_point_track_b,
-          closest_index
-        )
-      )
-    else: 
-      contour_b_partial_indices = np.concatenate(
-        (
-          closest_point_track_b,
-          opposite_point_track_b,
-          opposite_index_b,
-          opposite_point_track_a,
-          closest_point_track_a,
-          closest_index
-        )
-      )
+    contour_b_partial = np.array(
+      [np.copy(contour_b[i]) for i in contour_b_partial_indices],
+      dtype=np.int64
+    )
 
-    contour_b_partial = [contour_b[i] for i in contour_b_partial_indices]
-    contours[self.contour_id1] = np.insert(
-      contours[self.contour_id1], closest_index + 1, contour_b_partial
+    # Insert duplicated closest_point so that bridge between contour a and
+    # contour b is from index_a to closest_point in parallel.
+    contour_b_partial = np.insert(
+      contour_b_partial,
+      len(contour_b_partial),
+      contour_b_partial[0],
+      axis=0
+    )
+
+    contour_a = np.insert(
+      contour_a, index_a + 1, contour_b_partial,
+      axis=0
     )
 
     # Contour b will have the invaded points deleted
     contour_b = np.delete(contour_b, contour_b_partial_indices, axis=0)
+
+    contours[self.contour_id1] = contour_a
+    contours[self.contour_id2] = contour_b
 
     return contours

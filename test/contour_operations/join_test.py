@@ -48,7 +48,6 @@ class TestJoinOperation:
     )
     assert np.array_equal(contours[0], expected_contour)
 
- 
   def test_join_with_two_points(self):
     contours = [
       np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),

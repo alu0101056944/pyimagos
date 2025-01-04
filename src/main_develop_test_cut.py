@@ -5,7 +5,7 @@ Trabajo de Final de Máster
 Pyimagos development
 
 Main for visualizing the tests present in
-/test/contour_operations/join_test.py (normals)
+/test/contour_operations/cut_test.py (normals)
 '''
 
 import numpy as np
@@ -71,6 +71,33 @@ def test_cut():
                                'Cut top left edge of left square ' \
                                 '(before, after)')
   
+  contours = [
+    np.array([[4, 4], [4, 8]]),
+  ]
+  cutOperation = CutContour(0, 0, 30, 30)
+  contours_new = cutOperation.generate_new_contour(contours)
+  prepare_image_showing_cut(contours, contours_new, 30,
+                              'Cut line into two separate contours ' \
+                              '(before, after)')
+  
+  contours = [
+    np.array([[4, 4]]),
+  ]
+  cutOperation = CutContour(0, 0, 30, 30)
+  contours_new = cutOperation.generate_new_contour(contours)
+  prepare_image_showing_cut(contours, contours_new, 30,
+                            'Cut a single point. Contours state doesn\'t change.' \
+                            '(before, after)')
+  
+  contours = [
+    np.array([]),
+  ]
+  cutOperation = CutContour(0, 0, 30, 30)
+  contours_new = cutOperation.generate_new_contour(contours)
+  prepare_image_showing_cut(contours, contours_new, 30,
+                            'Cut an empty contour. Contours state doesn\'t change.' \
+                            '(before, after)')
+
   plt.show()
 
 def visualize_tests_cut() -> None:

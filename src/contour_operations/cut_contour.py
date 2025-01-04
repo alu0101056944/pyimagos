@@ -22,7 +22,7 @@ class CutContour(ContourOperation):
     self.cut_point_id = cut_point_id
     self.image_width = image_width
     self.image_height = image_height
-    
+
   def _split_contour_by_indices(self, contour, start_point_idx,
                                 opposite_point_idx):
     split_indices = sorted([start_point_idx, opposite_point_idx])
@@ -35,15 +35,29 @@ class CutContour(ContourOperation):
   def generate_new_contour(self, contours: list) -> list:
     contours = list(contours)
 
-    opposite_point_idx = find_opposite_point_with_normals(
-      contours[self.contour_id],
-      self.cut_point_id,
-      self.image_width,
-      self.image_height
-    )
+    if len(contours[self.contour_id]) <= 1:
+      return contours
+    
+    contour = contours[self.contour_id]
+    fixed_contour = np.reshape(contour, (-1, 2))
+
+    opposite_point_idx = None
+    if len(contours[self.contour_id]) == 2:
+      opposite_point_idx = 1
+      return [
+        np.array([contour[0]]),
+        np.array([contour[1]])
+      ]
+    else:
+      opposite_point_idx = find_opposite_point_with_normals(
+        fixed_contour,
+        self.cut_point_id,
+        self.image_width,
+        self.image_height
+      )
 
     contour_1, contour_2 = self._split_contour_by_indices(
-      contours[self.contour_id],
+      contour,
       self.cut_point_id,
       opposite_point_idx
     )
