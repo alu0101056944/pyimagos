@@ -63,5 +63,5 @@ class CutContour(ContourOperation):
     )
 
     contours[self.contour_id] = contour_1
-    contours.insert(self.contour_id + 1, contour_2)
+    contours.append(contour_2)
     return contours

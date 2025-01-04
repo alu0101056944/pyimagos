@@ -62,7 +62,7 @@ class ExtendContour(ContourOperation):
     fixed_contour_b = np.reshape(contour_b, (-1, 2))
 
     if len(contour_b) < 1:
-      del contours[self.contour_id2]
+      contours[self.contour_id2] = np.array([], dtype=np.int64)
       return contours
 
     index_a, closest_index, second_index = self._find_closest_pair(
@@ -98,7 +98,7 @@ class ExtendContour(ContourOperation):
 
       contour_a = np.insert(contour_a, index_a + 1, *contour_b_new, axis=0)
       
-      del contours[self.contour_id2]
+      contours[self.contour_id2] = np.array([], dtype=np.int64)
       contours[self.contour_id1] = contour_a
       return contours
 

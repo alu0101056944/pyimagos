@@ -89,7 +89,7 @@ class TestExtendOperation:
     )
 
     assert np.array_equal(contours[0], expected_array_a)
-    assert len(contours) == 1
+    assert np.array_equal(contours[1], np.array([], dtype=np.int64))
   
   def test_extend_into_one_point(self):
     contours = [
@@ -109,7 +109,7 @@ class TestExtendOperation:
     )
 
     assert np.array_equal(contours[0], expected_array_a)
-    assert len(contours) == 1
+    assert np.array_equal(contours[1], np.array([], dtype=np.int64))
 
   def test_extend_into_two_points(self):
     contours = [
@@ -132,4 +132,4 @@ class TestExtendOperation:
     )
 
     assert np.array_equal(contours[0], expected_array_a)
-    assert len(contours) == 1
+    assert np.array_equal(contours[1], np.array([], dtype=np.int64))

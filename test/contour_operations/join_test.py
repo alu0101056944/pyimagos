@@ -28,10 +28,10 @@ class TestJoinOperation:
     ]
     joinOperation = JoinContour(0, 1)
     contours = joinOperation.generate_new_contour(contours)
-    assert len(contours) == 1
 
     expected_contour = np.array([[4, 4], [4, 8], [8, 8], [8, 4]], np.int64)
     assert np.array_equal(contours[0], expected_contour)
+    assert np.array_equal(contours[1], np.array([], dtype=np.int64))
     
   def test_join_with_one_point(self):
     contours = [

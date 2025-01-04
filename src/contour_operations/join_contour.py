@@ -51,7 +51,7 @@ class JoinContour(ContourOperation):
     fixed_contour_b = np.reshape(contour_b, (-1, 2))
 
     if len(contour_b) < 1:
-      del contours[self.contour_id2]
+      contours[self.contour_id2] = np.array([], dtype=np.int64)
       return contours
 
     index_a, closest_index, second_index = self._find_closest_pair(
