@@ -2,17 +2,18 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Pytest",
+      "name": "Pytest test",
       "type": "debugpy",
       "request": "launch",
-      "module": "pytest"
+      "module": "pytest",
+      "args": ["test/contour_operations/join_test.py"]
     },
     {
       "name": "Python Debugger: Python File",
       "type": "debugpy",
       "request": "launch",
-      "program": "${file}",
-      "args": ["docs/bad_contrast.jpg"]
+      "program": "${workspaceFolder}/main.py",
+      "args": ["develop", "test-join"]
     }
   ]
 }
