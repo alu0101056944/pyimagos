@@ -13,7 +13,6 @@ expected contour are allowed to be.
 '''
 
 from abc import ABC, abstractmethod
-from typing import List
 from enum import Enum, auto
 
 class AllowedLineSideBasedOnY(Enum):
@@ -24,11 +23,9 @@ class AllowedLineSideBasedOnY(Enum):
 
 class ExpectedContour(ABC):
   @abstractmethod
-  def position_restrictions(
-    self
-  ) -> List[List[List[int, int], List[int, int], AllowedLineSideBasedOnY]]:
+  def position_restrictions(self) -> list:
     pass
   
   @abstractmethod
-  def shape_restrictions(self, contours: list) -> List[bool, int]:
+  def shape_restrictions(self, contours: list) -> list:
     pass

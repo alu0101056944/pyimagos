@@ -12,6 +12,5 @@ from abc import ABC, abstractmethod
 
 class ContourOperation(ABC):
   @abstractmethod
-  def generate_new_contour(self, contours: list) -> list:
+  def generate_new_contour(self, contour: list) -> list:
     pass
-    

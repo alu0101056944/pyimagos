@@ -29,6 +29,7 @@ from src.main_develop_test_normals import visualize_tests_normals
 from src.main_develop_test_join import visualize_tests_join
 from src.main_develop_test_cut import visualize_tests_cut
 from src.main_develop_test_extend import visualize_tests_extend
+from src.main_develop_corner_order import visualize_topleft_corner
 
 @click.group()
 def cli() -> None:
@@ -117,6 +118,12 @@ def test_cut() -> None:
 def test_extend() -> None:
   '''Show image representations for each extend contour operation test.'''
   visualize_tests_extend()
+
+@develop.command()
+def corner_order() -> None:
+  '''Show image representations showing top lest corner on different
+  rectangle orientations.''' 
+  visualize_topleft_corner()
 
 if __name__ == '__main__':
     cli()

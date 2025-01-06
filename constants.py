@@ -6,3 +6,4 @@ Configuration constants
 '''
 
 MODEL_PATH = './model/dino_deitsmall8_pretrain.pth'
+EXECUTION_DURATION_SECONDS = 5

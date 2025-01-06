@@ -19,14 +19,6 @@ import numpy as np
 import cv2 as cv
 
 from src.contour_operations.join_contour import JoinContour
-import src.rulesets.distal_phalanx as dist_phalanx
-
-expected_contours = [
-  {
-    'relative_distance': (0, 0),
-    'ruleset': dist_phalanx.ruleset
-  }
-]
 
 def draw_contour_points(image: np.array, contours: np.array,
                         draw_points: bool = True) -> np.array:
@@ -254,7 +246,7 @@ def visualize_contours(filename: str) -> None:
 
   joinOperation = JoinContour(0, 1)
   contours2 = joinOperation.generate_new_contour(contours)
-  joinOperation = JoinContour(0, 1)
+  joinOperation = JoinContour(0, 2)
   contours3 = joinOperation.generate_new_contour(contours2)
 
   visualizer = ContourViewer(borders_detected, [contours, contours2, contours3])
