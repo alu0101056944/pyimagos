@@ -20,7 +20,7 @@ from PIL import Image
 import click
 
 from src.main_execute import process_radiograph
-from src.main__develop_filter_gui import execute_ui
+from src.main_develop_filter_gui import execute_ui
 from src.main_develop_border_analysis import borderFilterAlternativesAnalysis
 from src.main_develop_contours_gui import visualize_contours
 from src.image_filters.attention_map_filter import AttentionMap

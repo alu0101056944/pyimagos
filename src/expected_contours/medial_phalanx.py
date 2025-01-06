@@ -5,7 +5,7 @@ Trabajo de Final de Máster
 Pyimagos development
 
 Shape restrictions to apply to a contour and position restrictions
-to apply to other contours for the distal phalanx hand bone.
+to apply to other contours for the medial phalanx hand bone.
 '''
 
 import cv2 as cv
@@ -17,7 +17,7 @@ from src.expected_contours.expected_contour import (
 
 from src.main_develop_corner_order import get_top_left_corner
 
-class ExpectedContourDistalPhalanx(ExpectedContour):
+class ExpectedContourMedialPhalanx(ExpectedContour):
 
   def __init__(self):
     self.contour = None
@@ -46,10 +46,11 @@ class ExpectedContourDistalPhalanx(ExpectedContour):
     ].tolist()
 
   def position_restrictions(self) -> list:
-    ERROR_PADDING = 4
     y_coords = self.contour[:, 1]
-    height = y_coords[np.argmax(y_coords)] - y_coords[np.argmin(y_coords)]
-    ERROR_PADDING_TOP = height * 4
+    height = y_coords[np.argmax(y_coords)] - y_coords[np.argmin(y_coords)] 
+    bottom_bound = height * 4
+
+    ERROR_PADDING = 4
     return [
       [
         self.bottom_right_corner + [ERROR_PADDING, 0],
@@ -62,51 +63,19 @@ class ExpectedContourDistalPhalanx(ExpectedContour):
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_left_corner + [0, ERROR_PADDING],
-        self.bottom_right_corner + [0, ERROR_PADDING],
+        self.bottom_left_corner,
+        self.bottom_right_corner,
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_left_corner,
-        self.bottom_right_corner,
+        self.bottom_left_corner + [0, bottom_bound],
+        self.bottom_right_corner + [0, bottom_bound],
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
     ]
 
   def shape_restrictions(self) -> list:
     return [False, -1] if  cv.contourArea(self.contour) < 100 else [True, 0]
-
+  
   def get_next_to_restrictions(self) -> list:
-    ''' For the metacarpal bones to be able to jump to the next finger'''
-
-    y_coords = self.contour[:, 1]
-    height = y_coords[np.argmax(y_coords)] - y_coords[np.argmin(y_coords)] 
-    upper_bound = height * 4
-    lower_bound = height * 2
-
-    x_coords = self.contour[:, 0]
-    width = x_coords[np.argmax(x_coords)] - x_coords[np.argmin(x_coords)] 
-    right_bound = width * 5
-
-    return [
-      [
-        self.top_left_corner - [0, upper_bound],
-        self.top_right_corner - [0, upper_bound],
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL 
-      ],
-      [
-        self.bottom_left_corner + [0, lower_bound],
-        self.bottom_right_corner + [0, lower_bound],
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
-      ],
-      [
-        self.bottom_right_corner,
-        self.top_right_corner,
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
-      ],
-      [
-        self.bottom_right_corner + [right_bound, 0],
-        self.top_right_corner + [right_bound, 0],
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
-      ],
-    ]
+    return []

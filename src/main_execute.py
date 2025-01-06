@@ -19,13 +19,22 @@ import cv2 as cv
 from src.main_develop_contours_gui import ContourViewer
 from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.expected_contours.expected_contour import (
-  ExpectedContour, AllowedLineSideBasedOnY
+  ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
 )
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
+from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
+from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalanx
 from constants import EXECUTION_DURATION_SECONDS
 
+# From left-top to right-bottom of the image (0, 0) to (size x, size y)
+distal_phalanx_1 = ExpectedContourDistalPhalanx()
+medial_phalanx_1 = ExpectedContourMedialPhalanx()
+proximal_phalanx_1 = ExpectedContourProximalPhalanx(distal_phalanx_1)
+
 expected_contours = [
-  ExpectedContourDistalPhalanx
+  distal_phalanx_1,
+  medial_phalanx_1,
+  proximal_phalanx_1
 ]
 
 def find_closest_contours_to_point(point: np.array, contours: list) -> np.array:
@@ -40,51 +49,50 @@ def find_closest_contours_to_point(point: np.array, contours: list) -> np.array:
 
 def is_in_allowed_space(
   contour: list,
-  expected_contours_until_now: list[ExpectedContour]
+  last_expected_contour: list[ExpectedContour]
 ) -> bool:
-  for expected_contour in expected_contours_until_now:
-    position_restrictions = expected_contour.position_restrictions()
-    for position_restriction in position_restrictions:
-      x1, y1 = position_restriction[0][0]
-      x2, y2 = position_restriction[1][0]
-      allowed_side = position_restriction[2]
+  position_restrictions = last_expected_contour.position_restrictions()
+  for position_restriction in position_restrictions:
+    x1, y1 = position_restriction[0][0]
+    x2, y2 = position_restriction[1][0]
+    allowed_side = position_restriction[2]
 
-      if x2 == x1:
-        # Vertical line case handling
-        for point in contour:
-          x, y = point[0]
-          if allowed_side == AllowedLineSideBasedOnY.GREATER:
-            if x <= x1:
-              return False
-          elif allowed_side == AllowedLineSideBasedOnY.LOWER:
-            if x >= x1:
-              return False
-          elif allowed_side == AllowedLineSideBasedOnY.GREATER_EQUAL:
-            if x < x1:
-              return False
-          elif allowed_side == AllowedLineSideBasedOnY.LOWER_EQUAL:
-            if x > x1:
-              return False
-      else:
-        # line equation y = mx + b
-        m = (y2 - y1) / (x2 - x1)
-        b = y1 - m * x1
+    if x2 == x1:
+      # Vertical line case handling
+      for point in contour:
+        x, y = point[0]
+        if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
+          if x <= x1:
+            return False
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
+          if x >= x1:
+            return False
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
+          if x < x1:
+            return False
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
+          if x > x1:
+            return False
+    else:
+      # line equation y = mx + b
+      m = (y2 - y1) / (x2 - x1)
+      b = y1 - m * x1
 
-        for point in contour:
-          x, y = point[0]
-          line_y = m * x + b
-          if allowed_side == AllowedLineSideBasedOnY.GREATER:
-            if y <= line_y:
-              return False
-          elif allowed_side == AllowedLineSideBasedOnY.LOWER:
-            if y >= line_y:
-              return False
-          elif allowed_side == AllowedLineSideBasedOnY.GREATER_EQUAL:
-            if y < line_y:
-              return False
-          elif allowed_side == AllowedLineSideBasedOnY.LOWER_EQUAL:
-            if y > line_y:
-              return False
+      for point in contour:
+        x, y = point[0]
+        line_y = m * x + b
+        if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
+          if y <= line_y:
+            return False
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
+          if y >= line_y:
+            return False
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
+          if y < line_y:
+            return False
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
+          if y > line_y:
+            return False
   return True
 
 def generate_contour_alternatives(contours: list, contour_id: int, 
@@ -112,10 +120,9 @@ def search_complete_contours(initial_state_stack: dict,
       expected_contour_class = (
         expected_contours[len(state['contours_committed'])]
       )
+      expected_contour_class.prepare(current_contour)
 
-      restrictions = expected_contour_class(
-        current_contour
-      ).shape_restrictions()
+      restrictions = expected_contour_class.shape_restrictions()
       current_contour_valid, current_contour_value = restrictions
 
       if current_contour_valid:
