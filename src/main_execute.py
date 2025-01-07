@@ -34,35 +34,100 @@ from src.contour_operations.extend_contour import ExtendContour
 from src.contour_operations.join_contour import JoinContour
 
 # From left-top to right-bottom of the image (0, 0) to (size x, size y)
-distal_phalanx_1 = ExpectedContourDistalPhalanx()
-medial_phalanx_1 = ExpectedContourMedialPhalanx()
-proximal_phalanx_1 = ExpectedContourProximalPhalanx()
-metacarpal_1 = ExpectedContourMetacarpal(distal_phalanx_1)
+distal_phalanx_1 = ExpectedContourDistalPhalanx(
+  encounter_amount=1,
+)
+medial_phalanx_1 = ExpectedContourMedialPhalanx(
+  encounter_amount=1,
+  first_in_branch=distal_phalanx_1
+)
+proximal_phalanx_1 = ExpectedContourProximalPhalanx(
+  encounter_amount=1,
+  first_in_branch=distal_phalanx_1
+)
+metacarpal_1 = ExpectedContourMetacarpal(
+  encounter_amount=1,
+  first_in_branch=distal_phalanx_1
+)
 
-distal_phalanx_2 = ExpectedContourDistalPhalanx()
-medial_phalanx_2 = ExpectedContourMedialPhalanx()
-proximal_phalanx_2 = ExpectedContourProximalPhalanx()
-metacarpal_2 = ExpectedContourMetacarpal(distal_phalanx_2)
+distal_phalanx_2 = ExpectedContourDistalPhalanx(
+  encounter_amount=2,
+  first_occurence=distal_phalanx_1
+)
+medial_phalanx_2 = ExpectedContourMedialPhalanx(
+  encounter_amount=2,
+  first_occurence=medial_phalanx_1,
+  first_in_branch=distal_phalanx_2
+)
+proximal_phalanx_2 = ExpectedContourProximalPhalanx(
+  encounter_amount=2,
+  first_occurence=proximal_phalanx_1,
+  first_in_branch=distal_phalanx_2
+)
+metacarpal_2 = ExpectedContourMetacarpal(
+  encounter_amount=2,
+  first_occurence=metacarpal_1,
+  first_in_branch=distal_phalanx_2
+)
 
-distal_phalanx_3 = ExpectedContourDistalPhalanx()
-medial_phalanx_3 = ExpectedContourMedialPhalanx()
-proximal_phalanx_3 = ExpectedContourProximalPhalanx()
-metacarpal_3 = ExpectedContourMetacarpal(distal_phalanx_3)
+distal_phalanx_3 = ExpectedContourDistalPhalanx(
+  encounter_amount=3,
+  first_occurence=distal_phalanx_1,
+)
+medial_phalanx_3 = ExpectedContourMedialPhalanx(
+  encounter_amount=3,
+  first_occurence=medial_phalanx_1,
+  first_in_branch=distal_phalanx_3
+)
+proximal_phalanx_3 = ExpectedContourProximalPhalanx(
+  encounter_amount=3,
+  first_occurence=proximal_phalanx_1,
+  first_in_branch=distal_phalanx_3
+)
+metacarpal_3 = ExpectedContourMetacarpal(
+  encounter_amount=3,
+  first_occurence=metacarpal_1,
+  first_in_branch=distal_phalanx_3
+)
 
-distal_phalanx_4 = ExpectedContourDistalPhalanx()
-medial_phalanx_4 = ExpectedContourMedialPhalanx()
-proximal_phalanx_4 = ExpectedContourProximalPhalanx()
-metacarpal_4 = ExpectedContourMetacarpal(distal_phalanx_4)
+distal_phalanx_4 = ExpectedContourDistalPhalanx(
+  encounter_amount=4,
+  first_occurence=distal_phalanx_1,
+)
+medial_phalanx_4 = ExpectedContourMedialPhalanx(
+  encounter_amount=4,
+  first_occurence=medial_phalanx_1,
+  first_in_branch=distal_phalanx_4
+)
+proximal_phalanx_4 = ExpectedContourProximalPhalanx(
+  encounter_amount=4,
+  first_occurence=proximal_phalanx_1,
+  first_in_branch=distal_phalanx_4
+)
+metacarpal_4 = ExpectedContourMetacarpal(
+  encounter_amount=4,
+  first_occurence=metacarpal_1,
+  first_in_branch=distal_phalanx_4
+)
 
-distal_phalanx_5 = ExpectedContourDistalPhalanx()
-medial_phalanx_5 = ExpectedContourMedialPhalanx()
-proximal_phalanx_5 = ExpectedContourProximalPhalanx()
-metacarpal_5 = ExpectedContourMetacarpal(distal_phalanx_5)
+distal_phalanx_5 = ExpectedContourDistalPhalanx(
+  encounter_amount=5,
+  first_occurence=distal_phalanx_1,
+)
+proximal_phalanx_5 = ExpectedContourProximalPhalanx(
+  encounter_amount=5,
+  first_occurence=proximal_phalanx_1,
+  first_in_branch=distal_phalanx_5
+)
+metacarpal_5 = ExpectedContourMetacarpal(
+  encounter_amount=5,
+  first_occurence=metacarpal_1,
+  first_in_branch=distal_phalanx_5,
+  ends_branchs_sequence=True
+)
 
 radius = ExpectedContourRadius()
 ulna = ExpectedContourUlna()
-
-AMOUNT_OF_FINGER_BONES = 20
 
 expected_contours = [
   distal_phalanx_1,
@@ -82,7 +147,6 @@ expected_contours = [
   proximal_phalanx_4,
   metacarpal_4,
   distal_phalanx_5,
-  medial_phalanx_5,
   proximal_phalanx_5,
   metacarpal_5,
   radius,
@@ -99,11 +163,10 @@ def find_closest_contours_to_point(point: np.array, contours: list) -> np.array:
   sorted_index = np.argsort(contour_distances)
   return sorted_index
 
-def is_in_allowed_space(
-  contour: list,
+def is_in_allowed_space(contour: list,
   last_expected_contour: ExpectedContour
 ) -> bool:
-  position_restrictions = last_expected_contour.position_restrictions()
+  position_restrictions = last_expected_contour.next_contour_restrictions()
   for position_restriction in position_restrictions:
     x1, y1 = position_restriction[0][0]
     x2, y2 = position_restriction[1][0]
@@ -223,15 +286,11 @@ def search_complete_contours(initial_state_stack: dict,
       expected_contour_class = (
         expected_contours[len(state['contours_committed'])]
       )
-      # To know when to stop applying metacarpal position restrictions:
-      is_last_in_branch = (
-        len(state['contours_committed']) == AMOUNT_OF_FINGER_BONES - 1
-      )
+
       expected_contour_class.prepare(
         current_contour,
         image_width,
-        image_height,
-        is_last_in_branch
+        image_height
       )
 
       restrictions = expected_contour_class.shape_restrictions()
