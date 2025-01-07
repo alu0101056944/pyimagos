@@ -21,22 +21,33 @@ class ExpectedContourMetacarpal(ExpectedContour):
 
   def __init__(self, distal_phalanx: ExpectedContour):
     self.contour = None
-    self.is_last = None
     self.distal_phalanx = distal_phalanx
     self.top_left_corner = None
     self.top_right_corner = None
     self.bottom_right_corner = None
     self.bottom_left_corner = None
+    self.image_width = None
+    self.image_height = None
+    self.is_last_in_branch = None
 
-  def prepare(self, contour: list, is_last: bool = False) -> None:
+  def prepare(self, contour: list, image_width: int, image_height: int,
+              is_last_in_branch: bool = False) -> None:
     '''This is needed to select the contour that this class will work on'''
-    self.is_last = is_last
+    self.image_width = image_width
+    self.image_height = image_height
+    self.is_last_in_branch = is_last_in_branch
+
     self.contour = np.reshape(contour, (-1, 2))
     rect = cv.minAreaRect(contour)
     bounding_rect_contour = cv.boxPoints(rect)
     bounding_rect_contour = np.int32(bounding_rect_contour) # to int
 
-    self.top_left_corner, i = get_top_left_corner(bounding_rect_contour).tolist()
+    self.top_left_corner, i = get_top_left_corner(
+      bounding_rect_contour,
+      self.image_width,
+      self.image_height
+    ).tolist()
+
     # assumming clockwise
     self.top_right_corner = bounding_rect_contour[
       (i + 1) % len(bounding_rect_contour)
@@ -49,7 +60,7 @@ class ExpectedContourMetacarpal(ExpectedContour):
     ].tolist()
 
   def position_restrictions(self) -> list:
-    if not self.is_last:
+    if not self.is_last_in_branch:
       return self.distal_phalanx.get_next_to_restrictions()
     else:
       ERROR_PADDING = 10

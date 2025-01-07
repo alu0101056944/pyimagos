@@ -11,6 +11,7 @@ import os.path
 from PIL import Image
 import time
 import random
+import copy
 
 import torchvision.transforms as transforms
 import numpy as np
@@ -24,17 +25,68 @@ from src.expected_contours.expected_contour import (
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
 from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalanx
+from src.expected_contours.metacarpal import ExpectedContourMetacarpal
+from src.expected_contours.radius import ExpectedContourRadius
+from src.expected_contours.ulna import ExpectedContourUlna
 from constants import EXECUTION_DURATION_SECONDS
+from src.contour_operations.cut_contour import CutContour
+from src.contour_operations.extend_contour import ExtendContour
+from src.contour_operations.join_contour import JoinContour
 
 # From left-top to right-bottom of the image (0, 0) to (size x, size y)
 distal_phalanx_1 = ExpectedContourDistalPhalanx()
 medial_phalanx_1 = ExpectedContourMedialPhalanx()
-proximal_phalanx_1 = ExpectedContourProximalPhalanx(distal_phalanx_1)
+proximal_phalanx_1 = ExpectedContourProximalPhalanx()
+metacarpal_1 = ExpectedContourMetacarpal(distal_phalanx_1)
+
+distal_phalanx_2 = ExpectedContourDistalPhalanx()
+medial_phalanx_2 = ExpectedContourMedialPhalanx()
+proximal_phalanx_2 = ExpectedContourProximalPhalanx()
+metacarpal_2 = ExpectedContourMetacarpal(distal_phalanx_2)
+
+distal_phalanx_3 = ExpectedContourDistalPhalanx()
+medial_phalanx_3 = ExpectedContourMedialPhalanx()
+proximal_phalanx_3 = ExpectedContourProximalPhalanx()
+metacarpal_3 = ExpectedContourMetacarpal(distal_phalanx_3)
+
+distal_phalanx_4 = ExpectedContourDistalPhalanx()
+medial_phalanx_4 = ExpectedContourMedialPhalanx()
+proximal_phalanx_4 = ExpectedContourProximalPhalanx()
+metacarpal_4 = ExpectedContourMetacarpal(distal_phalanx_4)
+
+distal_phalanx_5 = ExpectedContourDistalPhalanx()
+medial_phalanx_5 = ExpectedContourMedialPhalanx()
+proximal_phalanx_5 = ExpectedContourProximalPhalanx()
+metacarpal_5 = ExpectedContourMetacarpal(distal_phalanx_5)
+
+radius = ExpectedContourRadius()
+ulna = ExpectedContourUlna()
+
+AMOUNT_OF_FINGER_BONES = 20
 
 expected_contours = [
   distal_phalanx_1,
   medial_phalanx_1,
-  proximal_phalanx_1
+  proximal_phalanx_1,
+  metacarpal_1,
+  distal_phalanx_2,
+  medial_phalanx_2,
+  proximal_phalanx_2,
+  metacarpal_2,
+  distal_phalanx_3,
+  medial_phalanx_3,
+  proximal_phalanx_3,
+  metacarpal_3,
+  distal_phalanx_4,
+  medial_phalanx_4,
+  proximal_phalanx_4,
+  metacarpal_4,
+  distal_phalanx_5,
+  medial_phalanx_5,
+  proximal_phalanx_5,
+  metacarpal_5,
+  radius,
+  ulna,
 ]
 
 def find_closest_contours_to_point(point: np.array, contours: list) -> np.array:
@@ -49,7 +101,7 @@ def find_closest_contours_to_point(point: np.array, contours: list) -> np.array:
 
 def is_in_allowed_space(
   contour: list,
-  last_expected_contour: list[ExpectedContour]
+  last_expected_contour: ExpectedContour
 ) -> bool:
   position_restrictions = last_expected_contour.position_restrictions()
   for position_restriction in position_restrictions:
@@ -96,11 +148,62 @@ def is_in_allowed_space(
   return True
 
 def generate_contour_alternatives(contours: list, contour_id: int, 
-                                  reference_state: dict) -> list:
-  pass
+                                  reference_state: dict, image_width: int,
+                                  image_height: int) -> list:
+  alternatives = []
+
+  contour = contours[contour_id]
+  for i in range(len(contour)):
+    cut_operation = CutContour(contour_id, i, image_width, image_height)
+    new_contour = cut_operation.generate_new_contour(contours)
+    state = dict(reference_state)
+    state['contours_committed'] = copy.deepcopy(reference_state)
+    state['contours'] = new_contour
+    state['contours_alternatives'] = []
+    state['has_generated_alternatives'] = False
+    alternatives.append(state)
+  
+  invasion_counts = [1, 2, 3, 4]
+  for i in range(len(contours)):
+    for j in range(len(contours)):
+      for invasion_count in invasion_counts:
+        extend_operation = ExtendContour(
+          i,
+          j,
+          image_width,
+          image_height,
+          invasion_count
+        )
+        new_contour = extend_operation.generate_new_contour(contours)
+        state = dict(reference_state)
+        state['contours_committed'] = copy.deepcopy(reference_state)
+        state['contours'] = new_contour
+        state['contours_alternatives'] = []
+        state['has_generated_alternatives'] = False,
+        alternatives.append(state)
+
+      join_operation = JoinContour(i, j)
+      new_contour = join_operation.generate_new_contour(contours)
+      state = dict(reference_state)
+      state['contours_committed'] = copy.deepcopy(reference_state)
+      state['contours'] = new_contour
+      state['contours_alternatives'] = []
+      state['has_generated_alternatives'] = False,
+      alternatives.append(state)
+
+  return alternatives
+
+def min_contour_distance(contour1: list, contour2: list) -> float:
+  distances = np.sqrt(
+        np.sum((contour1[:, None] - contour2) ** 2, axis=2)
+    )  # contour1[:, None] adds dim, making it column for broadcasting purpose
+  min_distance = np.min(distances)
+  return min_distance
 
 def search_complete_contours(initial_state_stack: dict,
-                         search_duration_seconds: int) -> list:
+                             search_duration_seconds: int,
+                             image_width: int,
+                             image_height: int) -> list:
   complete_contours = []
 
   state_stack = initial_state_stack
@@ -120,44 +223,56 @@ def search_complete_contours(initial_state_stack: dict,
       expected_contour_class = (
         expected_contours[len(state['contours_committed'])]
       )
-      expected_contour_class.prepare(current_contour)
+      # To know when to stop applying metacarpal position restrictions:
+      is_last_in_branch = (
+        len(state['contours_committed']) == AMOUNT_OF_FINGER_BONES - 1
+      )
+      expected_contour_class.prepare(
+        current_contour,
+        image_width,
+        image_height,
+        is_last_in_branch
+      )
 
       restrictions = expected_contour_class.shape_restrictions()
       current_contour_valid, current_contour_value = restrictions
 
       if current_contour_valid:
-        # cálculo de siguiente contorno en base a restricciones de posición
-        expected_contours_until_now = (
-          expected_contours[:len(state['contours_committed']) + 1]
-        )
-        contours_within_allowed_space = (
-          filter(lambda contour : (
-            is_in_allowed_space(contour, expected_contours_until_now)
+        if len(state['contours_committed']) == len(expected_contours) - 1:
+          complete_contours.append(copy.deepcopy(
+            [
+              [*state['contours_committed'], current_contour],
+              state['committed_total_value'] + current_contour_value
+            ]
           ))
-        )
-        # TODO Falta estudiar cómo hacer que se posicione bien al lado
-        # Hay algo que me salté: si bajo del distal al medio y al próximo
-        # voy eliminando área global en la imagen y entonces los ...
-        # Estudiar bien cómo hacerlo.
-
-    # TODO REVISAR ESTO
-        if len(contours_within_allowed_space) == 0:
-          if len(state['contours_committed']) + 1 == len(expected_contours):
-            complete_contours.append(
-              [
-                [*state['contours_committed'], current_contour],
-                state['committed_total_value'] + current_contour_value
-              ]
+        else:
+          contours_inside_area = filter(
+            lambda contour : (
+              is_in_allowed_space(contour, expected_contour_class)
+            ),
+            contours
+          )
+          if len(contours_inside_area) > 0:
+            new_state = dict(state)
+            new_state['contours_committed'] = copy.deepcopy(
+              state['contours_committed']
             )
-        
-            new_state = list(state)
             new_state['contours_committed'].append(current_contour)
-            
-            # new_state['current_contour_index'] = <contorno que más sentido tiene>
+            new_state['contours'] = copy.deepcopy(contours)
+            new_state['contours_alternatives'] = []
+            new_state['has_generated_alternatives'] = False,
             new_state['committed_total_value'] = (
               new_state['committed_total_value'] + current_contour_value
             )
-            state['contours_alternatives'].append(new_state)
+
+            distances = [
+              min_contour_distance(
+                current_contour,
+                contour2
+              ) for contour2 in contours_inside_area
+            ]
+            sorted_indices = np.argsort(distances)
+            new_state['current_contour_index'] = sorted_indices[0]
 
       if not state['has_generated_alternatives']:
         contours_alternatives = generate_contour_alternatives(
@@ -181,6 +296,35 @@ def search_complete_contours(initial_state_stack: dict,
       break
 
   return complete_contours
+
+def create_minimal_image_from_contours(contours: list) -> np.array:
+  if not contours:
+    raise ValueError('Called main_execute.py:' \
+                     'create_minimal_image_from_contours(<contour>) with an ' \
+                      'empty contours array')
+  
+  all_points = np.concatenate(contours)
+  x_values = all_points[:, 0]
+  y_values = all_points[:, 1]
+
+  min_x = np.min(x_values)
+  min_y = np.min(y_values)
+  max_x = np.max(x_values)
+  max_y = np.max(y_values)
+
+  width = max_x - min_x + 1
+  height = max_y - min_y + 1
+
+  image = np.zeros((height, width, 3), dtype=np.uint8)
+
+  translated_contours = []
+  for contour in contours:
+    translated_contour = contour.copy()
+    translated_contour[:, 0] -= min_x
+    translated_contour[:, 1] -= min_y
+    translated_contours.append(translated_contour)
+
+  return image
 
 def process_radiograph(filename: str, write_images: bool = False,
                        show_images: bool = True) -> None:
@@ -206,10 +350,12 @@ def process_radiograph(filename: str, write_images: bool = False,
   borders_detected = cv.Canny(gaussian_blurred, 40, 135)
   borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,
                                   cv.CV_8U)
-
+  
   # Segmentation
   contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
                                 cv.CHAIN_APPROX_SIMPLE)
+  
+  minimize_image_size = create_minimal_image_from_contours(contours)
 
   current_contour_index = find_closest_contours_to_point([[0, 0]], contours)[0]
 
@@ -227,7 +373,7 @@ def process_radiograph(filename: str, write_images: bool = False,
   complete_contours.sort(key=lambda item: item[1], reverse=True)
   best_contour = complete_contours[0]
 
-  visualizer = ContourViewer(borders_detected, [best_contour])
+  visualizer = ContourViewer(minimize_image_size, [best_contour])
 
   # Measurements processing
 
@@ -241,11 +387,11 @@ def process_radiograph(filename: str, write_images: bool = False,
   if write_images:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
                f'processed_canny_borders.jpg',
-               borders_detected)
+               minimize_image_size)
   else:
     if show_images:
       cv.imshow(f'{os.path.basename(filename)}' \
                 f'processed_canny_borders.jpg',
-                borders_detected)
+                minimize_image_size)
       cv.waitKey(0)
       cv.destroyAllWindows()
