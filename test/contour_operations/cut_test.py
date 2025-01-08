@@ -29,7 +29,7 @@ class TestCutOperation:
     expected_contour_a = np.array([[4, 4], [4, 8], [8, 4]], np.int64)
     expected_contour_b = np.array([[4, 8], [8, 8], [8, 4]], np.int64)
     assert np.array_equal(contours[0], expected_contour_a)
-    assert np.array_equal(contours[1], expected_contour_b)
+    assert np.array_equal(contours[2], expected_contour_b)
 
   def test_cut_two_points(self):
     contours = [

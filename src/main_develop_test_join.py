@@ -5,7 +5,7 @@ Trabajo de Final de Máster
 Pyimagos development
 
 Main for visualizing the tests present in
-/test/contour_operations/join_test.py (normals)
+/test/contour_operations/join_test.py
 '''
 
 import numpy as np
