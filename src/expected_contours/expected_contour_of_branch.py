@@ -19,7 +19,7 @@ from src.expected_contours.expected_contour import ExpectedContour
 class ExpectedContourOfBranch(ExpectedContour):
 
   @abstractmethod
-    def prepare(self, contour: list, image_width: int, image_height: int) -> None:
+  def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     pass
 
   @abstractmethod

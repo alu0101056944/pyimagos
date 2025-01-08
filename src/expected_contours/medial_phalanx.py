@@ -45,6 +45,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
 
     self.contour = np.reshape(contour, (-1, 2))
     rect = cv.minAreaRect(contour)
+    self.min_area_rect = rect
     bounding_rect_contour = cv.boxPoints(rect)
     bounding_rect_contour = np.int32(bounding_rect_contour) # to int
 
@@ -52,7 +53,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
       bounding_rect_contour,
       self.image_width,
       self.image_height
-    ).tolist()
+    )
 
     # assumming clockwise
     self.top_right_corner = bounding_rect_contour[
@@ -66,8 +67,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
     ].tolist()
 
   def next_contour_restrictions(self) -> list:
-    y_coords = self.contour[:, 1]
-    height = y_coords[np.argmax(y_coords)] - y_coords[np.argmin(y_coords)] 
+    height = self.min_area_rect[1][1] 
     bottom_bound = height * 4
 
     ERROR_PADDING = 4
@@ -184,3 +184,6 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
       be. For example when jumping from metacarpal to next finger's distal phalanx
       in a top-left to bottom-right fashion (cv coords wise)'''
     return []
+  
+  def measure(self) -> dict:
+    return {}

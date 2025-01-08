@@ -45,6 +45,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
     self.contour = np.reshape(contour, (-1, 2))
     rect = cv.minAreaRect(contour)
+    self.min_area_rect = rect
     bounding_rect_contour = cv.boxPoints(rect)
     bounding_rect_contour = np.int32(bounding_rect_contour) # to int
 
@@ -52,7 +53,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       bounding_rect_contour,
       self.image_width,
       self.image_height
-    ).tolist()
+    )
 
     # assumming clockwise
     self.top_right_corner = bounding_rect_contour[
@@ -68,7 +69,9 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
   def next_contour_restrictions(self) -> list:
     ERROR_PADDING = 4
     y_coords = self.contour[:, 1]
-    height = y_coords[np.argmax(y_coords)] - y_coords[np.argmin(y_coords)]
+    height = self.min_area_rect[1][1]
+    bottom_bound = height * 4
+
     return [
       [
         self.bottom_right_corner + [ERROR_PADDING, 0],
@@ -86,8 +89,8 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_left_corner,
-        self.bottom_right_corner,
+        self.bottom_left_corner + [0, bottom_bound],
+        self.bottom_right_corner + [0, bottom_bound],
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
     ]
@@ -194,13 +197,11 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       be. For example when jumping from metacarpal to next finger's distal phalanx
       in a top-left to bottom-right fashion (cv coords wise)'''
 
-    y_coords = self.contour[:, 1]
-    height = y_coords[np.argmax(y_coords)] - y_coords[np.argmin(y_coords)] 
+    height = self.min_area_rect[1][1] 
     upper_bound = height * 4
     lower_bound = height * 2
 
-    x_coords = self.contour[:, 0]
-    width = x_coords[np.argmax(x_coords)] - x_coords[np.argmin(x_coords)] 
+    width = self.min_area_rect[1][0]
     right_bound = width * 5
 
     return [
@@ -225,3 +226,6 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
     ]
+
+  def measure(self) -> dict:
+    return {}

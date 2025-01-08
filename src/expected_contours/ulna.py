@@ -35,6 +35,7 @@ class ExpectedContourUlna(ExpectedContour):
 
     self.contour = np.reshape(contour, (-1, 2))
     rect = cv.minAreaRect(contour)
+    self.min_area_rect = rect
     bounding_rect_contour = cv.boxPoints(rect)
     bounding_rect_contour = np.int32(bounding_rect_contour) # to int
 
@@ -42,7 +43,7 @@ class ExpectedContourUlna(ExpectedContour):
       bounding_rect_contour,
       self.image_width,
       self.image_height
-    ).tolist()
+    )
 
     # assumming clockwise
     self.top_right_corner = bounding_rect_contour[
@@ -86,6 +87,7 @@ class ExpectedContourUlna(ExpectedContour):
 
     self.contour = np.reshape(contour, (-1, 2))
     rect = cv.minAreaRect(contour)
+    self.min_area_rect = rect
     bounding_rect_contour = cv.boxPoints(rect)
     bounding_rect_contour = np.int32(bounding_rect_contour)
 
@@ -93,7 +95,7 @@ class ExpectedContourUlna(ExpectedContour):
       bounding_rect_contour,
       self.image_width,
       self.image_height
-    ).tolist()
+    )
 
     self.top_right_corner = bounding_rect_contour[
       (i + 1) % len(bounding_rect_contour)
@@ -106,7 +108,27 @@ class ExpectedContourUlna(ExpectedContour):
     ].tolist()
 
   def next_contour_restrictions(self) -> list:
-    return []
+    width = self.min_area_rect[1][0]
+    right_bound = width * 4
+    ERROR_PADDING = 10
+    return [
+      [
+        self.top_right_corner - [0, ERROR_PADDING],
+        self.top_left_corner - [0, ERROR_PADDING],
+        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+      ],
+      [
+        self.bottom_right_corner,
+        self.top_right_corner,
+        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+      ],
+      [
+        self.bottom_right_corner + [right_bound, 0],
+        self.top_right_corner + [right_bound, 0],
+        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
+      ],
+
+    ]
 
   def shape_restrictions(self) -> list:
     area = cv.contourArea(self.contour)
@@ -176,3 +198,11 @@ class ExpectedContourUlna(ExpectedContour):
       be. For example when jumping from metacarpal to next finger's distal phalanx
       in a top-left to bottom-right fashion (cv coords wise)'''
     return []
+
+  def measure(self) -> dict:
+    width = self.min_area_rect[1][0]
+    height = self.min_area_rect[1][1]
+    return {
+      'ulna_width': width,
+      'ulna_length': height,
+    }

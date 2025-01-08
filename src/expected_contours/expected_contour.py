@@ -24,7 +24,7 @@ class AllowedLineSideBasedOnYorXOnVertical(Enum):
 class ExpectedContour(ABC):
 
   @abstractmethod
-    def prepare(self, contour: list, image_width: int, image_height: int) -> None:
+  def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     pass
 
   @abstractmethod
@@ -32,6 +32,9 @@ class ExpectedContour(ABC):
     pass
 
   @abstractmethod
-  def shape_restrictions(self, contours: list) -> list:
+  def shape_restrictions(self) -> list:
     pass
 
+  @abstractmethod
+  def measure(self) -> dict:
+    pass
