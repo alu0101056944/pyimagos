@@ -8,8 +8,6 @@ Pyimagos development
 import pytest
 
 import numpy as np
-import cv2 as cv
-from shapely import Polygon
 
 from src.contour_operations.utils import blend_colors_with_alpha
 from src.contour_operations.utils import segments_intersect
@@ -544,7 +542,7 @@ class TestContourUtils:
       image_width,
       image_height
     )
-    assert opposite_point_index == 6
+    assert opposite_point_index is None
 
   def test_opposite_equal_points(self):
     contour = np.array(

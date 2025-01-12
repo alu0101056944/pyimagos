@@ -197,16 +197,8 @@ def find_opposite_point(contour, start_point_idx, image_width, image_height):
     dists = distance.cdist([intersection_point], contour)
     opposite_point_idx = np.argmin(dists)
   else:
-    distances_to_start = np.sqrt(
-      np.sum((contour - start_point) ** 2, axis=1)
-    )
-    sorted_indices = np.argsort(distances_to_start, axis=0)
-    shortest_distance_index = sorted_indices[0]
-    if np.all(contour[shortest_distance_index] == start_point):
-      shortest_distance_index = sorted_indices[1]
+    opposite_point_idx = None
 
-    opposite_point_idx = shortest_distance_index
-    
   return opposite_point_idx
 
 def segments_intersect(seg1_p1, seg1_p2, seg2_p1, seg2_p2, epsilon=1e-8):
@@ -230,7 +222,6 @@ def segments_intersect(seg1_p1, seg1_p2, seg2_p1, seg2_p2, epsilon=1e-8):
           t <= 1 + epsilon and
           u > -epsilon and
           u <= 1 + epsilon), t, u
-
 
 def blend_colors_with_alpha(background_color: np.array,
                             foreground_color: np.array) -> tuple:
