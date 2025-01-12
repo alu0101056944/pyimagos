@@ -62,12 +62,23 @@ def prepare_image_showing_extend(contours_a, contours_b, contour_a_index,
     contours_b_reshaped = all_contours[len(contours_a_reshaped):]
 
   image_after_operation = np.copy(image)
+  image_for_only_contour_a_after = np.copy(image)
+  image_for_only_contour_b_after = np.copy(image)
 
   for i, contour in enumerate(contours_a_reshaped):
     color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
     if len(contour) > 0:
       cv.drawContours(image, contours_a_reshaped, i, color, 1)
-  
+
+  for i, contour in enumerate(contours_b_reshaped):
+    color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
+    if len(contour) > 0 and i == contour_a_index:
+      cv.drawContours(image_for_only_contour_a_after, contours_b_reshaped,
+                      i, color, 1)
+    elif len(contour) > 0 and i == contour_b_index:
+      cv.drawContours(image_for_only_contour_b_after, contours_b_reshaped,
+                      i, color, 1)
+
   for i, contour in enumerate(contours_b_reshaped):
     color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
     if len(contour) > 0:
@@ -80,14 +91,19 @@ def prepare_image_showing_extend(contours_a, contours_b, contour_a_index,
       image[y, x] = point_color
 
   point_color = np.array((155, 155, 155), dtype=np.uint8)
-  for contour in contours_b_reshaped:
+  for i, contour in enumerate(contours_b_reshaped):
     for point in contour:
       x, y = point[0].astype(np.int64)
       image_after_operation[y, x] = point_color
+    if i == contour_a_index:
+      for point in contour:
+        x, y = point[0].astype(np.int64)
+        image_for_only_contour_a_after[y, x] = point_color
+    elif i == contour_b_index:
+      for point in contour:
+        x, y = point[0].astype(np.int64)
+        image_for_only_contour_b_after[y, x] = point_color
 
-  # Find closest pair
-
-  
   fixed_contour_a = np.reshape(contours_a_reshaped[contour_a_index], (-1, 2))
   fixed_contour_b = np.reshape(contours_a_reshaped[contour_b_index], (-1, 2))
   if len(fixed_contour_a) > 0 and len(fixed_contour_b) > 0:
@@ -131,10 +147,18 @@ def prepare_image_showing_extend(contours_a, contours_b, contour_a_index,
     )
 
     concatenated = np.concatenate(
-      (image, separator_column, image_after_operation),
+      (
+        image,
+        separator_column,
+        image_after_operation,
+        separator_column,
+        image_for_only_contour_a_after,
+        separator_column,
+        image_for_only_contour_b_after
+      ),
       axis=1
     )
-        
+
     fig = plt.figure()
     plt.imshow(concatenated)
     plt.title(title)
@@ -179,9 +203,10 @@ def test_extend():
   invasion_count = 1
   extendOperation = ExtendContour(0, 1, 30, 30, invasion_count)
   contours_new = extendOperation.generate_new_contour(contours)
-  prepare_image_showing_extend(contours, contours_new, 0, 1, 30, 30,
-                              'extend square into empty ' \
-                              '(before, after)')
+  if contours_new is not None:
+    prepare_image_showing_extend(contours, contours_new, 0, 1, 30, 30,
+                                'extend square into empty ' \
+                                '(before, after)')
 
   contours = [
     np.array([[4, 12], [4, 16], [8, 16], [8, 12]]),
@@ -190,9 +215,10 @@ def test_extend():
   invasion_count = 1
   extendOperation = ExtendContour(0, 1, 30, 30, invasion_count)
   contours_new = extendOperation.generate_new_contour(contours)
-  prepare_image_showing_extend(contours, contours_new, 0, 1, 30, 30,
-                            'extend square into one point ' \
-                            '(before, after)')
+  if contours_new is not None:
+    prepare_image_showing_extend(contours, contours_new, 0, 1, 30, 30,
+                              'extend square into one point ' \
+                              '(before, after)')
 
   contours = [
     np.array([[4, 12], [4, 16], [8, 16], [8, 12]]),
@@ -204,9 +230,10 @@ def test_extend():
   invasion_count = 1
   extendOperation = ExtendContour(0, 1, 30, 30, invasion_count)
   contours_new = extendOperation.generate_new_contour(contours)
-  prepare_image_showing_extend(contours, contours_new, 0, 1, 30, 30,
-                               'extend square into two points ' \
-                                '(before, after)')
+  if contours_new is not None:
+    prepare_image_showing_extend(contours, contours_new, 0, 1, 30, 30,
+                                'extend square into two points ' \
+                                  '(before, after)')
 
   contours = [
     np.array([[4, 12], [4, 16], [8, 16], [8, 12]]),
@@ -263,15 +290,15 @@ def test_extend():
       [8, 16],
       [16, 16],
       [16, 20],
-      [20, 20],
       [20, 16],
       [20, 12],
+      [20, 8],
       [16, 12],
       [16, 16],
       [8, 16],
       [8, 12],
     ]),
-    np.array([[16,  4], [16,  8], [16, 24], [20, 24], [20,  8], [20,  4]])
+    np.array([[16,  4], [16,  8], [16, 24], [20, 24], [20,  4]])
   ]
   invasion_count = 1
   extendOperation = ExtendContour(0, 1, 30, 30, invasion_count)

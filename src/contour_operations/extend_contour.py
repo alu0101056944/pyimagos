@@ -53,6 +53,11 @@ class ExtendContour(ContourOperation):
     else:
       return None
 
+  def _unify_contours(self, contour_a, contour_b) -> list:
+    polygons = []
+    pass
+
+
   def generate_new_contour(self, contours: list) -> list:
     contours = list(contours)
 
@@ -61,9 +66,8 @@ class ExtendContour(ContourOperation):
     fixed_contour_a = np.reshape(contour_a, (-1, 2))
     fixed_contour_b = np.reshape(contour_b, (-1, 2))
 
-    if len(contour_b) < 1:
-      contours[self.contour_id2] = np.array([], dtype=np.int64)
-      return contours
+    if len(contour_b) < 2:
+      return None
 
     index_a, closest_index, second_index = self._find_closest_pair(
       fixed_contour_a,
@@ -78,36 +82,15 @@ class ExtendContour(ContourOperation):
       axis=0
     )
 
-    if len(contour_b) < 3:
-      # Three points is just short of minimum 3 to be able to calculate the normal
-      # because the normal needs the start point and next point and previous
-      # point and because those are exactly three points then the normal will
-      # not intersect
-
-      contour_b = np.insert(
-        contour_b,
-        closest_index + 1,
-        contour_b[closest_index],
-        axis=0
-      )
-      
-      contour_b_new = [
-        *contour_b[closest_index::-1].tolist(),
-        *contour_b[closest_index + 1:].tolist(),
-      ],
-
-      contour_a = np.insert(contour_a, index_a + 1, *contour_b_new, axis=0)
-      
-      contours[self.contour_id2] = np.array([], dtype=np.int64)
-      contours[self.contour_id1] = contour_a
-      return contours
-
     opposite_index_b = find_opposite_point(
       fixed_contour_b,
       closest_index,
       self.image_width,
       self.image_height
     )
+
+    if opposite_index_b is None:
+      return None
 
     # track 1 is opposite negative and closest positive
     # track 2 is opposite positive and closest negative
@@ -248,5 +231,7 @@ class ExtendContour(ContourOperation):
 
     contours[self.contour_id1] = contour_a
     contours[self.contour_id2] = contour_b
+
+    # contours = self._unify_contours(contour_a, contour_b)
 
     return contours
