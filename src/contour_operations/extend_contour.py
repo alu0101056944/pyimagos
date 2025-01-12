@@ -15,7 +15,7 @@ up to the opposite side and extends <invasion_count> laterally.
 
 import numpy as np
 
-from src.contour_operations.utils import find_opposite_point_with_normals
+from src.contour_operations.utils import find_opposite_point
 from src.contour_operations.contour_operation import ContourOperation
 from src.contour_operations.utils import segments_intersect
 
@@ -102,7 +102,7 @@ class ExtendContour(ContourOperation):
       contours[self.contour_id1] = contour_a
       return contours
 
-    opposite_index_b = find_opposite_point_with_normals(
+    opposite_index_b = find_opposite_point(
       fixed_contour_b,
       closest_index,
       self.image_width,

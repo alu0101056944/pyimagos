@@ -342,7 +342,9 @@ def search_complete_contours(initial_state_stack: dict,
         contours_alternatives = generate_contour_alternatives(
           contours,
           current_contour_index,
-          state
+          state,
+          image_width,
+          image_height
         )
         state['contours_alternatives'].extend(contours_alternatives)
         state['has_generated_alternatives'] = True
@@ -373,15 +375,19 @@ def create_minimal_image_from_contours(image: np.array,
   x_values = all_points[:, 0]
   y_values = all_points[:, 1]
 
-  min_x = np.min(x_values)
-  min_y = np.min(y_values)
-  max_x = np.max(x_values)
-  max_y = np.max(y_values)
+  min_x = max(0, np.min(x_values))
+  min_y = max(0, np.min(y_values))
+  max_x = min(image.shape[1], np.max(x_values))
+  max_y = min(image.shape[1], np.max(y_values))
 
   roi_from_original = image[min_y:max_y + 1, min_x:max_x + 1]
   roi_from_original = np.copy(roi_from_original)
 
-  return roi_from_original
+  corrected_contours = [
+    points - np.array([[[min_x, min_y]]]) for points in contours
+  ]
+
+  return roi_from_original, corrected_contours
 
 def get_bounding_box_xy(contour):
   x, y, w, h = cv.boundingRect(contour)
@@ -400,7 +406,6 @@ def create_minimal_image_from_contour(image: np.array,
   cropped_image = image[y1:y2, x1:x2]
 
   return cropped_image
-
 
 def get_contours_in_region(image, contours, region_rect, padding):
   x, y, w, h = region_rect
@@ -454,42 +459,174 @@ def find_sesamoid(image: np.array, segmentation: dict, contours: list) -> list:
     shape_value = sesamoid_instance.shape_restrictions()
     shape_values.append(shape_value)
 
-  sesamoid_contour_index = np.argmax(shape_values)
-  sesamoid_contour = contours[sesamoid_contour_index]
+  if len(shape_values) > 0:
+    sesamoid_contour_index = np.argmax(shape_values)
+    sesamoid_contour = contours[sesamoid_contour_index]
+  else:
+    sesamoid_contour = None
 
   return sesamoid_contour
 
-def process_radiograph(filename: str, write_images: bool = False,
+def _find_closest_pair(contour_a: list, contour_b: list):
+  overall_min_distance = float('inf')
+  overall_closest_pair = None
+
+  for i, point_a in enumerate(contour_a):
+    distances = np.sqrt(np.sum((contour_b - point_a) ** 2, axis=1))
+
+    sorted_indices = np.argsort(distances)
+
+    min_distance_local = distances[sorted_indices[0]]
+    min_distance_index = sorted_indices[0]
+    second_min_distance_index = sorted_indices[1] if len(distances) > 1 else None
+
+    if min_distance_local < overall_min_distance:
+      overall_min_distance = min_distance_local
+      overall_closest_pair = (i, min_distance_index, second_min_distance_index)
+  
+  if overall_closest_pair is not None:
+    index_a = overall_closest_pair[0]
+    min_index = overall_closest_pair[1]
+    second_min_index = overall_closest_pair[2]
+    return index_a, min_index, second_min_index
+  else:
+    return None
+  
+def measure(segmentation, image: np.array, contours: list) -> dict:
+  measurements = {}
+
+  metacarpal_instances=[
+    metacarpal_2,
+    metacarpal_3,
+    metacarpal_4,
+    metacarpal_5,
+  ]
+  for i in range(len(metacarpal_instances)):
+    instance = metacarpal_instances[i]
+    instance.prepare(
+      segmentation[f'metacarpal{i + 2}'],
+      image_width=image.shape[1],
+      image_height=image.shape[0]
+    )
+    measurements_dict = instance.measure()
+    measurements.update(measurements_dict)
+
+  instance = ulna
+  instance.prepare(
+    segmentation['ulna'],
+    image_width=image.shape[1],
+    image_height=image.shape[0]
+  )
+  measurements_dict = instance.measure()
+  measurements.update(measurements_dict)
+
+  instance = radius
+  instance.prepare(
+    segmentation['radius'],
+    image_width=image.shape[1],
+    image_height=image.shape[0]
+  )
+  measurements_dict = instance.measure()
+  measurements.update(measurements_dict)
+
+  # sesamoid measurements
+  sesamoid_contour = find_sesamoid(
+    image,
+    segmentation,
+    contours
+  )
+  if sesamoid_contour:
+    index_a, closest_index_b, _ = _find_closest_pair(
+      segmentation['metacarpal5'],
+      sesamoid_contour
+    )
+
+    sesamoid_distance = np.sqrt(
+      np.sum(
+        (
+          segmentation['metacarpal5'][index_a] - (
+          sesamoid_contour[closest_index_b])
+        ) ** 2
+      )
+    )
+
+    measurements['inter-sesamoid_distance'] = sesamoid_distance
+  
+  measurement_values = measurements.values()
+  min_value = min(measurement_values)
+  max_value = max(measurement_values)
+  measurements_normalized = {
+    key: (
+     (value - min_value) / (max_value - min_value)
+    ) for key, value in measurements.items()
+  }
+
+  return measurements_normalized
+
+def estimate_age(measurements: dict) -> float:
+  lowest_difference = float('inf')
+  age_output = None
+  for age_key in BONE_AGE_ATLAS.keys():
+    atlas_measurements = BONE_AGE_ATLAS[age_key]
+    difference = 0
+    for measurement_name in atlas_measurements.keys():
+      if measurement_name in measurements:
+        difference = difference + (
+          np.absolute(
+            atlas_measurements[measurement_name] - (
+              measurements[measurement_name]
+            )
+          )
+        )
+    if difference <= lowest_difference:
+      lowest_difference = difference
+      age_output = age_key
+
+  return float(age_output)
+
+def process_radiograph(filename: str,
+                       write_images: bool = False,
                        show_images: bool = False,
                        nofilter: bool = False,
                        nosearch: bool = False,
-                       historygui: bool = False) -> None:
+                       historygui: bool = False
+                      ) -> None:
   global expected_contours
   if len(expected_contours) == 0:
      raise ValueError("The global list 'expected_contours' must have at least one' \
                       ' element to work correctly.")
 
   input_image = Image.open(filename)
-  input_image = transforms.ToTensor()(input_image)
 
   if not nofilter:
+    input_image = transforms.ToTensor()(input_image)
     he_enchanced = ContrastEnhancement().process(input_image)
     he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
                                 cv.CV_8U)
 
-    # gaussian_blurred = cv.GaussianBlur(he_enchanced, (5, 5), 0)
-    gaussian_blurred = cv.GaussianBlur(input_image, (5, 5), 0)
+    gaussian_blurred = cv.GaussianBlur(he_enchanced, (5, 5), 0)
     borders_detected = cv.Canny(gaussian_blurred, 40, 135)
     borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,
                                     cv.CV_8U)
   else:
-    borders_detected = input_image
+    borders_detected = np.array(input_image)
+    borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+    _, thresh = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+    borders_detected = thresh
 
   # Segmentation
+  successful_segmentation = False
+
   contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
                                 cv.CHAIN_APPROX_SIMPLE)
   
-  minimize_image_size = create_minimal_image_from_contours(borders_detected, contours)
+  minimum_image, corrected_contours = create_minimal_image_from_contours(
+    borders_detected,
+    contours
+  )
+  contours = corrected_contours
+  image_width = minimum_image.shape[1]
+  image_height = minimum_image.shape[0]
 
   if not nosearch:
     current_contour_index = find_closest_contours_to_point([[0, 0]], contours)[0]
@@ -504,128 +641,51 @@ def process_radiograph(filename: str, write_images: bool = False,
     }]
 
     complete_contours = search_complete_contours(state_stack,
-                                                EXECUTION_DURATION_SECONDS)
+                                                EXECUTION_DURATION_SECONDS,
+                                                image_width,
+                                                image_height)
     complete_contours.sort(key=lambda item: item[1], reverse=True)
-    best_contours = complete_contours[0]
+    if len(complete_contours) > 0:
+      successful_segmentation = True
+      best_contours = complete_contours[0]
 
     if historygui:
       # Opens history gui
-      _ = ContourViewer(minimize_image_size, complete_contours)
+      _ = ContourViewer(minimum_image, complete_contours)
   else:
     best_contours = contours
 
-  # Measurements processing
-    
-  segmentation = {
-    'metacarpal2': best_contours[7],
-    'metacarpal3': best_contours[11],
-    'metacarpal4': best_contours[15],
-    'metacarpal5': best_contours[18],
-    'ulna': best_contours[19],
-    'radius': best_contours[20]
-  }
-
-  measurements = {}
-
-  metacarpal_instances=[
-    metacarpal_2,
-    metacarpal_3,
-    metacarpal_4,
-    metacarpal_5,
-  ]
-  for i in range(1, len(metacarpal_instances)):
-    instance.prepare(
-      segmentation[f'metacarpal{i}'],
-      image_width=minimize_image_size.shape[1],
-      image_height=minimize_image_size.shape[0]
-    )
-    measurements_dict = instance.measure()
-    measurements.update(measurements_dict)
-
-  instance = ulna
-  instance.prepare(
-    segmentation['ulna'],
-    image_width=minimize_image_size.shape[1],
-    image_height=minimize_image_size.shape[0]
-  )
-  measurements_dict = instance.measure()
-  measurements.update(measurements_dict)
-
-  instance = radius
-  instance.prepare(
-    segmentation['radius'],
-    image_width=minimize_image_size.shape[1],
-    image_height=minimize_image_size.shape[0]
-  )
-  measurements_dict = instance.measure()
-  measurements.update(measurements_dict)
-
-  sesamoid_contour = find_sesamoid(minimize_image_size, segmentation,
-                                   contours)
+  if successful_segmentation:
+    segmentation = {
+      'metacarpal2': best_contours[7],
+      'metacarpal3': best_contours[11],
+      'metacarpal4': best_contours[15],
+      'metacarpal5': best_contours[18],
+      'ulna': best_contours[19],
+      'radius': best_contours[20]
+    }
   
-  # calculate closest distance between metacarpal and it's sesamoid
-  index_a, closest_index_b, _ = _find_closest_pair(
-    segmentation['metacarpal5'],
-    sesamoid_contour
-  )
+    measurements_normalized = measure(segmentation, minimum_image.shape[1],
+                                      minimum_image.shape[0])
 
-  sesamoid_distance = np.sqrt(
-    np.sum(
-      (
-        segmentation['metacarpal5'][index_a] - (
-        sesamoid_contour[closest_index_b])
-      ) ** 2
-    )
-  )
+    estimated_age = estimate_age(measurements_normalized)
 
-  measurements['inter-sesamoid_distance'] = sesamoid_distance
-
-  measurement_values = measurements.values()
-  min_value_index = np.argmin(measurement_values)
-  min_value = measurement_values[min_value_index]
-  max_value_index = np.argmax(measurement_values)
-  max_value = measurement_values[max_value_index]
-  
-  measurements_normalized = {
-    key: (
-     (value - min_value) / (max_value - min_value)
-    ) for key, value in measurements.items()
-  }
-
-  # Compare measurements with measurements atlas
-  lowest_difference = float('inf')
-  age_output = None
-  for age_key in BONE_AGE_ATLAS.keys():
-    atlas_measurements = BONE_AGE_ATLAS[age_key]
-    difference = 0
-    for measurement_name in atlas_measurements.keys():
-      if measurements_normalized[measurement_name]:
-        difference = difference + (
-          np.absolute(
-            atlas_measurements[measurement_name] - (
-              measurements_normalized[measurement_name]
-            )
-          )
-        )
-    if difference <= lowest_difference:
-      lowest_difference = difference
-      age_output = age_key
-
-  if float(age_output) < 18:
-    print('Sistema encuentra edad de individuo <18.')
-    print('El individuo es menor de edad.')
+    if estimated_age < 18:
+      print('System finds patient age <18.')
+      print('Patient is underage.')
+    else:
+      print('System finds patient age =>18.')
+      print('Patient is adult.')
   else:
-    print('Sistema encuentra edad de individuo >18.')
-    print('El individuo es mayor de edad.')
-
+    print('Could not estimate age due to unsuccessful bone segmentation.')
   if write_images:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
                f'execute_output.jpg',
-               minimize_image_size)
+               minimum_image)
   else:
     if show_images:
       cv.imshow(f'{os.path.basename(filename)}' \
                 f'execute_output.jpg',
-                minimize_image_size)
+                minimum_image)
       cv.waitKey(0)
       cv.destroyAllWindows()
