@@ -33,6 +33,7 @@ from src.main_develop_test_extend import visualize_tests_extend
 from src.main_develop_corner_order import visualize_topleft_corner
 from src.main_develop_find_contour_corner import find_contour_corner
 from src.main_develop_find_sesamoid import find_sesamoid_main
+from src.main_develop_shape_distal_phalanx import visualize_distal_phalanx_shape
 
 @click.group()
 def cli() -> None:
@@ -150,6 +151,16 @@ def find_corner() -> None:
 def find_sesamoid() -> None:
   '''Show image representations for sesamoid search near fifth metacarpal.''' 
   find_sesamoid_main()
+
+@develop.group()
+def shape() -> None:
+  '''Image representations for the different shapes.''' 
+  pass
+
+@shape.command()
+def distal_phalanx():
+  '''Image visualization of the distal phalanx shape'''
+  visualize_distal_phalanx_shape()
 
 if __name__ == '__main__':
     cli()

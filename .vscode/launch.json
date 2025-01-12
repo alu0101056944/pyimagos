@@ -6,7 +6,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["test/contour_operations/join_test.py"]
+      "args": ["test/expected_contours/distal_phalanx_test.py"]
     },
     {
       "name": "Python Debugger: Python File",
@@ -26,7 +26,8 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "develop",
-        "test-join",
+        "shape",
+        "distal-phalanx",
       ]
     },
   ]
