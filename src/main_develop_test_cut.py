@@ -72,31 +72,136 @@ def test_cut():
                                 '(before, after)')
   
   contours = [
-    np.array([[4, 4], [4, 8]]),
+    np.array([[5, 5], [10, 5], [10, 10], [7,7], [5, 10]])
   ]
-  cutOperation = CutContour(0, 0, 30, 30)
+  cutOperation = CutContour(0, 1, 30, 30)
   contours_new = cutOperation.generate_new_contour(contours)
   prepare_image_showing_cut(contours, contours_new, 30,
-                              'Cut line into two separate contours ' \
-                              '(before, after)')
+                            'Cut concave contour. (before, after)')
+
+  contours = [
+    np.array([
+        [5, 5],
+        [7, 8],
+        [9, 8],
+        [12, 9],
+        [14, 8],
+        [16, 7],
+        [18, 7],
+        [21, 6],
+        [21, 5],
+        [20, 4],
+        [19, 4],
+        [16, 4],
+        [13, 3],
+        [10, 3],
+        [9, 2],
+        [7, 4],
+        [6, 5],
+      ]
+    )
+  ]
+  cutOperation = CutContour(0, 6, 30, 30)
+  contours_new = cutOperation.generate_new_contour(contours)
+  prepare_image_showing_cut(contours, contours_new, 30,
+                            'Cut long contour. (before, after)')
   
   contours = [
-    np.array([[4, 4]]),
+    np.array([
+        [5, 5],
+        [7, 8],
+        [9, 8],
+        [12, 9],
+        [14, 8],
+        [16, 7],
+        [18, 7],
+        [21, 6],
+        [21, 5],
+        [20, 4],
+        [19, 4],
+        [16, 4],
+        [13, 3],
+        [10, 3],
+        [9, 2],
+        [7, 4],
+        [6, 5],
+      ]
+    )
   ]
-  cutOperation = CutContour(0, 0, 30, 30)
+  cutOperation = CutContour(0, 9, 30, 30)
   contours_new = cutOperation.generate_new_contour(contours)
   prepare_image_showing_cut(contours, contours_new, 30,
-                            'Cut a single point. Contours state doesn\'t change.' \
-                            '(before, after)')
+                            'Cut long contour 2. (before, after)')
   
   contours = [
-    np.array([]),
+    np.array([
+        [5, 5],
+        [7, 8],
+        [9, 8],
+        [12, 9],
+        [14, 8],
+        [16, 7],
+        [18, 7],
+        [21, 6],
+        [21, 5],
+        [20, 4],
+        [19, 4],
+        [16, 4],
+        [13, 3],
+        [10, 3],
+        [9, 2],
+        [7, 4],
+        [6, 5],
+      ]
+    )
+  ]
+  cutOperation = CutContour(0, 3, 30, 30)
+  contours_new = cutOperation.generate_new_contour(contours)
+  prepare_image_showing_cut(contours, contours_new, 30,
+                            'Cut long contour 3. (before, after)')
+  
+  contours = [
+    np.array([
+        [5, 5],
+        [7, 8],
+        [9, 8],
+        [12, 9],
+        [14, 8],
+        [16, 7],
+        [18, 7],
+        [21, 6],
+        [21, 5],
+        [20, 4],
+        [19, 4],
+        [16, 4],
+        [13, 3],
+        [10, 3],
+        [9, 2],
+        [7, 4],
+        [6, 5],
+      ]
+    )
+  ]
+  cutOperation = CutContour(0, 1, 30, 30)
+  contours_new = cutOperation.generate_new_contour(contours)
+  prepare_image_showing_cut(contours, contours_new, 30,
+                            'Cut long contour 4. (before, after)')
+  
+  contours = [
+    np.array([[10, 10], [20, 10], [20, 20], [15, 15], [10, 20]])
   ]
   cutOperation = CutContour(0, 0, 30, 30)
   contours_new = cutOperation.generate_new_contour(contours)
   prepare_image_showing_cut(contours, contours_new, 30,
-                            'Cut an empty contour. Contours state doesn\'t change.' \
-                            '(before, after)')
+                            'Complex contour. (before, after)')
+
+  contours = [
+     np.array([[1, 1],[1, 29],[29, 29],[29, 1]])
+  ]
+  cutOperation = CutContour(0, 0, 30, 30)
+  contours_new = cutOperation.generate_new_contour(contours)
+  prepare_image_showing_cut(contours, contours_new, 30,
+                            'Cut out of bounds. (before, after)')
 
   plt.show()
 
