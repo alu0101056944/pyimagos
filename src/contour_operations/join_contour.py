@@ -13,9 +13,12 @@ import numpy as np
 from src.contour_operations.contour_operation import ContourOperation
 
 class JoinContour(ContourOperation):
-  def __init__(self, contour_id1: int, contour_id2: int):
+  def __init__(self, contour_id1: int, contour_id2: int,
+               point_id1: int = None, point_id2: int = None):
     self.contour_id1 = contour_id1
     self.contour_id2 = contour_id2
+    self.point_id1 = point_id1
+    self.point_id2 = point_id2
 
   def _find_closest_pair(self, contour_a: list, contour_b: list):
     overall_min_distance = float('inf')
@@ -50,14 +53,25 @@ class JoinContour(ContourOperation):
     fixed_contour_a = np.reshape(contour_a, (-1, 2))
     fixed_contour_b = np.reshape(contour_b, (-1, 2))
 
-    if len(contour_b) < 1:
-      contours[self.contour_id2] = np.array([], dtype=np.int64)
-      return contours
+    if len(contour_b) == 0:
+      return None
 
-    index_a, closest_index, second_index = self._find_closest_pair(
-      fixed_contour_a,
-      fixed_contour_b
-    )
+    if self.point_id1 is not None:
+      # calculate closest index in contour b to point1
+      point1 = fixed_contour_a[self.point_id1]
+      distances = np.sqrt(np.sum((fixed_contour_b - point1) ** 2, axis=1))
+      sorted_indices = np.argsort(distances)
+
+      index_a = self.point_id1
+      closest_index = sorted_indices[0]
+    elif self.point_id1 is not None and self.point_id2 is not None:
+      index_a = self.point_id1
+      closest_index = self.point_id2
+    else:
+      index_a, closest_index, _ = self._find_closest_pair(
+        fixed_contour_a,
+        fixed_contour_b
+      )
 
     contour_a = np.insert(contour_a, index_a + 1, fixed_contour_a[index_a], axis=0)
     contour_b = np.insert(contour_b, closest_index + 1,
