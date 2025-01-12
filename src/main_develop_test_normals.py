@@ -43,87 +43,107 @@ def prepare_image_showing_normal(image_width: int, image_height: int, contours,
                                  contour_id, point_id, title,
                                  minimize_image: bool = False,
                                  draw_contours: bool = False):
-    image = np.zeros((image_width, image_height, 3), dtype=np.uint8)
-    contours = [np.reshape(contour, (-1, 1, 2)) for contour in contours]
+  image = np.zeros((image_width, image_height, 3), dtype=np.uint8)
+  contours = [np.reshape(contour, (-1, 1, 2)) for contour in contours]
 
-    if minimize_image:
-      image, corrected_contours = create_minimal_image_from_contours(
-        image,
-        contours
-      )
-      contours = corrected_contours
-
-    point_color = np.array((155, 155, 155), dtype=np.uint8)
-    for contour in contours:
-      for point in contour:
-        x, y = point[0].astype(np.int64)
-        image[y, x] = point_color
-
-    centroid_color = np.array((120, 100, 70), dtype=np.uint8)
-    global_centroid = np.mean(contours[0], axis=0).astype(np.int64)
-    x3, y3 = global_centroid[0]
-    image[y3, x3] = centroid_color
-
-    start_point_color = np.array((0, 255, 0), dtype=np.uint8)
-    x1, y1 = contours[contour_id][point_id][0].astype(np.int64)
-    image[y1, x1] = start_point_color
-
-    opposite_point_index = find_opposite_point(
-      contours[0],
-      point_id,
-      image_width,
-      image_height
+  if minimize_image:
+    image, corrected_contours = create_minimal_image_from_contours(
+      image,
+      contours
     )
-    if opposite_point_index is not None:
+    contours = corrected_contours
 
-      without_normal_highlighted = np.copy(image)
+  separator_color = (255, 255, 255)
+  separator_width = 2
+  separator_column = np.full(
+    (image.shape[0], separator_width, 3), separator_color, dtype=np.uint8
+  )
 
-      opposite_color = np.array((255, 0, 0), dtype=np.uint8)
-      x2, y2 = contours[0][opposite_point_index][0].astype(np.int64)
-      image[y2, x2] = opposite_color
+  point_color = np.array((155, 155, 155), dtype=np.uint8)
+  for contour in contours:
+    for point in contour:
+      x, y = point[0].astype(np.int64)
+      image[y, x] = point_color
 
-      if draw_contours:
-        image_with_drawn_contours = np.copy(image)
-        cv.drawContours(image_with_drawn_contours,
-                        [contour.astype(np.int64) for contour in contours],
-                        -1, (0, 0, 255), 1)
+  centroid_color = np.array((120, 100, 70), dtype=np.uint8)
+  global_centroid = np.mean(contours[0], axis=0).astype(np.int64)
+  x3, y3 = global_centroid[0]
+  image[y3, x3] = centroid_color
 
-        image_with_drawn_contours[y1, x1] = start_point_color
-        image_with_drawn_contours[y2, x2] = opposite_color
+  start_point_color = np.array((0, 255, 0), dtype=np.uint8)
+  x1, y1 = contours[contour_id][point_id][0].astype(np.int64)
+  image[y1, x1] = start_point_color
 
-        concatenated = np.concatenate(
-          (without_normal_highlighted, image, image_with_drawn_contours),
-          axis=1
-        )
-      else:
-        concatenated = np.concatenate(
-          (without_normal_highlighted, image),
-          axis=1
-        )
+  opposite_point_index = find_opposite_point(
+    contours[0],
+    point_id,
+    image_width,
+    image_height
+  )
+  if opposite_point_index is not None:
 
-      fig = plt.figure()
-      plt.imshow(concatenated)
-      plt.title(title)
-      plt.axis('off')
-      fig.canvas.manager.set_window_title(title)
-    else:
+    without_normal_highlighted = np.copy(image)
+
+    opposite_color = np.array((255, 0, 0), dtype=np.uint8)
+    x2, y2 = contours[0][opposite_point_index][0].astype(np.int64)
+    image[y2, x2] = opposite_color
+
+    if draw_contours:
       image_with_drawn_contours = np.copy(image)
       cv.drawContours(image_with_drawn_contours,
                       [contour.astype(np.int64) for contour in contours],
                       -1, (0, 0, 255), 1)
 
       image_with_drawn_contours[y1, x1] = start_point_color
+      image_with_drawn_contours[y2, x2] = opposite_color
 
       concatenated = np.concatenate(
-        (image, image_with_drawn_contours),
+        (
+          without_normal_highlighted,
+          separator_column,
+          image,
+          separator_column,
+          image_with_drawn_contours
+        ),
+        axis=1
+      )
+    else:
+      concatenated = np.concatenate(
+        (
+          without_normal_highlighted,
+          separator_column,
+          image
+         ),
         axis=1
       )
 
-      fig = plt.figure()
-      plt.imshow(concatenated)
-      plt.title(title)
-      plt.axis('off')
-      fig.canvas.manager.set_window_title(title)
+    fig = plt.figure()
+    plt.imshow(concatenated)
+    plt.title(title)
+    plt.axis('off')
+    fig.canvas.manager.set_window_title(title)
+  else:
+    image_with_drawn_contours = np.copy(image)
+    cv.drawContours(image_with_drawn_contours,
+                    [contour.astype(np.int64) for contour in contours],
+                    -1, (0, 0, 255), 1)
+
+    image_with_drawn_contours[y1, x1] = start_point_color
+
+    concatenated = np.concatenate(
+      (
+        image,
+        separator_column,
+        image_with_drawn_contours
+      ),
+      axis=1
+    )
+
+    fig = plt.figure()
+    plt.imshow(concatenated)
+    plt.title(title)
+    plt.axis('off')
+    fig.canvas.manager.set_window_title(title)
 
 
 def test_normals_square():
