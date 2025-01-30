@@ -18,6 +18,7 @@ from PIL import Image
 import cv2 as cv
 from PIL import Image
 import click
+import numpy as np
 
 from src.main_execute import process_radiograph
 from src.main_estimate_ideal import estimate_age_from_ideal_contour
@@ -34,6 +35,7 @@ from src.main_develop_corner_order import visualize_topleft_corner
 from src.main_develop_find_contour_corner import find_contour_corner
 from src.main_develop_find_sesamoid import find_sesamoid_main
 from src.main_develop_shape_distal_phalanx import visualize_distal_phalanx_shape
+from src.main_develop_shape_metacarpal import visualize_metacarpal_shape
 
 @click.group()
 def cli() -> None:
@@ -159,8 +161,51 @@ def shape() -> None:
 
 @shape.command()
 def distal_phalanx():
-  '''Image visualization of the distal phalanx shape'''
+  '''Image visualization of the distal phalanx 1 (leftmost) shape'''
   visualize_distal_phalanx_shape()
+
+@shape.command()
+def metacarpal():
+  '''Image visualization of the metacarpal 1 (leftmost) shape'''
+  visualize_metacarpal_shape()
+
+@develop.command()
+@click.argument("filename")
+def contour(filename: str):
+  '''Given a binary image, print its contour.'''
+  input_image = Image.open(filename)
+  borders_detected = np.array(input_image)
+  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+  _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(
+    thresholded,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  )
+
+  print('Contours found in the image:')
+  print(contours)
+
+@develop.command()
+@click.argument("filename")
+def hu_moments(filename: str):
+  '''Given a binary image, print its hu moments'''
+  input_image = Image.open(filename)
+  borders_detected = np.array(input_image)
+  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+  _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(
+    thresholded,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  )
+
+  moments = cv.moments(contours[0])
+  hu_moments = cv.HuMoments(moments)
+  hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
+
+  print('Hu moments:')
+  print(hu_moments)
 
 if __name__ == '__main__':
     cli()

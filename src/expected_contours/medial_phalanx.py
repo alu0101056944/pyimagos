@@ -22,7 +22,7 @@ from src.main_develop_corner_order import get_top_left_corner
 class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
 
   def __init__(self, encounter_amount : int,
-               first_occurence: ExpectedContour = None,
+               first_encounter: ExpectedContour = None,
                first_in_branch: ExpectedContour = None,
                ends_branchs_sequence: bool = False):
     self.contour = None
@@ -34,7 +34,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
     self.image_height = None
     self.ends_branchs_sequence = None
     self.encounter_amount = encounter_amount
-    self.first_occurence = first_occurence
+    self.first_encounter = first_encounter
     self.first_in_branch = first_in_branch
     self.ends_branchs_sequence = ends_branchs_sequence
 

@@ -22,7 +22,7 @@ from src.main_develop_corner_order import get_top_left_corner
 class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
   def __init__(self, encounter_amount : int,
-               first_occurence: ExpectedContour = None,
+               first_encounter: ExpectedContour = None,
                first_in_branch: ExpectedContour = None,
                ends_branchs_sequence: bool = False):
     self.contour = None
@@ -34,9 +34,23 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     self.image_height = None
     self.ends_branchs_sequence = None
     self.encounter_amount = encounter_amount
-    self.first_occurence = first_occurence
+    self.first_encounter = first_encounter
     self.first_in_branch = first_in_branch
     self.ends_branchs_sequence = ends_branchs_sequence
+    self.approximated_contour = None
+    self._aspect_ratio = None
+    self.reference_hu_moments = np.array(
+      [
+        -0.59893488,
+        -1.62052591,
+        -2.46926287,
+        -3.46397177,
+        -6.4447155,
+        -4.28778216,
+        -7.03097531
+      ],
+      dtype=np.float64
+    )
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''
@@ -49,11 +63,24 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     bounding_rect_contour = cv.boxPoints(rect)
     bounding_rect_contour = np.int32(bounding_rect_contour) # to int
 
+    height = self.min_area_rect[1][1]
+    width = self.min_area_rect[1][0]
+    self._aspect_ratio = max(width, height) / min(width, height)
+
     self.top_left_corner, i = get_top_left_corner(
       bounding_rect_contour,
       self.image_width,
       self.image_height
     )
+
+    # TODO experiment with the epsilon paremeter
+    # Calculate perimeter of curve on the contour. Iterates all lines in contour
+    # and sums the distances. closed so that it calculates distance from last to
+    # first point. epsilon is distance from original curve and the approximated.
+    # Changing epsilon varies how much the approx polygon is close to the original.
+    epsilon = 0.02 * cv.arcLength(self.contour, closed=True)
+    approximated_contour = cv.approxPolyDP(self.contour, epsilon, True)
+    self.approximated_contour = np.reshape(approximated_contour, (-1, 2))
 
     # assumming clockwise
     self.top_right_corner = bounding_rect_contour[
@@ -68,7 +95,6 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
   def next_contour_restrictions(self) -> list:
     ERROR_PADDING = 4
-    y_coords = self.contour[:, 1]
     height = self.min_area_rect[1][1]
     bottom_bound = height * 4
 
@@ -97,97 +123,57 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
   def shape_restrictions(self) -> list:
     area = cv.contourArea(self.contour)
-    if area < 80:
+    if area <= 80:
+      return [False, -1]
+    
+    if self._aspect_ratio < 1.3:
+      return [False, -1]
+    
+    if self.encounter_amount > 1:
+      first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
+      TOLERANCE = 0.3
+      if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
+        return [False, -1]
+
+    if len(self.approximated_contour) < 3:
+      return [False, -1]
+    
+    min_rect_width = self.min_area_rect[1][0]
+    min_rect_height = self.min_area_rect[1][1]
+    hull = cv.convexHull(self.contour)
+    solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+    if solidity > 1.3:
+      return [False, -1]
+    
+    hull_area = cv.contourArea(hull)
+    significant_convexity_defects = 0
+    hull_indices = cv.convexHull(self.contour, returnPoints=False)
+    defects = cv.convexityDefects(self.contour, hull_indices)
+    if defects is not None:
+      for i in range(defects.shape[0]):
+        start_index, end_index, farthest_point_index, distance = defects[i, 0]
+
+        start = self.contour[start_index]
+        end = self.contour[end_index]
+        farthest = self.contour[farthest_point_index]
+
+        defect_area = cv.contourArea(np.array([start, end, farthest]))
+
+        if defect_area / hull_area > 0.1:
+          significant_convexity_defects += 1
+
+    if significant_convexity_defects != 2:
       return [False, -1]
 
-    # TODO experiment with the epsilon paremeter
-    # Calculate perimeter of curve on the contour. Iterates all lines in contour
-    # and sums the distances. closed so that it calculates distance from last to
-    # first point. epsilon is distance from original curve and the approximated.
-    # Changing epsilon varies how much the approx polygon is close to the original.
-    epsilon = 0.02 * cv.arcLength(self.contour, closed=True)
-    approximated_contour = cv.approxPolyDP(self.contour, epsilon, True)
-    approximated_contour = np.reshape(approximated_contour, (-1, 2))
+    if self.encounter_amount != 1: # little finger
+      pass
 
-    if len(approximated_contour) < 3:
-      return [False, -1]
+    moments = cv.moments(self.contour)
+    hu_moments = cv.HuMoments(moments)
+    hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
 
-    angles = []
-    for i in range(len(approximated_contour)):
-      p1 = approximated_contour[i - 1]
-      p2 = approximated_contour[i]
-      p3 = approximated_contour[(i + 1) % len(approximated_contour)]
-
-      v1 = p1 - p2
-      v2 = p3 - p2
-      angle = np.degrees(
-        np.arctan2(
-          np.linalg.det([v1, v2]),
-          np.dot(v1, v2)
-        )
-      )
-
-      angles.append(angle)
-
-    angles_abs = [abs(angle) for angle in angles]
-    average_angle = sum(angles_abs) / len(angles_abs)
-
-    curvature_score = 0
-    for i in range(1, len(self.contour) - 1):
-      p1 = self.contour[i - 1]
-      p2 = self.contour[i]
-      p3 = self.contour[i + 1]
-
-      v1 = p1 - p2
-      v2 = p3 - p2
-
-      angle = np.degrees(np.arctan2(np.linalg.det([v1, v2]), np.dot(v1, v2)))
-      curvature_score += abs(angle)
-
-    # normalize curvature score
-    if len(self.contour) > 0:
-      curvature_score /= len(self.contour)
-    else:
-      curvature_score = 0
-
-    score = area / 100
-
-    if self.encounter_amount == 1: # little finger
-      # Penalize if average angle not close to 90
-      score -= (abs(average_angle - 90) * 1) 
-
-      # Penalize for lots of curve changes
-      score -= (curvature_score * 0.2) 
-      
-      # Penalty for too many or too few corners
-      if len(approximated_contour) < 4 or len(approximated_contour) > 7:
-        score -= 5
-    elif self.encounter_amount == 2: # ring finger
-      score -= (abs(average_angle - 90) * 1)
-      score -= (curvature_score * 0.2)
-      if len(approximated_contour) < 4 or len(approximated_contour) > 7:
-        score -= 5
-    elif self.encounter_amount == 3: # middle finger
-      score -= (abs(average_angle - 90) * 1)
-      score -= (curvature_score * 0.1)
-      if len(approximated_contour) < 4 or len(approximated_contour) > 7:
-        score -= 5
-    elif self.encounter_amount == 4: # index finger
-        score -= (abs(average_angle - 90) * 0.5)
-        score -= (curvature_score * 0.05)
-        if len(approximated_contour) < 4 or len(approximated_contour) > 7:
-          score -= 5
-    elif self.encounter_amount == 5: # thumb finger
-      score -= (abs(average_angle - 90) * 0.5)
-      score -= (curvature_score * 0.05)
-      if len(approximated_contour) < 4 or len(approximated_contour) > 7:
-        score -= 5
-
-    if score < 1:
-      return [False, -1]
-
-    return [True, score]
-
+    difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+    return [True, difference]
 
   def branch_start_position_restrictions(self) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
