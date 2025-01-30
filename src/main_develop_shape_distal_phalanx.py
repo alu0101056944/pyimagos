@@ -255,28 +255,6 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
     axis=1
   )
 
-  positional_view_image = calculate_positional_image(bounding_rect_contour,
-                                                     rect,
-                                                     concatenated.shape[1],
-                                                     image_height)
-
-  # Separator (horizontal)
-  separator_color = (255, 255, 255)
-  separator_width = 2
-  separator_column = np.full(
-    (separator_width, concatenated.shape[1], 3),
-    separator_color,
-    dtype=np.uint8
-  )
-
-  concatenated = np.concatenate(
-    (
-      concatenated,
-      positional_view_image
-    ),
-    axis=0
-  )
-
   fig = plt.figure()
   plt.imshow(concatenated)
   plt.title(title)
@@ -296,8 +274,18 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
     f'significant_convex_hull_defects={significant_convex_hull_defects}\n' \
     f'hu_moments={hu_moments}\n' \
     f'difference={difference}'
-  plt.text(0, 1.23, text, transform=plt.gca().transAxes,
+  plt.text(0, 1.24, text, transform=plt.gca().transAxes,
            verticalalignment='bottom', horizontalalignment='left')
+  
+  positional_view_image = calculate_positional_image(bounding_rect_contour,
+                                                    rect,
+                                                    concatenated.shape[1],
+                                                    image_height)
+  fig = plt.figure()
+  plt.imshow(positional_view_image)
+  plt.title(title)
+  plt.axis('off')
+  fig.canvas.manager.set_window_title(title)
 
 def calculate_attributes(contour) -> list:
   contour = np.reshape(contour, (-1, 2))
