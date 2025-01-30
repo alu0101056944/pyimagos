@@ -11,6 +11,7 @@ import numpy as np
 import cv2 as cv
 
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
+from src.main_execute import is_in_allowed_space
 
 class TestDistalPhalanxExpectedContour:
 
@@ -279,3 +280,45 @@ class TestDistalPhalanxExpectedContour:
     phalanx.prepare(under_convex_defects, 20, 30)
     shape_value = phalanx.shape_restrictions()
     assert shape_value == [False, -1]
+
+  def test_contour_fully_inside_allowed_area(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[20, 106]],
+      [[23, 106]],
+      [[23, 108]],
+      [[20, 108]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == True
+
+  def test_contour_partially_outside_allowed_area(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[12, 106]],
+      [[16, 106]],
+      [[16, 108]],
+      [[12, 108]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == False
+
+  def test_contour_fully_outside_allowed_area(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[8, 106]],
+      [[10, 106]],
+      [[10, 108]],
+      [[8, 108]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == False

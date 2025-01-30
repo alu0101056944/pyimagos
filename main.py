@@ -34,8 +34,8 @@ from src.main_develop_test_extend import visualize_tests_extend
 from src.main_develop_corner_order import visualize_topleft_corner
 from src.main_develop_find_contour_corner import find_contour_corner
 from src.main_develop_find_sesamoid import find_sesamoid_main
-from src.main_develop_shape_distal_phalanx import visualize_distal_phalanx_shape
-from src.main_develop_shape_metacarpal import visualize_metacarpal_shape
+from src.main_develop_test_distal_phalanx import visualize_distal_phalanx_shape
+from src.main_develop_test_metacarpal import visualize_metacarpal_shape
 
 @click.group()
 def cli() -> None:

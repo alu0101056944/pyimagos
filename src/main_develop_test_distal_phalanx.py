@@ -26,9 +26,9 @@ def calculate_positional_image(
     bounding_rect_contour: list,
     min_rect,
     concatenated_image_width: int,
-    image_height: int
+    image_height: int,
+    test_contours: list = None
 ) -> np.array:
-  bounding_rect_contour = np.array(bounding_rect_contour) + 20
   image = np.full((image_height * 6, concatenated_image_width, 3), 0, dtype=np.uint8)
 
   cv.drawContours(image, [bounding_rect_contour], 0, (0, 255, 0), 1)
@@ -97,6 +97,11 @@ def calculate_positional_image(
   cv.circle(image, top_right_corner, 1, (0, 0, 255), -1)
   cv.circle(image, bottom_right_corner, 1, (0, 255, 255), -1)
   cv.circle(image, bottom_left_corner, 1, (255, 0, 255), -1)
+
+  if test_contours is not None:
+    for i in range(len(test_contours)):
+      color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
+      cv.drawContours(image, test_contours, i, color, 1)
 
   return image
 
@@ -183,7 +188,7 @@ def create_minimal_image_from_contours(image: np.array,
   return roi_from_original, corrected_contours
 
 def prepare_image_showing_shape(contours, approximated_contour, image_width,
-                                image_height, title):
+                                image_height, title, test_contour=None):
 
   # Separator (vertical)
   separator_color = (255, 255, 255)
@@ -283,7 +288,8 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
   positional_view_image = calculate_positional_image(bounding_rect_contour,
                                                     rect,
                                                     concatenated.shape[1],
-                                                    image_height)
+                                                    image_height,
+                                                    test_contour)
   fig = plt.figure()
   plt.imshow(positional_view_image)
   plt.title(title)
@@ -347,8 +353,8 @@ def calculate_attributes(contour) -> list:
     difference
   )
 
-def show_contour(contour, padding=0, title='Distal phalanx variation',
-                 minimize_image: bool = True):
+def show_contour(contour, test_contour=None, padding=0,
+                 title='Distal phalanx variation', minimize_image: bool = True):
   contour = np.reshape(contour, (-1, 2))
   x_values = contour[:, 0]
   y_values = contour[:, 1]
@@ -377,7 +383,8 @@ def show_contour(contour, padding=0, title='Distal phalanx variation',
   prepare_image_showing_shape(contours, approximated_contour,
                               image_width=minimal_image.shape[1],
                               image_height=minimal_image.shape[0],
-                              title=title)
+                              title=title,
+                              test_contour=test_contour)
 
 def visualize_distal_phalanx_shape():
   borders_detected = Image.open('docs/distal_phalanx.jpg')
@@ -388,7 +395,31 @@ def visualize_distal_phalanx_shape():
   contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL,
                               cv.CHAIN_APPROX_SIMPLE)
 
-  show_contour(contours[0], 5, 'Distal phalanx original.')
+  test_contour_fully_inside = np.array([
+      [[20, 106]],
+      [[23, 106]],
+      [[23, 108]],
+      [[20, 108]],
+    ])
+  test_contour_partially_outside = np.array([
+      [[12, 106]],
+      [[16, 106]],
+      [[16, 108]],
+      [[12, 108]],
+    ])
+  test_contour_fully_outside = np.array([
+      [[8, 106]],
+      [[10, 106]],
+      [[10, 108]],
+      [[8, 108]],
+    ])
+  test_contours = [
+    test_contour_fully_inside,
+    test_contour_partially_outside,
+    test_contour_fully_outside
+  ]
+  show_contour(contours[0], test_contours, padding=5,
+               title='Distal phalanx original.', minimize_image=False)
   
   under_80_area = np.array(
     [[[28,  80]],
@@ -428,7 +459,7 @@ def visualize_distal_phalanx_shape():
     [[29,  80]]],
     dtype=np.int32
   )
-  show_contour(under_80_area, 5, 'Under 80 area distal phalanx.')
+  show_contour(under_80_area, padding=5, title='Under 80 area distal phalanx.')
 
   bad_aspect_ratio = np.array(
     [[[84, 120]],
@@ -456,7 +487,8 @@ def visualize_distal_phalanx_shape():
     [[87, 120]]],
     dtype=np.int32
   )
-  show_contour(bad_aspect_ratio, 5, 'Bad aspect ratio distal phalanx.')
+  show_contour(bad_aspect_ratio, padding=5,
+               title='Bad aspect ratio distal phalanx.')
 
   larger_aspect_contour = np.array([
     [[25, 59]],
@@ -506,8 +538,8 @@ def visualize_distal_phalanx_shape():
     [[27, 59]]],
     dtype=np.int32
   )
-  show_contour(larger_aspect_contour, 5,
-               'Second occurrence non within range distal phalanx aspect' \
+  show_contour(larger_aspect_contour, padding=5,
+               title='Second occurrence non within range distal phalanx aspect' \
                ' ratio\'s.')
 
   high_solidity = np.array(
@@ -528,7 +560,7 @@ def visualize_distal_phalanx_shape():
     [[ 8,  0]]],
     dtype=np.int32
   )
-  show_contour(high_solidity, 5, 'High solidity distal phalanx.')
+  show_contour(high_solidity, padding=5, title='High solidity distal phalanx.')
   
   over_convex_defects = np.array(
     [[[ 2,  0]],
@@ -550,8 +582,8 @@ def visualize_distal_phalanx_shape():
     [[14,  0]]],
     dtype=np.int32
   )
-  show_contour(over_convex_defects, 5, 'Too many significant convexity defects ' \
-               'distal phalanx.')
+  show_contour(over_convex_defects, padding=5,
+               title='Too many significant convexity defects distal phalanx.')
 
   under_convex_defects = np.array(
     [[[ 2,  0]],
@@ -567,8 +599,8 @@ def visualize_distal_phalanx_shape():
     [[17,  0]]],
     dtype=np.int32
   )
-  show_contour(under_convex_defects, 5, 'Too few significant convexity defects ' \
-               'distal phalanx.')
+  show_contour(under_convex_defects, padding=5,
+               title='Too few significant convexity defects distal phalanx.')
   
   rotated_ideal = np.array(
     [[[17, 63]],
@@ -626,6 +658,7 @@ def visualize_distal_phalanx_shape():
     [[20, 63]]],
     dtype=np.int32
   )
-  show_contour(rotated_ideal, 5, 'Rotated ideal to see bounding box adaptation')
+  show_contour(rotated_ideal, padding=5,
+               title='Rotated ideal to see bounding box adaptation')
 
   plt.show()

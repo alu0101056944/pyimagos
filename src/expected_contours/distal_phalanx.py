@@ -100,23 +100,23 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
     return [
       [
-        self.bottom_right_corner + [ERROR_PADDING, 0],
-        self.top_right_corner + [ERROR_PADDING, 0],
+        self.bottom_right_corner + np.array([ERROR_PADDING, 0]),
+        self.top_right_corner + np.array([ERROR_PADDING, 0]),
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
       [
-        self.bottom_left_corner - [ERROR_PADDING, 0],
-        self.top_left_corner - [ERROR_PADDING, 0],
+        self.bottom_left_corner - np.array([ERROR_PADDING, 0]),
+        self.top_left_corner - np.array([ERROR_PADDING, 0]),
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_left_corner + [0, ERROR_PADDING],
-        self.bottom_right_corner + [0, ERROR_PADDING],
+        self.bottom_left_corner + np.array([0, ERROR_PADDING]),
+        self.bottom_right_corner + np.array([0, ERROR_PADDING]),
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_left_corner + [0, bottom_bound],
-        self.bottom_right_corner + [0, bottom_bound],
+        self.bottom_left_corner + np.array([0, bottom_bound]),
+        self.bottom_right_corner + np.array([0, bottom_bound]),
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
     ]
@@ -192,13 +192,13 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
     return [
       [
-        self.top_left_corner - [0, upper_bound],
-        self.top_right_corner - [0, upper_bound],
+        self.top_left_corner - np.array([0, upper_bound]),
+        self.top_right_corner - np.array([0, upper_bound]),
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL 
       ],
       [
-        self.bottom_left_corner + [0, lower_bound],
-        self.bottom_right_corner + [0, lower_bound],
+        self.bottom_left_corner + np.array([0, lower_bound]),
+        self.bottom_right_corner + np.array([0, lower_bound]),
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
       [
@@ -207,8 +207,8 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_right_corner + [right_bound, 0],
-        self.top_right_corner + [right_bound, 0],
+        self.bottom_right_corner + np.array([right_bound, 0]),
+        self.top_right_corner + np.array([right_bound, 0]),
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
     ]

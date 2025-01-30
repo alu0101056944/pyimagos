@@ -170,8 +170,8 @@ def is_in_allowed_space(contour: list,
 ) -> bool:
   position_restrictions = last_expected_contour.next_contour_restrictions()
   for position_restriction in position_restrictions:
-    x1, y1 = position_restriction[0][0]
-    x2, y2 = position_restriction[1][0]
+    x1, y1 = position_restriction[0]
+    x2, y2 = position_restriction[1]
     allowed_side = position_restriction[2]
 
     if x2 == x1:
