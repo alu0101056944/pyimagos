@@ -26,12 +26,15 @@ def create_minimal_image_from_contours(image: np.array,
   x_values = all_points[:, 0]
   y_values = all_points[:, 1]
 
-  min_x = int(max(0, np.min(x_values) - padding))
-  min_y = int(max(0, np.min(y_values) - padding))
-  max_x = int(min(image.shape[1], np.max(x_values) + padding))
-  max_y = int(min(image.shape[0], np.max(y_values) + padding))
+  min_x = int(max(0, np.min(x_values)))
+  min_y = int(max(0, np.min(y_values)))
+  max_x = int(min(image.shape[1], np.max(x_values)))
+  max_y = int(min(image.shape[0], np.max(y_values)))
 
-  roi_from_original = image[min_y:max_y + 1, min_x:max_x + 1]
+  roi_from_original = image[
+    max(0, min_y - padding):max_y + padding + 1,
+    max(0, min_x - padding):max_x + padding + 1
+  ]
   roi_from_original = np.copy(roi_from_original)
 
   # missing X padding correction on the left
@@ -49,7 +52,7 @@ def create_minimal_image_from_contours(image: np.array,
   
   # missing X padding correction on the right
   if np.max(x_values) + padding > image.shape[1]:
-    missing_pixel_amount = np.absolute(np.max(x_values) + padding)
+    missing_pixel_amount = np.max(x_values) + padding - image.shape[1]
     roi_from_original = np.concatenate(
       (
         roi_from_original,
@@ -73,9 +76,9 @@ def create_minimal_image_from_contours(image: np.array,
       dtype=np.uint8
     )
   
-  # missing Y padding correction on top
+  # missing Y padding correction on bottom
   if np.max(y_values) + padding > image.shape[0]:
-    missing_pixel_amount = np.absolute(np.max(y_values) + padding)
+    missing_pixel_amount = np.max(y_values) + padding - image.shape[0]
     roi_from_original = np.concatenate(
       (
         roi_from_original,

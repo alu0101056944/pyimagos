@@ -113,12 +113,15 @@ def create_minimal_image_from_contours(image: np.array,
   x_values = all_points[:, 0]
   y_values = all_points[:, 1]
 
-  min_x = int(max(0, np.min(x_values) - padding))
-  min_y = int(max(0, np.min(y_values) - padding))
-  max_x = int(min(image.shape[1], np.max(x_values) + padding))
-  max_y = int(min(image.shape[0], np.max(y_values) + padding))
+  min_x = int(max(0, np.min(x_values)))
+  min_y = int(max(0, np.min(y_values)))
+  max_x = int(min(image.shape[1], np.max(x_values)))
+  max_y = int(min(image.shape[0], np.max(y_values)))
 
-  roi_from_original = image[min_y:max_y + 1, min_x:max_x + 1]
+  roi_from_original = image[
+    max(0, min_y - padding):max_y + padding + 1,
+    max(0, min_x - padding):max_x + padding + 1
+  ]
   roi_from_original = np.copy(roi_from_original)
 
   # missing X padding correction on the left
@@ -136,7 +139,7 @@ def create_minimal_image_from_contours(image: np.array,
   
   # missing X padding correction on the right
   if np.max(x_values) + padding > image.shape[1]:
-    missing_pixel_amount = np.absolute(np.max(x_values) + padding)
+    missing_pixel_amount = np.max(x_values) + padding - image.shape[1]
     roi_from_original = np.concatenate(
       (
         roi_from_original,
@@ -160,9 +163,9 @@ def create_minimal_image_from_contours(image: np.array,
       dtype=np.uint8
     )
   
-  # missing Y padding correction on top
+  # missing Y padding correction on bottom
   if np.max(y_values) + padding > image.shape[0]:
-    missing_pixel_amount = np.absolute(np.max(y_values) + padding)
+    missing_pixel_amount = np.max(y_values) + padding - image.shape[0]
     roi_from_original = np.concatenate(
       (
         roi_from_original,
@@ -503,7 +506,7 @@ def visualize_distal_phalanx_shape():
     [[27, 59]]],
     dtype=np.int32
   )
-  show_contour(larger_aspect_contour, 0,
+  show_contour(larger_aspect_contour, 5,
                'Second occurrence non within range distal phalanx aspect' \
                ' ratio\'s.')
 
@@ -566,5 +569,63 @@ def visualize_distal_phalanx_shape():
   )
   show_contour(under_convex_defects, 5, 'Too few significant convexity defects ' \
                'distal phalanx.')
+  
+  rotated_ideal = np.array(
+    [[[17, 63]],
+    [[15, 65]],
+    [[14, 65]],
+    [[13, 66]],
+    [[13, 67]],
+    [[10, 70]],
+    [[10, 71]],
+    [[11, 72]],
+    [[10, 73]],
+    [[12, 75]],
+    [[13, 75]],
+    [[14, 76]],
+    [[16, 76]],
+    [[17, 77]],
+    [[17, 78]],
+    [[19, 80]],
+    [[21, 80]],
+    [[23, 82]],
+    [[23, 83]],
+    [[25, 85]],
+    [[27, 85]],
+    [[28, 86]],
+    [[27, 87]],
+    [[29, 89]],
+    [[29, 91]],
+    [[30, 92]],
+    [[30, 93]],
+    [[31, 94]],
+    [[31, 96]],
+    [[33, 98]],
+    [[36, 98]],
+    [[44, 90]],
+    [[44, 89]],
+    [[46, 87]],
+    [[46, 86]],
+    [[48, 84]],
+    [[48, 83]],
+    [[49, 82]],
+    [[49, 81]],
+    [[48, 81]],
+    [[47, 80]],
+    [[47, 79]],
+    [[46, 79]],
+    [[45, 78]],
+    [[44, 79]],
+    [[38, 79]],
+    [[37, 78]],
+    [[34, 78]],
+    [[32, 76]],
+    [[31, 76]],
+    [[24, 69]],
+    [[24, 67]],
+    [[20, 63]]],
+    dtype=np.int32
+  )
+  show_contour(rotated_ideal, 5, 'Rotated ideal to see bounding box adaptation')
 
   plt.show()
