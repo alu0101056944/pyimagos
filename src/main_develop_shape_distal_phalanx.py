@@ -102,7 +102,7 @@ def calculate_positional_image(
 
 def create_minimal_image_from_contours(image: np.array,
                                        contours: list,
-                                       padding = 5) -> np.array:
+                                       padding = 0) -> np.array:
   if not contours:
     raise ValueError('Called main_execute.py:' \
                      'create_minimal_image_from_contours(<contour>) with an ' \
@@ -113,16 +113,68 @@ def create_minimal_image_from_contours(image: np.array,
   x_values = all_points[:, 0]
   y_values = all_points[:, 1]
 
-  min_x = int(max(0, np.min(x_values))) - padding
-  min_y = int(max(0, np.min(y_values))) - padding
-  max_x = int(min(image.shape[1], np.max(x_values))) + padding
-  max_y = int(min(image.shape[0], np.max(y_values))) + padding
+  min_x = int(max(0, np.min(x_values) - padding))
+  min_y = int(max(0, np.min(y_values) - padding))
+  max_x = int(min(image.shape[1], np.max(x_values) + padding))
+  max_y = int(min(image.shape[0], np.max(y_values) + padding))
 
   roi_from_original = image[min_y:max_y + 1, min_x:max_x + 1]
   roi_from_original = np.copy(roi_from_original)
 
+  # missing X padding correction on the left
+  if np.min(x_values) - padding < 0:
+    missing_pixel_amount = np.absolute(np.min(x_values) - padding)
+    roi_from_original = np.concatenate(
+      (
+        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
+                dtype=np.uint8),
+        roi_from_original,
+      ),
+      axis=1,
+      dtype=np.uint8
+    )
+  
+  # missing X padding correction on the right
+  if np.max(x_values) + padding > image.shape[1]:
+    missing_pixel_amount = np.absolute(np.max(x_values) + padding)
+    roi_from_original = np.concatenate(
+      (
+        roi_from_original,
+        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
+                dtype=np.uint8)
+      ),
+      axis=1,
+      dtype=np.uint8
+    )
+
+  # missing Y padding correction on top
+  if np.min(y_values) - padding < 0:
+    missing_pixel_amount = np.absolute(np.min(y_values) - padding)
+    roi_from_original = np.concatenate(
+      (
+        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
+                dtype=np.uint8),
+        roi_from_original,
+      ),
+      axis=0,
+      dtype=np.uint8
+    )
+  
+  # missing Y padding correction on top
+  if np.max(y_values) + padding > image.shape[0]:
+    missing_pixel_amount = np.absolute(np.max(y_values) + padding)
+    roi_from_original = np.concatenate(
+      (
+        roi_from_original,
+        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
+                dtype=np.uint8),
+      ),
+      axis=0,
+      dtype=np.uint8
+    ) 
+
   corrected_contours = [
-    points - np.array([[[min_x, min_y]]]) for points in contours
+    points - np.array([[[min_x, min_y]]]) + padding for points in contours
   ]
 
   return roi_from_original, corrected_contours
@@ -345,7 +397,7 @@ def visualize_distal_phalanx_shape():
   contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL,
                               cv.CHAIN_APPROX_SIMPLE)
 
-  show_contour(contours[0], 0, 'Distal phalanx original.')
+  show_contour(contours[0], 5, 'Distal phalanx original.')
   
   under_80_area = np.array(
     [[[28,  80]],
@@ -385,7 +437,7 @@ def visualize_distal_phalanx_shape():
     [[29,  80]]],
     dtype=np.int32
   )
-  show_contour(under_80_area, 0, 'Under 80 area distal phalanx.')
+  show_contour(under_80_area, 5, 'Under 80 area distal phalanx.')
 
   bad_aspect_ratio = np.array(
     [[[84, 120]],
@@ -413,7 +465,7 @@ def visualize_distal_phalanx_shape():
     [[87, 120]]],
     dtype=np.int32
   )
-  show_contour(bad_aspect_ratio, 0, 'Bad aspect ratio distal phalanx.')
+  show_contour(bad_aspect_ratio, 5, 'Bad aspect ratio distal phalanx.')
 
   larger_aspect_contour = np.array([
     [[25, 59]],
@@ -485,7 +537,7 @@ def visualize_distal_phalanx_shape():
     [[ 8,  0]]],
     dtype=np.int32
   )
-  show_contour(high_solidity, 0, 'High solidity distal phalanx.')
+  show_contour(high_solidity, 5, 'High solidity distal phalanx.')
   
   over_convex_defects = np.array(
     [[[ 2,  0]],
@@ -507,7 +559,7 @@ def visualize_distal_phalanx_shape():
     [[14,  0]]],
     dtype=np.int32
   )
-  show_contour(over_convex_defects, 0, 'Too many significant convexity defects ' \
+  show_contour(over_convex_defects, 5, 'Too many significant convexity defects ' \
                'distal phalanx.')
 
   under_convex_defects = np.array(
@@ -524,7 +576,7 @@ def visualize_distal_phalanx_shape():
     [[17,  0]]],
     dtype=np.int32
   )
-  show_contour(under_convex_defects, 0, 'Too few significant convexity defects ' \
+  show_contour(under_convex_defects, 5, 'Too few significant convexity defects ' \
                'distal phalanx.')
 
   plt.show()

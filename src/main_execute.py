@@ -364,7 +364,8 @@ def search_complete_contours(initial_state_stack: dict,
   return complete_contours
 
 def create_minimal_image_from_contours(image: np.array,
-                                       contours: list) -> np.array:
+                                       contours: list,
+                                       padding = 0) -> np.array:
   if not contours:
     raise ValueError('Called main_execute.py:' \
                      'create_minimal_image_from_contours(<contour>) with an ' \
@@ -375,19 +376,72 @@ def create_minimal_image_from_contours(image: np.array,
   x_values = all_points[:, 0]
   y_values = all_points[:, 1]
 
-  min_x = max(0, np.min(x_values))
-  min_y = max(0, np.min(y_values))
-  max_x = min(image.shape[1], np.max(x_values))
-  max_y = min(image.shape[1], np.max(y_values))
+  min_x = int(max(0, np.min(x_values) - padding))
+  min_y = int(max(0, np.min(y_values) - padding))
+  max_x = int(min(image.shape[1], np.max(x_values) + padding))
+  max_y = int(min(image.shape[0], np.max(y_values) + padding))
 
   roi_from_original = image[min_y:max_y + 1, min_x:max_x + 1]
   roi_from_original = np.copy(roi_from_original)
 
+  # missing X padding correction on the left
+  if np.min(x_values) - padding < 0:
+    missing_pixel_amount = np.absolute(np.min(x_values) - padding)
+    roi_from_original = np.concatenate(
+      (
+        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
+                dtype=np.uint8),
+        roi_from_original,
+      ),
+      axis=1,
+      dtype=np.uint8
+    )
+  
+  # missing X padding correction on the right
+  if np.max(x_values) + padding > image.shape[1]:
+    missing_pixel_amount = np.absolute(np.max(x_values) + padding)
+    roi_from_original = np.concatenate(
+      (
+        roi_from_original,
+        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
+                dtype=np.uint8)
+      ),
+      axis=1,
+      dtype=np.uint8
+    )
+
+  # missing Y padding correction on top
+  if np.min(y_values) - padding < 0:
+    missing_pixel_amount = np.absolute(np.min(y_values) - padding)
+    roi_from_original = np.concatenate(
+      (
+        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
+                dtype=np.uint8),
+        roi_from_original,
+      ),
+      axis=0,
+      dtype=np.uint8
+    )
+  
+  # missing Y padding correction on top
+  if np.max(y_values) + padding > image.shape[0]:
+    missing_pixel_amount = np.absolute(np.max(y_values) + padding)
+    roi_from_original = np.concatenate(
+      (
+        roi_from_original,
+        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
+                dtype=np.uint8),
+      ),
+      axis=0,
+      dtype=np.uint8
+    ) 
+
   corrected_contours = [
-    points - np.array([[[min_x, min_y]]]) for points in contours
+    points - np.array([[[min_x, min_y]]]) + padding for points in contours
   ]
 
   return roi_from_original, corrected_contours
+
 
 def get_bounding_box_xy(contour):
   x, y, w, h = cv.boundingRect(contour)
