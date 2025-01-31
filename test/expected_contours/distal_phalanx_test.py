@@ -295,7 +295,7 @@ class TestDistalPhalanxExpectedContour:
     ])
     assert is_in_allowed_space(square_contour, phalanx) == True
 
-  def test_contour_partially_outside_allowed_area(
+  def test_contour_partially_outside_allowed_area_left(
     self,
     distal_phalanx_contour
   ):
@@ -309,7 +309,7 @@ class TestDistalPhalanxExpectedContour:
     ])
     assert is_in_allowed_space(square_contour, phalanx) == False
 
-  def test_contour_fully_outside_allowed_area(
+  def test_contour_fully_outside_allowed_area_left(
     self,
     distal_phalanx_contour
   ):
@@ -322,3 +322,88 @@ class TestDistalPhalanxExpectedContour:
       [[8, 108]],
     ])
     assert is_in_allowed_space(square_contour, phalanx) == False
+
+  def test_contour_fully_outside_allowed_area_right(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[48, 106]],
+      [[50, 106]],
+      [[50, 108]],
+      [[48, 108]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == False
+
+  def test_contour_partially_outside_allowed_area_right(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[43, 116]],
+      [[48, 116]],
+      [[48, 118]],
+      [[43, 118]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == False
+
+  def test_contour_fully_outside_allowed_area_top(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[32, 88]],
+      [[38, 88]],
+      [[38, 92]],
+      [[32, 92]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == False
+
+  def test_contour_partially_outside_allowed_area_top(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[32, 98]],
+      [[38, 98]],
+      [[38, 102]],
+      [[32, 102]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == False
+
+  def test_contour_fully_outside_allowed_area_bottom(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[32, 192]],
+      [[38, 192]],
+      [[38, 198]],
+      [[32, 198]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == False
+
+  def test_contour_partially_outside_allowed_area_bottom(
+    self,
+    distal_phalanx_contour
+  ):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(distal_phalanx_contour, 66, 151)
+    square_contour = np.array([
+      [[32, 183]],
+      [[38, 183]],
+      [[38, 189]],
+      [[32, 189]],
+    ])
+    assert is_in_allowed_space(square_contour, phalanx) == False
+

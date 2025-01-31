@@ -413,10 +413,52 @@ def visualize_distal_phalanx_shape():
       [[10, 108]],
       [[8, 108]],
     ])
+  test_contour_fully_outside_right = np.array([
+      [[48, 106]],
+      [[50, 106]],
+      [[50, 108]],
+      [[48, 108]],
+    ])
+  test_contour_partially_outside_right = np.array([
+      [[43, 116]],
+      [[48, 116]],
+      [[48, 118]],
+      [[43, 118]],
+    ])
+  test_contour_partially_outside_top = np.array([
+      [[32, 98]],
+      [[38, 98]],
+      [[38, 102]],
+      [[32, 102]],
+    ])
+  test_contour_fully_outside_top = np.array([
+      [[32, 88]],
+      [[38, 88]],
+      [[38, 92]],
+      [[32, 92]],
+    ])
+  test_contour_fully_outside_bottom = np.array([
+      [[32, 192]],
+      [[38, 192]],
+      [[38, 198]],
+      [[32, 198]],
+    ])
+  test_contour_partially_outside_bottom = np.array([
+      [[32, 183]],
+      [[38, 183]],
+      [[38, 189]],
+      [[32, 189]],
+    ])
   test_contours = [
     test_contour_fully_inside,
     test_contour_partially_outside,
-    test_contour_fully_outside
+    test_contour_fully_outside,
+    test_contour_fully_outside_right,
+    test_contour_partially_outside_right,
+    test_contour_partially_outside_top,
+    test_contour_fully_outside_top,
+    test_contour_fully_outside_bottom,
+    test_contour_partially_outside_bottom
   ]
   show_contour(contours[0], test_contours, padding=5,
                title='Distal phalanx original.', minimize_image=False)
