@@ -66,6 +66,13 @@ class TestDistalPhalanxExpectedContour:
       dtype=np.int32
     )
 
+  def test_empty_contour(self):
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare([], 66, 151)
+    shape_score = phalanx.shape_restrictions()
+    assert shape_score[0] == False
+    assert shape_score[1] == -1
+
   def test_ideal_shape_accepted(self, distal_phalanx_contour):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
@@ -407,3 +414,51 @@ class TestDistalPhalanxExpectedContour:
     ])
     assert is_in_allowed_space(square_contour, phalanx) == False
 
+  def test_overlap_does_not_throw_error_for_convexity_defects(self):
+    '''self-intercepting contours cause errors, but i expect overlap
+    not to cause errors as inside-outside is non-ambiguous.'''
+    contour_with_edge_overlap = np.array(
+      [[ 4,  4],
+      [ 4,  8],
+      [ 8,  8],
+      [ 8,  4],
+      [16,  4],
+      [20,  4],
+      [16,  4],
+      [ 8,  4]]
+    )
+    defects = cv.convexityDefects(
+      contour_with_edge_overlap,
+      cv.convexHull(contour_with_edge_overlap, returnPoints=False),
+    )
+    assert defects is not None
+
+  def test_self_interception_contour_is_discarded(self):
+    self_intercepting_contour = np.array(
+      [[25, 66],
+      [24, 67],
+      [21, 67],
+      [32, 68],
+      [32, 82],
+      [22, 84],
+      [22, 87],
+      [21, 88],
+      [21, 89],
+      [20, 91],
+      [19, 92],
+      [19, 96],
+      [20, 97],
+      [31, 97],
+      [32, 82],
+      [32, 68],
+      [31, 67],
+      [28, 67],
+      [27, 66]],
+      dtype=np.int32
+    )
+
+    phalanx = ExpectedContourDistalPhalanx(1)
+    phalanx.prepare(self_intercepting_contour, 32, 97)
+    is_valid, score = phalanx.shape_restrictions()
+    assert is_valid == False
+    assert score == -1

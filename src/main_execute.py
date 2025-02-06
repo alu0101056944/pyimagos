@@ -220,13 +220,14 @@ def generate_contour_alternatives(contours: list, contour_id: int,
   contour = contours[contour_id]
   for i in range(len(contour)):
     cut_operation = CutContour(contour_id, i, image_width, image_height)
-    new_contour = cut_operation.generate_new_contour(contours)
-    state = dict(reference_state)
-    state['contours_committed'] = copy.deepcopy(reference_state)
-    state['contours'] = new_contour
-    state['contours_alternatives'] = []
-    state['has_generated_alternatives'] = False
-    alternatives.append(state)
+    new_contours = cut_operation.generate_new_contour(contours)
+    if new_contours is not None:
+      state = dict(reference_state)
+      state['contours_committed'] = list(reference_state['contours_committed'])
+      state['contours'] = new_contours
+      state['contours_alternatives'] = []
+      state['has_generated_alternatives'] = False
+      alternatives.append(state)
   
   invasion_counts = [1, 2, 3, 4]
   for i in range(len(contours)):
@@ -239,22 +240,24 @@ def generate_contour_alternatives(contours: list, contour_id: int,
           image_height,
           invasion_count
         )
-        new_contour = extend_operation.generate_new_contour(contours)
+        new_contours = extend_operation.generate_new_contour(contours)
+        if new_contours is not None:
+          state = dict(reference_state)
+          state['contours_committed'] = list(reference_state['contours_committed'])
+          state['contours'] = new_contours
+          state['contours_alternatives'] = []
+          state['has_generated_alternatives'] = False,
+          alternatives.append(state)
+
+      join_operation = JoinContour(i, j)
+      new_contours = join_operation.generate_new_contour(contours)
+      if new_contours is not None:
         state = dict(reference_state)
-        state['contours_committed'] = copy.deepcopy(reference_state)
-        state['contours'] = new_contour
+        state['contours_committed'] = list(reference_state['contours_committed'])
+        state['contours'] = new_contours
         state['contours_alternatives'] = []
         state['has_generated_alternatives'] = False,
         alternatives.append(state)
-
-      join_operation = JoinContour(i, j)
-      new_contour = join_operation.generate_new_contour(contours)
-      state = dict(reference_state)
-      state['contours_committed'] = copy.deepcopy(reference_state)
-      state['contours'] = new_contour
-      state['contours_alternatives'] = []
-      state['has_generated_alternatives'] = False,
-      alternatives.append(state)
 
   return alternatives
 
@@ -265,13 +268,33 @@ def min_contour_distance(contour1: list, contour2: list) -> float:
   min_distance = np.min(distances)
   return min_distance
 
-def search_complete_contours(initial_state_stack: dict,
+def search_complete_contours(contours: list,
+                             expected_contours: list,
                              search_duration_seconds: int,
                              image_width: int,
                              image_height: int) -> list:
+  if len(contours) == 0:
+    return []
+  
+  if len(expected_contours) == 0:
+    return []
+
+  state_stack = [{
+    'contours_committed': [],
+    'contours': contours,
+    'contours_alternatives': [],
+    'current_contour_index': find_closest_contours_to_point(
+      [[0, 0]],
+      contours,
+    )[0],
+    'has_generated_alternatives': False,
+    'committed_total_value': 0
+  }]
   complete_contours = []
 
-  state_stack = initial_state_stack
+  # TODO: what if starting contour is not accepted? It will be modified on alternatives
+  # but need to add starting alternatives as in each contour can be the first contour.
+
   start_time = time.time()
   while True:
     elapsed_time = time.time() - start_time
@@ -310,12 +333,12 @@ def search_complete_contours(initial_state_stack: dict,
             ]
           ))
         else:
-          contours_inside_area = filter(
+          contours_inside_area = list(filter(
             lambda contour : (
               is_in_allowed_space(contour, expected_contour_class)
             ),
             contours
-          )
+          ))
           if len(contours_inside_area) > 0:
             new_state = dict(state)
             new_state['contours_committed'] = copy.deepcopy(
@@ -354,7 +377,7 @@ def search_complete_contours(initial_state_stack: dict,
       else:
         # Choose alternative
         # TODO Dont just choose random alternative.
-        random_index = random.randnt(0, len(state['contours_alternatives'] - 1))
+        random_index = random.randint(0, len(state['contours_alternatives']) - 1)
         state_stack.insert(0, state['contours_alternatives'][random_index])
         state['contours_alternatives'].pop(random_index)
     else:
@@ -685,21 +708,11 @@ def process_radiograph(filename: str,
   image_height = minimum_image.shape[0]
 
   if not nosearch:
-    current_contour_index = find_closest_contours_to_point([[0, 0]], contours)[0]
-
-    state_stack = [{
-      'contours_committed': [],
-      'contours': contours,
-      'contours_alternatives': [],
-      'current_contour_index': current_contour_index,
-      'has_generated_alternatives': False,
-      'committed_total_value': 0
-    }]
-
-    complete_contours = search_complete_contours(state_stack,
-                                                EXECUTION_DURATION_SECONDS,
-                                                image_width,
-                                                image_height)
+    complete_contours = search_complete_contours(contours,
+                                                 expected_contours,
+                                                 EXECUTION_DURATION_SECONDS,
+                                                 image_width,
+                                                 image_height)
     complete_contours.sort(key=lambda item: item[1], reverse=True)
     if len(complete_contours) > 0:
       successful_segmentation = True

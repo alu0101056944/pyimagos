@@ -13,6 +13,7 @@ from src.contour_operations.utils import blend_colors_with_alpha
 from src.contour_operations.utils import segments_intersect
 from src.contour_operations.utils import line_segment_intersection
 from src.contour_operations.utils import find_opposite_point
+from src.contour_operations.utils import filter_internal_interceptions
 
 class TestContourUtils:
 
@@ -754,3 +755,23 @@ class TestContourUtils:
       image_height
     )
     assert opposite_point_index is None
+
+  def test_none_input_to_filter_internal_interceptions(self):
+    no_opposite_point_contour = np.array(
+      [[239, 168],
+      [238, 168],
+      [237, 169],
+      [238, 170],
+      [239, 171],
+      [240, 171],
+      [240, 170],
+      [240, 171],
+      [238, 170],
+      [237, 169]]
+    )
+    filtered_interceptions = filter_internal_interceptions(
+      None,
+      2,
+      no_opposite_point_contour
+    )
+    assert filtered_interceptions is None

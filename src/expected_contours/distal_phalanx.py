@@ -56,6 +56,9 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     '''This is needed to select the contour that this class will work on'''
     self.image_width = image_width
     self.image_height = image_height
+    if len(contour) == 0:
+      self.contour = []
+      return
 
     self.contour = np.reshape(contour, (-1, 2))
     rect = cv.minAreaRect(contour)
@@ -65,6 +68,9 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
     height = self.min_area_rect[1][1]
     width = self.min_area_rect[1][0]
+
+    if height == 0 or width == 0:
+      return [False, -1]
     self._aspect_ratio = max(width, height) / min(width, height)
 
     self.top_left_corner, i = get_top_left_corner(
@@ -122,6 +128,9 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     ]
 
   def shape_restrictions(self) -> list:
+    if len(self.contour) == 0:
+      return [False, -1]
+
     area = cv.contourArea(self.contour)
     if area <= 80:
       return [False, -1]
@@ -145,25 +154,30 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     if solidity > 1.3:
       return [False, -1]
     
-    hull_area = cv.contourArea(hull)
-    significant_convexity_defects = 0
-    hull_indices = cv.convexHull(self.contour, returnPoints=False)
-    defects = cv.convexityDefects(self.contour, hull_indices)
-    if defects is not None:
-      for i in range(defects.shape[0]):
-        start_index, end_index, farthest_point_index, distance = defects[i, 0]
+    try:
+      hull_area = cv.contourArea(hull)
+      significant_convexity_defects = 0
+      hull_indices = cv.convexHull(self.contour, returnPoints=False)
+      defects = cv.convexityDefects(self.contour, hull_indices)
+      if defects is not None:
+        for i in range(defects.shape[0]):
+          start_index, end_index, farthest_point_index, distance = defects[i, 0]
 
-        start = self.contour[start_index]
-        end = self.contour[end_index]
-        farthest = self.contour[farthest_point_index]
+          start = self.contour[start_index]
+          end = self.contour[end_index]
+          farthest = self.contour[farthest_point_index]
 
-        defect_area = cv.contourArea(np.array([start, end, farthest]))
+          defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-        if defect_area / hull_area > 0.1:
-          significant_convexity_defects += 1
+          if defect_area / hull_area > 0.1:
+            significant_convexity_defects += 1
 
-    if significant_convexity_defects != 2:
-      return [False, -1]
+      if significant_convexity_defects != 2:
+        return [False, -1]
+    except cv.error as e:
+      error_message = str(e).lower()
+      if 'not monotonous' in error_message:
+        return [False, -1]
 
     if self.encounter_amount != 1: # little finger
       pass

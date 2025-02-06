@@ -188,7 +188,8 @@ def create_minimal_image_from_contours(image: np.array,
   return roi_from_original, corrected_contours
 
 def prepare_image_showing_shape(contours, approximated_contour, image_width,
-                                image_height, title, test_contour=None):
+                                image_height, title, test_contour=None,
+                                show_convex_defects: bool = True):
 
   # Separator (vertical)
   separator_color = (255, 255, 255)
@@ -227,41 +228,56 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
   cv.drawContours(convex_hull_image, [hull], 0, (0, 255, 0), 1)
 
   # Fifth: hull convexity defects
-  hull_area = cv.contourArea(hull)
-  hull_defects_image = np.zeros((image_height, image_width, 3), dtype=np.uint8)
-  cv.drawContours(hull_defects_image, [hull], 0, (0, 255, 0), 2)
-  hull_indices = cv.convexHull(contour, returnPoints=False)
-  defects = cv.convexityDefects(contour, hull_indices)
-  if defects is not None:
-    for i in range(defects.shape[0]):
-      start_index, end_index, farthest_point_index, distance = defects[i, 0]
+  if show_convex_defects:
+    hull_area = cv.contourArea(hull)
+    hull_defects_image = np.zeros((image_height, image_width, 3), dtype=np.uint8)
+    cv.drawContours(hull_defects_image, [hull], 0, (0, 255, 0), 2)
+    hull_indices = cv.convexHull(contour, returnPoints=False)
+    defects = cv.convexityDefects(contour, hull_indices)
+    if defects is not None:
+      for i in range(defects.shape[0]):
+        start_index, end_index, farthest_point_index, distance = defects[i, 0]
 
-      start = contour[start_index]
-      end = contour[end_index]
-      farthest = contour[farthest_point_index]
+        start = contour[start_index]
+        end = contour[end_index]
+        farthest = contour[farthest_point_index]
 
-      defect_area = cv.contourArea(np.array([start, end, farthest]))
+        defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-      cv.line(hull_defects_image, start, end, (255, 0, 0), 1)
-      if defect_area / hull_area > 0.1:
-        cv.circle(hull_defects_image, farthest, 1, (0, 255, 255), -1)
-      else:
-        cv.circle(hull_defects_image, farthest, 1, (0, 140, 45), -1)
+        cv.line(hull_defects_image, start, end, (255, 0, 0), 1)
+        if defect_area / hull_area > 0.1:
+          cv.circle(hull_defects_image, farthest, 1, (0, 255, 255), -1)
+        else:
+          cv.circle(hull_defects_image, farthest, 1, (0, 140, 45), -1)
 
-  concatenated = np.concatenate(
-    (
-      blank_image,
-      separator_column,
-      approximated_image,
-      separator_column,
-      bounding_box_image,
-      separator_column,
-      convex_hull_image,
-      separator_column,
-      hull_defects_image
-    ),
-    axis=1
-  )
+    concatenated = np.concatenate(
+      (
+        blank_image,
+        separator_column,
+        approximated_image,
+        separator_column,
+        bounding_box_image,
+        separator_column,
+        convex_hull_image,
+        separator_column,
+        hull_defects_image
+      ),
+      axis=1
+    )
+  else:
+    concatenated = np.concatenate(
+      (
+        blank_image,
+        separator_column,
+        approximated_image,
+        separator_column,
+        bounding_box_image,
+        separator_column,
+        convex_hull_image,
+      ),
+      axis=1
+    )
+
 
   fig = plt.figure()
   plt.imshow(concatenated)
@@ -276,7 +292,7 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
     significant_convex_hull_defects,
     hu_moments,
     difference
-  ) = calculate_attributes(contour)
+  ) = calculate_attributes(contour, show_convex_defects)
   text = f'area={area}\naspect_ratio={aspect_ratio}\n' \
     f'solidity={solidity}\n' \
     f'significant_convex_hull_defects={significant_convex_hull_defects}\n' \
@@ -296,7 +312,7 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
   plt.axis('off')
   fig.canvas.manager.set_window_title(title)
 
-def calculate_attributes(contour) -> list:
+def calculate_attributes(contour, show_convex_defects: bool = True) -> list:
   contour = np.reshape(contour, (-1, 2))
 
   area = cv.contourArea(contour)
@@ -309,22 +325,25 @@ def calculate_attributes(contour) -> list:
       cv.contourArea(cv.convexHull(contour))
   )
 
-  significant_convexity_defects = 0
-  hull_area = cv.contourArea(cv.convexHull(contour))
-  hull = cv.convexHull(contour, returnPoints=False)
-  defects = cv.convexityDefects(contour, hull)
-  if defects is not None:
-    for i in range(defects.shape[0]):
-      start_index, end_index, farthest_point_index, distance = defects[i, 0]
+  if show_convex_defects:
+    significant_convexity_defects = 0
+    hull_area = cv.contourArea(cv.convexHull(contour))
+    hull = cv.convexHull(contour, returnPoints=False)
+    defects = cv.convexityDefects(contour, hull)
+    if defects is not None:
+      for i in range(defects.shape[0]):
+        start_index, end_index, farthest_point_index, distance = defects[i, 0]
 
-      start = contour[start_index]
-      end = contour[end_index]
-      farthest = contour[farthest_point_index]
+        start = contour[start_index]
+        end = contour[end_index]
+        farthest = contour[farthest_point_index]
 
-      defect_area = cv.contourArea(np.array([start, end, farthest]))
+        defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-      if defect_area / hull_area > 0.1:
-        significant_convexity_defects += 1
+        if defect_area / hull_area > 0.1:
+          significant_convexity_defects += 1
+  else:
+    significant_convexity_defects = -1
 
   moments = cv.moments(contour)
   hu_moments = cv.HuMoments(moments)
@@ -354,7 +373,8 @@ def calculate_attributes(contour) -> list:
   )
 
 def show_contour(contour, test_contour=None, padding=0,
-                 title='Distal phalanx variation', minimize_image: bool = True):
+                 title='Distal phalanx variation', minimize_image: bool = True,
+                 show_convex_defects: bool = True):
   contour = np.reshape(contour, (-1, 2))
   x_values = contour[:, 0]
   y_values = contour[:, 1]
@@ -384,7 +404,8 @@ def show_contour(contour, test_contour=None, padding=0,
                               image_width=minimal_image.shape[1],
                               image_height=minimal_image.shape[0],
                               title=title,
-                              test_contour=test_contour)
+                              test_contour=test_contour,
+                              show_convex_defects=show_convex_defects)
 
 def visualize_distal_phalanx_shape():
   borders_detected = Image.open('docs/distal_phalanx.jpg')
@@ -702,5 +723,32 @@ def visualize_distal_phalanx_shape():
   )
   show_contour(rotated_ideal, padding=5,
                title='Rotated ideal to see bounding box adaptation')
+  
+  self_intercepting_contour = np.array(
+    [[25, 66],
+    [24, 67],
+    [21, 67],
+    [32, 68],
+    [32, 82],
+    [22, 84],
+    [22, 87],
+    [21, 88],
+    [21, 89],
+    [20, 91],
+    [19, 92],
+    [19, 96],
+    [20, 97],
+    [31, 97],
+    [32, 82],
+    [32, 68],
+    [31, 67],
+    [28, 67],
+    [27, 66]],
+    dtype=np.int32
+  )
+  show_contour(self_intercepting_contour, padding=5,
+              title='Self intercepting contour. Expected to be discarded.',
+              minimize_image=False,
+              show_convex_defects=False)
 
   plt.show()

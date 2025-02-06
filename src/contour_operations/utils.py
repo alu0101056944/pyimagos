@@ -118,6 +118,8 @@ def find_intersections_by_neighbors(contour, start_point_index,
   return intersections
 
 def filter_internal_interceptions(intersections, start_point, contour) -> list:
+  if intersections is None:
+    return None
   internal_interceptions = []
   for intersection_point in intersections:
     p1 = np.array(start_point, dtype=np.float32) # float32 for no precision error
