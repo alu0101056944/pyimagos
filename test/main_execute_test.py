@@ -28,7 +28,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      10,
+      5,
       50,
       50,
     )
@@ -40,7 +40,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      10,
+      5,
       50,
       50,
     )
@@ -58,7 +58,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      10,
+      5,
       41,
       97,
     )
@@ -76,14 +76,15 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      10,
+      5,
       41,
       97,
     )
     assert len(complete_contours) == 0
 
-  def test_single_ideal_distal_phalanx(self):
-    contours = [
+  @pytest.fixture(scope='class')
+  def ideal_distal_phalanx_contours(self):
+    yield [
       np.array(
         [[[25, 66]],
         [[24, 67]],
@@ -133,11 +134,17 @@ class TestMainExecute:
         dtype=np.int32
       ),
     ]
+
+
+  def test_single_ideal_distal_phalanx(self, ideal_distal_phalanx_contours):
+    contours = [
+      ideal_distal_phalanx_contours
+    ]
     expected_contours = [ExpectedContourDistalPhalanx(1)]
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      10,
+      5,
       41,
       97,
     )
@@ -147,3 +154,35 @@ class TestMainExecute:
     assert np.array_equal(found_contours[0], contours[0])
     EPSILON = 1e-10
     assert np.absolute(total_score - 5.75452274621356e-09) < EPSILON
+
+  def test_invalid_image_width(self, ideal_distal_phalanx_contours):
+    contours = [
+      ideal_distal_phalanx_contours
+    ]
+    expected_contours = [ExpectedContourDistalPhalanx(1)]
+    with pytest.raises(ValueError) as excinfo:
+      search_complete_contours(
+        contours,
+        expected_contours,
+        5,
+        21,
+        97,
+      )
+    assert "Image width is not enough to cover the whole contour." \
+      in str(excinfo.value)
+  
+  def test_invalid_image_height(self, ideal_distal_phalanx_contours):
+    contours = [
+      ideal_distal_phalanx_contours
+    ]
+    expected_contours = [ExpectedContourDistalPhalanx(1)]
+    with pytest.raises(ValueError) as excinfo:
+      search_complete_contours(
+        contours,
+        expected_contours,
+        5,
+        22,
+        30,
+      )
+    assert "Image height is not enough to cover the whole contour." \
+      in str(excinfo.value)

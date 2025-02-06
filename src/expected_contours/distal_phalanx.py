@@ -59,8 +59,20 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     if len(contour) == 0:
       self.contour = []
       return
-
+    
     self.contour = np.reshape(contour, (-1, 2))
+
+    x_values = self.contour[:, 0]
+    y_values = self.contour[:, 1]
+    min_x = int(np.min(x_values))
+    min_y = int(np.min(y_values))
+    max_x = int(np.max(x_values))
+    max_y = int(np.max(y_values))
+    if image_width < max_x - min_x:
+      raise ValueError('Image width is not enough to cover the whole contour.')
+    if image_height < max_y - min_y:
+      raise ValueError('Image height is not enough to cover the whole contour.')
+
     rect = cv.minAreaRect(contour)
     self.min_area_rect = rect
     bounding_rect_contour = cv.boxPoints(rect)
