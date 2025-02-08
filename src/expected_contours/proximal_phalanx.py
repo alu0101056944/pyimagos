@@ -98,7 +98,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
   def shape_restrictions(self) -> list:
     area = cv.contourArea(self.contour)
     if area < 80:
-      return [False, -1]
+      return float('inf')
 
     # Calculate perimeter of curve on the contour. Iterates all lines in contour
     # and sums the distances. closed so that it calculates distance from last to
@@ -109,7 +109,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
     approximated_contour = np.reshape(approximated_contour, (-1, 2))
 
     if len(approximated_contour) < 3:
-       return [False, -1]
+       return float('inf')
 
     angles = []
     for i in range(len(approximated_contour)):
@@ -177,7 +177,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
         score -= 5
 
     if score < 1:
-      return [False, -1]
+      return float('inf')
 
     return [True, score]
 

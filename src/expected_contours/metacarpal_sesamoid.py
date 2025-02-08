@@ -62,7 +62,7 @@ class ExpectedContourMetacarpalSesamoid(ExpectedContour):
   def shape_restrictions(self) -> list:
     area = cv.contourArea(self.contour)
     if area < 10:  # Minimum area for sesamoid, adjust as needed
-      return [False, -1]
+      return float('inf')
 
     # Calculate perimeter of curve on the contour. Iterates all lines in contour
     # and sums the distances. closed so that it calculates distance from last to
@@ -73,7 +73,7 @@ class ExpectedContourMetacarpalSesamoid(ExpectedContour):
     approximated_contour = np.reshape(approximated_contour, (-1, 2))
 
     if len(approximated_contour) < 3: # min 3 points to form a shape
-      return [False, -1]
+      return float('inf')
 
     angles = []
     for i in range(len(approximated_contour)):
@@ -105,7 +105,7 @@ class ExpectedContourMetacarpalSesamoid(ExpectedContour):
       score -= 5
 
     if score < 1:
-      return [False, -1]
+      return float('inf')
 
     return [True, score]
 

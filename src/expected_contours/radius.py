@@ -62,14 +62,14 @@ class ExpectedContourRadius(ExpectedContour):
   def shape_restrictions(self) -> list:
     area = cv.contourArea(self.contour)
     if area < 100:
-      return [False, -1]
+      return float('inf')
 
     epsilon = 0.02 * cv.arcLength(self.contour, closed=True)
     approximated_contour = cv.approxPolyDP(self.contour, epsilon, True)
     approximated_contour = np.reshape(approximated_contour, (-1, 2))
 
     if len(approximated_contour) < 3:
-      return [False, -1]
+      return float('inf')
 
     angles = []
     for i in range(len(approximated_contour)):
@@ -115,7 +115,7 @@ class ExpectedContourRadius(ExpectedContour):
       score -= 5
 
     if score < 1:
-      return [False, -1]
+      return float('inf')
 
     return [True, score]
 

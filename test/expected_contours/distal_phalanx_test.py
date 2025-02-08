@@ -70,15 +70,13 @@ class TestDistalPhalanxExpectedContour:
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare([], 66, 151)
     shape_score = phalanx.shape_restrictions()
-    assert shape_score[0] == False
-    assert shape_score[1] == -1
+    assert shape_score == float('inf')
 
   def test_ideal_shape_accepted(self, distal_phalanx_contour):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
     shape_score = phalanx.shape_restrictions()
-    assert shape_score[0] == True
-    assert shape_score != -1
+    assert shape_score != float('inf')
 
   def test_shape_under_80_area(self):
     under_80_distal_phalanx = np.array(
@@ -122,8 +120,7 @@ class TestDistalPhalanxExpectedContour:
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(under_80_distal_phalanx, 40, 100)
     shape_score = phalanx.shape_restrictions()
-    assert shape_score[0] == False
-    assert shape_score != -1
+    assert shape_score == float('inf')
 
   def test_bad_aspect_ratio(self):
     bad_aspect_ratio = np.array(
@@ -155,8 +152,7 @@ class TestDistalPhalanxExpectedContour:
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(bad_aspect_ratio, 66, 151)
     shape_score = phalanx.shape_restrictions()
-    assert shape_score[0] == False
-    assert shape_score != -1
+    assert shape_score == float('inf')
 
   def test_second_occurence_aspect_ratio_tolerance_fault(
     self,
@@ -215,8 +211,7 @@ class TestDistalPhalanxExpectedContour:
     )
     distal_2.prepare(larger_aspect_contour, 22, 38)
     score = distal_2.shape_restrictions()
-    assert score[0] == False
-    assert score[1] == -1
+    assert score == float('inf')
 
   def test_solidity_too_high(self):
     high_solidity = np.array(
@@ -240,7 +235,7 @@ class TestDistalPhalanxExpectedContour:
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(high_solidity, 20, 30)
     shape_value = phalanx.shape_restrictions()
-    assert shape_value == [False, -1]
+    assert shape_value == float('inf')
 
   def test_too_many_convexity_defects(self):
     over_convex_defects = np.array(
@@ -266,7 +261,7 @@ class TestDistalPhalanxExpectedContour:
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(over_convex_defects, 20, 30)
     shape_value = phalanx.shape_restrictions()
-    assert shape_value == [False, -1]
+    assert shape_value == float('inf')
 
   def test_too_few_convexity_defects(self):
     under_convex_defects = np.array(
@@ -286,7 +281,7 @@ class TestDistalPhalanxExpectedContour:
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(under_convex_defects, 20, 30)
     shape_value = phalanx.shape_restrictions()
-    assert shape_value == [False, -1]
+    assert shape_value == float('inf')
 
   def test_contour_fully_inside_allowed_area(
     self,
@@ -459,6 +454,5 @@ class TestDistalPhalanxExpectedContour:
 
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(self_intercepting_contour, 32, 97)
-    is_valid, score = phalanx.shape_restrictions()
-    assert is_valid == False
-    assert score == -1
+    score = phalanx.shape_restrictions()
+    assert score == float('inf')

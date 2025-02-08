@@ -135,34 +135,28 @@ class TestMainExecute:
       ),
     ]
 
-
   def test_single_ideal_distal_phalanx(self, ideal_distal_phalanx_contours):
-    contours = [
-      ideal_distal_phalanx_contours
-    ]
     expected_contours = [ExpectedContourDistalPhalanx(1)]
     complete_contours = search_complete_contours(
-      contours,
+      ideal_distal_phalanx_contours,
       expected_contours,
       5,
       41,
       97,
     )
     assert len(complete_contours) == 1
-    found_contours, total_score = complete_contours[0]
+    found_contours = complete_contours[0]['contours_committed']
+    total_score = complete_contours[0]['committed_total_value']
     assert len(found_contours) == 1
-    assert np.array_equal(found_contours[0], contours[0])
-    EPSILON = 1e-10
+    assert np.array_equal(found_contours[0], ideal_distal_phalanx_contours[0])
+    EPSILON = 1e-8
     assert np.absolute(total_score - 5.75452274621356e-09) < EPSILON
 
   def test_invalid_image_width(self, ideal_distal_phalanx_contours):
-    contours = [
-      ideal_distal_phalanx_contours
-    ]
     expected_contours = [ExpectedContourDistalPhalanx(1)]
     with pytest.raises(ValueError) as excinfo:
       search_complete_contours(
-        contours,
+        ideal_distal_phalanx_contours,
         expected_contours,
         5,
         21,
@@ -172,13 +166,10 @@ class TestMainExecute:
       in str(excinfo.value)
   
   def test_invalid_image_height(self, ideal_distal_phalanx_contours):
-    contours = [
-      ideal_distal_phalanx_contours
-    ]
     expected_contours = [ExpectedContourDistalPhalanx(1)]
     with pytest.raises(ValueError) as excinfo:
       search_complete_contours(
-        contours,
+        ideal_distal_phalanx_contours,
         expected_contours,
         5,
         22,

@@ -82,7 +82,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     width = self.min_area_rect[1][0]
 
     if height == 0 or width == 0:
-      return [False, -1]
+      return float('inf')
     self._aspect_ratio = max(width, height) / min(width, height)
 
     self.top_left_corner, i = get_top_left_corner(
@@ -141,30 +141,30 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
   def shape_restrictions(self) -> list:
     if len(self.contour) == 0:
-      return [False, -1]
+      return float('inf')
 
     area = cv.contourArea(self.contour)
     if area <= 80:
-      return [False, -1]
+      return float('inf')
     
     if self._aspect_ratio < 1.3:
-      return [False, -1]
+      return float('inf')
     
     if self.encounter_amount > 1:
       first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
       TOLERANCE = 0.3
       if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
-        return [False, -1]
+        return float('inf')
 
     if len(self.approximated_contour) < 3:
-      return [False, -1]
+      return float('inf')
     
     min_rect_width = self.min_area_rect[1][0]
     min_rect_height = self.min_area_rect[1][1]
     hull = cv.convexHull(self.contour)
     solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
     if solidity > 1.3:
-      return [False, -1]
+      return float('inf')
     
     try:
       hull_area = cv.contourArea(hull)
@@ -185,11 +185,11 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
             significant_convexity_defects += 1
 
       if significant_convexity_defects != 2:
-        return [False, -1]
+        return float('inf')
     except cv.error as e:
       error_message = str(e).lower()
       if 'not monotonous' in error_message:
-        return [False, -1]
+        return float('inf')
 
     if self.encounter_amount != 1: # little finger
       pass
@@ -199,7 +199,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
 
     difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
-    return [True, difference]
+    return difference
 
   def branch_start_position_restrictions(self) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
