@@ -24,19 +24,20 @@ class BoundingBoxPoint(Enum):
   BOTTOMLEFT = auto(),
 
 def calculate_positional_image(
+    contour: np.array,
     bounding_rect_contour: list,
     min_rect,
-    concatenated_image_width: int,
+    image_width: int,
     image_height: int,
     test_contours: list = None
 ) -> np.array:
-  image = np.full((image_height * 6, concatenated_image_width, 3), 0, dtype=np.uint8)
+  image = np.full((image_height * 6, image_width, 3), 0, dtype=np.uint8)
 
   cv.drawContours(image, [bounding_rect_contour], 0, (0, 255, 0), 1)
 
   top_left_corner, i = get_top_left_corner(
     bounding_rect_contour,
-    concatenated_image_width,
+    image_width,
     image_height
   )
   top_left_corner = top_left_corner
@@ -50,49 +51,21 @@ def calculate_positional_image(
     (i + 3) % len(bounding_rect_contour)
   ].tolist()
 
-  ERROR_PADDING = 4
-  point_1 = (bottom_right_corner + np.array([ERROR_PADDING, 0]))
-  point_2 = (top_right_corner + np.array([ERROR_PADDING, 0]))
-  direction = point_2 - point_1
-  cv.line(
-    image,
-    point_1 - direction * concatenated_image_width,
-    point_2 + direction * concatenated_image_width,
-    (255, 255, 0),
-    1
-  )
-  point_1 = (bottom_left_corner - np.array([ERROR_PADDING, 0]))
-  point_2 = (top_left_corner - np.array([ERROR_PADDING, 0]))
-  direction = point_2 - point_1
-  cv.line(
-    image,
-    point_1 - direction * concatenated_image_width,
-    point_2 + direction * concatenated_image_width,
-    (255, 255, 0),
-    1
-  )
-  point_1 = (bottom_left_corner + np.array([0, ERROR_PADDING]))
-  point_2 = (bottom_right_corner + np.array([0, ERROR_PADDING]))
-  direction = point_2 - point_1
-  cv.line(
-    image,
-    point_1 - direction * concatenated_image_width,
-    point_2 + direction * concatenated_image_width,
-    (255, 255, 0),
-    1
-  )
-  height = int(min_rect[1][1])
-  bottom_bound = int(height * 4)
-  point_1 = np.array((bottom_left_corner + np.array([0, bottom_bound])))
-  point_2 = np.array((bottom_right_corner + np.array([0, bottom_bound])))
-  direction = point_2 - point_1
-  cv.line(
-    image,
-    point_1 - direction * concatenated_image_width,
-    point_2 + direction * concatenated_image_width,
-    (255, 255, 0),
-    1
-  )
+  expected_contour = ExpectedContourDistalPhalanx(1)
+  expected_contour.prepare(contour, image.shape[1],
+                          image.shape[0])
+  position_restrictions = expected_contour.next_contour_restrictions()
+  for position_restriction in position_restrictions:
+    point_a = position_restriction[0]
+    point_b = position_restriction[1]
+    direction = point_b - point_a
+    cv.line(
+      image,
+      (point_a - direction * image.shape[1]).astype(np.int32),
+      (point_b + direction * image.shape[1]).astype(np.int32),
+      (255, 255, 0),
+      1
+    )
 
   cv.circle(image, top_left_corner, 1, (255, 0, 0), -1)
   cv.circle(image, top_right_corner, 1, (0, 0, 255), -1)
@@ -302,7 +275,7 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
   plt.text(0, 1.24, text, transform=plt.gca().transAxes,
            verticalalignment='bottom', horizontalalignment='left')
   
-  positional_view_image = calculate_positional_image(bounding_rect_contour,
+  positional_view_image = calculate_positional_image(contour, bounding_rect_contour,
                                                     rect,
                                                     concatenated.shape[1],
                                                     image_height,
