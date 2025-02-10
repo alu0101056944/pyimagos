@@ -72,8 +72,8 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     else: # expect ulna
       ERROR_PADDING = 10
       width = self.min_area_rect[1][0]
-      right_bound = width
-      left_bound = width * 6
+      right_bound = int(width)
+      left_bound = int(width * 6)
       return [
         [
           self.bottom_left_corner + [0, ERROR_PADDING],

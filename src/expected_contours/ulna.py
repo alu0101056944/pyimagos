@@ -109,7 +109,7 @@ class ExpectedContourUlna(ExpectedContour):
 
   def next_contour_restrictions(self) -> list:
     width = self.min_area_rect[1][0]
-    right_bound = width * 4
+    right_bound = int(width * 4)
     ERROR_PADDING = 10
     return [
       [

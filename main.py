@@ -35,7 +35,9 @@ from src.main_develop_corner_order import visualize_topleft_corner
 from src.main_develop_find_contour_corner import find_contour_corner
 from src.main_develop_find_sesamoid import find_sesamoid_main
 from src.main_develop_test_distal_phalanx import visualize_distal_phalanx_shape
+from src.main_develop_test_medial_phalanx import visualize_medial_phalanx_shape
 from src.main_develop_test_metacarpal import visualize_metacarpal_shape
+from src.main_develop_test_execute import visualize_execute_tests
 
 @click.group()
 def cli() -> None:
@@ -165,9 +167,19 @@ def distal_phalanx():
   visualize_distal_phalanx_shape()
 
 @shape.command()
+def medial_phalanx():
+  '''Image visualization of the medial phalanx 1 (leftmost) shape'''
+  visualize_medial_phalanx_shape()
+
+@shape.command()
 def metacarpal():
   '''Image visualization of the metacarpal 1 (leftmost) shape'''
   visualize_metacarpal_shape()
+
+@develop.command()
+def test_execute():
+  '''Image visualization of the execute tests'''
+  visualize_execute_tests()
 
 @develop.command()
 @click.argument("filename")

@@ -69,7 +69,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
 
   def next_contour_restrictions(self) -> list:
     height = self.min_area_rect[1][1] 
-    bottom_bound = height * 3
+    bottom_bound = int(height * 3)
 
     ERROR_PADDING = 4
     return [

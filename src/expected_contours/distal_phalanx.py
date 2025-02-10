@@ -135,7 +135,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
           [width // 2 + ERROR_PADDING,
           width // 2 + ERROR_PADDING]
         ),
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
+        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
         self.orientation_line[0] - np.array(

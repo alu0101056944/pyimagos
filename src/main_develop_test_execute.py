@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from src.main_develop_test_distal_phalanx import (
   create_minimal_image_from_contours,
 )
+from src.main_execute import is_in_allowed_space
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.expected_contour import ExpectedContour
 
@@ -184,5 +185,12 @@ def visualize_execute_tests():
   expected_contour = ExpectedContourDistalPhalanx(1)
   show_contours_position_restrictions(contours, 1, expected_contour, padding=5,
                title='Composition.', minimize_image=False)
-
+  contours_inside_area = list(filter(
+    lambda contour : (
+      is_in_allowed_space(contour, expected_contour)
+    ),
+    contours[:1] + contours[1 + 1:]
+  ))
+  if len(contours_inside_area) > 0:
+    print('Second contour is within expected position.')
   plt.show()
