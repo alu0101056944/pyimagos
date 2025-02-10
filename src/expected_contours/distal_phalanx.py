@@ -37,7 +37,6 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     self.first_encounter = first_encounter
     self.first_in_branch = first_in_branch
     self.ends_branchs_sequence = ends_branchs_sequence
-    self.approximated_contour = None
     self._aspect_ratio = None
     self.reference_hu_moments = np.array(
       [
@@ -91,15 +90,6 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       self.image_height
     )
 
-    # TODO experiment with the epsilon paremeter
-    # Calculate perimeter of curve on the contour. Iterates all lines in contour
-    # and sums the distances. closed so that it calculates distance from last to
-    # first point. epsilon is distance from original curve and the approximated.
-    # Changing epsilon varies how much the approx polygon is close to the original.
-    epsilon = 0.02 * cv.arcLength(self.contour, closed=True)
-    approximated_contour = cv.approxPolyDP(self.contour, epsilon, True)
-    self.approximated_contour = np.reshape(approximated_contour, (-1, 2))
-
     # assumming clockwise
     self.top_right_corner = bounding_rect_contour[
       (i + 1) % len(bounding_rect_contour)
@@ -114,7 +104,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
   def next_contour_restrictions(self) -> list:
     ERROR_PADDING = 4
     height = self.min_area_rect[1][1]
-    bottom_bound = height * 4
+    bottom_bound = int(height * 4)
 
     return [
       [
@@ -156,7 +146,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
         return float('inf')
 
-    if len(self.approximated_contour) < 3:
+    if len(self.contour) < 3:
       return float('inf')
     
     min_rect_width = self.min_area_rect[1][0]
@@ -191,9 +181,6 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       if 'not monotonous' in error_message:
         return float('inf')
 
-    if self.encounter_amount != 1: # little finger
-      pass
-
     moments = cv.moments(self.contour)
     hu_moments = cv.HuMoments(moments)
     hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
@@ -210,11 +197,11 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       in a top-left to bottom-right fashion (cv coords wise)'''
 
     height = self.min_area_rect[1][1] 
-    upper_bound = height * 4
-    lower_bound = height * 2
+    upper_bound = int(height * 4)
+    lower_bound = int(height * 2)
 
     width = self.min_area_rect[1][0]
-    right_bound = width * 5
+    right_bound = int(width * 5)
 
     return [
       [

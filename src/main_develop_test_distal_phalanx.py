@@ -15,6 +15,7 @@ import cv2 as cv
 import matplotlib.pyplot as plt
 
 from src.main_develop_corner_order import get_top_left_corner
+from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 
 class BoundingBoxPoint(Enum):
   TOPLEFT = auto(),
@@ -81,7 +82,7 @@ def calculate_positional_image(
     1
   )
   height = int(min_rect[1][1])
-  bottom_bound = height * 4
+  bottom_bound = int(height * 4)
   point_1 = np.array((bottom_left_corner + np.array([0, bottom_bound])))
   point_2 = np.array((bottom_right_corner + np.array([0, bottom_bound])))
   direction = point_2 - point_1
@@ -407,68 +408,74 @@ def show_contour(contour, test_contour=None, padding=0,
                               test_contour=test_contour,
                               show_convex_defects=show_convex_defects)
 
-def visualize_distal_phalanx_shape():
-  borders_detected = Image.open('docs/distal_phalanx.jpg')
-  borders_detected = np.array(borders_detected)
-  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+def get_test_contours(contour, image_width, image_height):
+  instance = ExpectedContourDistalPhalanx(1)
+  instance.prepare(contour, image_width, image_height)
+  position_restrictions = instance.next_contour_restrictions()
 
-  _, thresh = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
-  contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL,
-                              cv.CHAIN_APPROX_SIMPLE)
+  # target is to the different contours be calculated dynamically
+  # so I need to know which line is bottomleft to bottom right , etc
+  # but there is no order garantee, so I hard wire it looking
+  # at how ExpectedContourDistalPhalanx's next_contour_restrictions is
+  # at the moment of coding this.
 
+  limit_x_lowest = position_restrictions[1][0][0]
+  limit_x_highest = position_restrictions[0][0][0]
+  limit_y_lowest = position_restrictions[2][0][1]
+  limit_y_highest = position_restrictions[3][0][1]
   test_contour_fully_inside = np.array([
-      [[20, 106]],
-      [[23, 106]],
-      [[23, 108]],
-      [[20, 108]],
+      [[limit_x_lowest + 2, limit_y_lowest + 2]],
+      [[limit_x_lowest + 4, limit_y_lowest + 2]],
+      [[limit_x_lowest + 4, limit_y_lowest + 4]],
+      [[limit_x_lowest + 2, limit_y_lowest + 4]],
     ])
   test_contour_partially_outside = np.array([
-      [[12, 106]],
-      [[16, 106]],
-      [[16, 108]],
-      [[12, 108]],
+      [[limit_x_lowest - 3, limit_y_lowest + 6]],
+      [[limit_x_lowest + 3, limit_y_lowest + 6]],
+      [[limit_x_lowest + 3, limit_y_lowest + 8]],
+      [[limit_x_lowest - 3, limit_y_lowest + 8]],
     ])
   test_contour_fully_outside = np.array([
-      [[8, 106]],
-      [[10, 106]],
-      [[10, 108]],
-      [[8, 108]],
+      [[limit_x_lowest - 8, limit_y_lowest + 10]],
+      [[limit_x_lowest - 5, limit_y_lowest + 10]],
+      [[limit_x_lowest - 5, limit_y_lowest + 12]],
+      [[limit_x_lowest - 8, limit_y_lowest + 12]],
     ])
   test_contour_fully_outside_right = np.array([
-      [[48, 106]],
-      [[50, 106]],
-      [[50, 108]],
-      [[48, 108]],
+      [[limit_x_highest + 3, limit_y_lowest + 14]],
+      [[limit_x_highest + 6, limit_y_lowest + 14]],
+      [[limit_x_highest + 6, limit_y_lowest + 16]],
+      [[limit_x_highest + 3, limit_y_lowest + 16]],
     ])
   test_contour_partially_outside_right = np.array([
-      [[43, 116]],
-      [[48, 116]],
-      [[48, 118]],
-      [[43, 118]],
+      [[limit_x_highest - 3, limit_y_lowest + 18]],
+      [[limit_x_highest + 3, limit_y_lowest + 18]],
+      [[limit_x_highest + 3, limit_y_lowest + 20]],
+      [[limit_x_highest - 3, limit_y_lowest + 20]],
     ])
   test_contour_partially_outside_top = np.array([
-      [[32, 98]],
-      [[38, 98]],
-      [[38, 102]],
-      [[32, 102]],
+      [[limit_x_lowest + 15, limit_y_lowest - 3]],
+      [[limit_x_lowest + 17, limit_y_lowest - 3]],
+      [[limit_x_lowest + 17, limit_y_lowest + 3]],
+      [[limit_x_lowest + 15, limit_y_lowest + 3]],
     ])
   test_contour_fully_outside_top = np.array([
-      [[32, 88]],
-      [[38, 88]],
-      [[38, 92]],
-      [[32, 92]],
+      [[limit_x_lowest + 15, limit_y_lowest - 8]],
+      [[limit_x_lowest + 17, limit_y_lowest - 8]],
+      [[limit_x_lowest + 17, limit_y_lowest - 5]],
+      [[limit_x_lowest + 15, limit_y_lowest - 5]],
     ])
   test_contour_fully_outside_bottom = np.array([
-      [[32, 192]],
-      [[38, 192]],
-      [[38, 198]],
-      [[32, 198]],
+      [[limit_x_lowest + 15, limit_y_highest + 8]],
+      [[limit_x_lowest + 17, limit_y_highest + 8]],
+      [[limit_x_lowest + 17, limit_y_highest + 11]],
+      [[limit_x_lowest + 15, limit_y_highest + 11]],
     ])
   test_contour_partially_outside_bottom = np.array([
-      [[32, 183]],
-      [[38, 183]],
-      [[38, 189]],
-      [[32, 189]],
+      [[limit_x_lowest + 15, limit_y_highest - 3]],
+      [[limit_x_lowest + 17, limit_y_highest - 3]],
+      [[limit_x_lowest + 17, limit_y_highest + 3]],
+      [[limit_x_lowest + 15, limit_y_highest + 3]],
     ])
   test_contours = [
     test_contour_fully_inside,
@@ -481,6 +488,18 @@ def visualize_distal_phalanx_shape():
     test_contour_fully_outside_bottom,
     test_contour_partially_outside_bottom
   ]
+  return test_contours
+
+def visualize_distal_phalanx_shape():
+  borders_detected = Image.open('docs/distal_phalanx.jpg')
+  borders_detected = np.array(borders_detected)
+  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+
+  _, thresh = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL,
+                              cv.CHAIN_APPROX_SIMPLE)
+
+  test_contours = get_test_contours(contours[0], thresh.shape[1], thresh.shape[0])
   show_contour(contours[0], test_contours, padding=5,
                title='Distal phalanx original.', minimize_image=False)
   
