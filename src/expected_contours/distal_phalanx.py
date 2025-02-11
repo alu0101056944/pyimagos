@@ -168,7 +168,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     if area <= 80:
       return float('inf')
     
-    if self._aspect_ratio < 1.3:
+    if self._aspect_ratio < 1.2:
       return float('inf')
     
     if self.encounter_amount > 1:
@@ -202,7 +202,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
           defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-          if defect_area / hull_area > 0.1:
+          if defect_area / hull_area > 0.08:
             significant_convexity_defects += 1
 
       if significant_convexity_defects != 2:
@@ -228,11 +228,12 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       in a top-left to bottom-right fashion (cv coords wise)'''
 
     height = self.min_area_rect[1][1] 
-    upper_bound = int(height * 4)
-    lower_bound = int(height * 2)
+    upper_bound = int(height * 2)
+    lower_bound = int(height)
 
     width = self.min_area_rect[1][0]
     right_bound = int(width * 5)
+    ERROR_PADDING = 1
 
     return [
       [
@@ -246,9 +247,15 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
       [
-        self.bottom_right_corner,
-        self.top_right_corner,
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+        self.orientation_line[0] + np.array(
+          [width // 2 + ERROR_PADDING,
+          width // 2 + ERROR_PADDING]
+        ),
+        self.orientation_line[1] + np.array(
+          [width // 2 + ERROR_PADDING,
+          width // 2 + ERROR_PADDING]
+        ),
+        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
       [
         self.bottom_right_corner + np.array([right_bound, 0]),

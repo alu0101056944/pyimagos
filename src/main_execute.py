@@ -166,9 +166,15 @@ def find_closest_contours_to_point(point: np.array, contours: list) -> np.array:
   return sorted_index
 
 def is_in_allowed_space(contour: list,
-  last_expected_contour: ExpectedContour
+  last_expected_contour: ExpectedContour,
+  has_to_jump_to_next_branch: bool = False,
+  first_in_branch: ExpectedContour = None,
 ) -> bool:
-  position_restrictions = last_expected_contour.next_contour_restrictions()
+  if not has_to_jump_to_next_branch:
+    position_restrictions = last_expected_contour.next_contour_restrictions()
+  else:
+    position_restrictions = first_in_branch.branch_start_position_restrictions()
+
   for position_restriction in position_restrictions:
     x1, y1 = position_restriction[0]
     x2, y2 = position_restriction[1]
@@ -212,12 +218,12 @@ def is_in_allowed_space(contour: list,
             return False
   return True
 
-def get_best_contour_alternative(contours: list, reference_state: dict,
-                                 expected_contours: list, image_width: int,
-                                 image_height: int) -> list:
+def get_best_contour_alternative(contours: list, inside_indices: list,
+                                 reference_state: dict, expected_contours: list,
+                                 image_width: int, image_height: int) -> list:
   alternatives = []
 
-  for i in range(len(contours)):
+  for i in inside_indices:
     state = dict(reference_state)
     state['contours_committed'] = list(reference_state['contours_committed'])
     state['contours_committed'].append(contours[i])
@@ -229,7 +235,7 @@ def get_best_contour_alternative(contours: list, reference_state: dict,
     state['committed_total_value'] = state['committed_total_value'] + score
     alternatives.append(state)
 
-  for i in range(len(contours)):
+  for i in inside_indices:
     for j in range(len(contours[i])):
       cut_operation = CutContour(i, j, image_width, image_height)
       new_contours = cut_operation.generate_new_contour(contours)
@@ -258,17 +264,31 @@ def get_best_contour_alternative(contours: list, reference_state: dict,
         alternatives.append(state)
   
   invasion_counts = [1, 2, 3, 4]
-  for i in range(len(contours)):
-    for j in range(len(contours)):
-      for invasion_count in invasion_counts:
-        extend_operation = ExtendContour(
-          i,
-          j,
-          image_width,
-          image_height,
-          invasion_count
-        )
-        new_contours = extend_operation.generate_new_contour(contours)
+  for i in inside_indices:
+    for j in inside_indices:
+      if i != j:
+        for invasion_count in invasion_counts:
+          extend_operation = ExtendContour(
+            i,
+            j,
+            image_width,
+            image_height,
+            invasion_count
+          )
+          new_contours = extend_operation.generate_new_contour(contours)
+          if new_contours is not None:
+            state = dict(reference_state)
+            state['contours_committed'] = list(reference_state['contours_committed'])
+            state['contours'] = new_contours
+            state['chosen_contour_index'] = i
+            instance = expected_contours[len(state['contours_committed']) - 1]
+            instance.prepare(new_contours[i], image_width, image_height)
+            score = instance.shape_restrictions()
+            state['committed_total_value'] = state['committed_total_value'] + score
+            alternatives.append(state)
+
+        join_operation = JoinContour(i, j)
+        new_contours = join_operation.generate_new_contour(contours)
         if new_contours is not None:
           state = dict(reference_state)
           state['contours_committed'] = list(reference_state['contours_committed'])
@@ -279,19 +299,6 @@ def get_best_contour_alternative(contours: list, reference_state: dict,
           score = instance.shape_restrictions()
           state['committed_total_value'] = state['committed_total_value'] + score
           alternatives.append(state)
-
-      join_operation = JoinContour(i, j)
-      new_contours = join_operation.generate_new_contour(contours)
-      if new_contours is not None:
-        state = dict(reference_state)
-        state['contours_committed'] = list(reference_state['contours_committed'])
-        state['contours'] = new_contours
-        state['chosen_contour_index'] = i
-        instance = expected_contours[len(state['contours_committed']) - 1]
-        instance.prepare(new_contours[i], image_width, image_height)
-        score = instance.shape_restrictions()
-        state['committed_total_value'] = state['committed_total_value'] + score
-        alternatives.append(state)
 
   best_alternative = None
   min_value = float('inf')
@@ -346,7 +353,9 @@ def search_complete_contours(contours: list,
   while True:
     elapsed_time = time.time() - start_time
     if elapsed_time >= search_duration_seconds:
-      break
+      # return []
+      # TODO turn this back on
+      pass
     print(f'Elapsed time: {elapsed_time:.2f} seconds')
 
     if len(state_stack) > 0:
@@ -354,6 +363,9 @@ def search_complete_contours(contours: list,
       contours = state['contours']
       chosen_contour_index = state['chosen_contour_index']
       chosen_contour = contours[chosen_contour_index]
+      expected_contour_class = (
+        expected_contours[len(state['contours_committed']) - 1]
+      )
       expected_contour_class.prepare(chosen_contour, image_width, image_height)
 
       if len(state['contours_committed']) == len(expected_contours):
@@ -366,29 +378,41 @@ def search_complete_contours(contours: list,
           }
         ))]
       else:
-        contours_inside_area = list(filter(
-          lambda contour : (
-            is_in_allowed_space(contour, expected_contour_class)
-          ),
+        contours_without_chosen = (
           contours[:chosen_contour_index] + contours[chosen_contour_index + 1:]
-        ))
-        if len(contours_inside_area) > 0:
+        )
+        contours_inside_area_indices = [
+          index
+          for index, contour in enumerate(contours_without_chosen)
+          if is_in_allowed_space(
+            contour,
+            expected_contour_class,
+            has_to_jump_to_next_branch=expected_contour_class.ends_branchs_sequence,
+            first_in_branch=expected_contour_class.first_in_branch
+          )
+        ]
+        if len(contours_inside_area_indices) > 0:
           best_alternative = get_best_contour_alternative(
-            contours_inside_area,
+            contours_without_chosen,
+            contours_inside_area_indices,
             state,
             expected_contours,
             image_width,
             image_height
           )
-          state_stack.pop(0)
-          state_stack.insert(0, best_alternative)
+          if best_alternative is not None:
+            state_stack.pop(0)
+            state_stack.insert(0, best_alternative)
+          else:
+            print('No valid contour inside required area was found. Search stop.')
+            state_stack.pop(0)
         else:
-          print('No valid contours encountered (position). Search stop.')
-          return []
+          print('No contours inside required area were found. Search stop.')
+          state_stack.pop(0)
       
     else:
       print('Search finished: explored all alternatives')
-      break
+      return []
 
 def create_minimal_image_from_contours(image: np.array,
                                        contours: list,

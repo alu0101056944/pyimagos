@@ -219,7 +219,7 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
         defect_area = cv.contourArea(np.array([start, end, farthest]))
 
         cv.line(hull_defects_image, start, end, (255, 0, 0), 1)
-        if defect_area / hull_area > 0.1:
+        if defect_area / hull_area > 0.08:
           cv.circle(hull_defects_image, farthest, 1, (0, 255, 255), -1)
         else:
           cv.circle(hull_defects_image, farthest, 1, (0, 140, 45), -1)
@@ -314,7 +314,7 @@ def calculate_attributes(contour, show_convex_defects: bool = True) -> list:
 
         defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-        if defect_area / hull_area > 0.1:
+        if defect_area / hull_area > 0.08:
           significant_convexity_defects += 1
   else:
     significant_convexity_defects = -1
@@ -397,10 +397,10 @@ def get_test_contours(contour, image_width, image_height):
   limit_y_lowest = position_restrictions[2][0][1]
   limit_y_highest = position_restrictions[3][0][1]
   test_contour_fully_inside = np.array([
-      [[limit_x_lowest + 2, limit_y_lowest + 2]],
-      [[limit_x_lowest + 4, limit_y_lowest + 2]],
-      [[limit_x_lowest + 4, limit_y_lowest + 4]],
-      [[limit_x_lowest + 2, limit_y_lowest + 4]],
+      [[limit_x_lowest + 15, limit_y_lowest + 5]],
+      [[limit_x_lowest + 17, limit_y_lowest + 5]],
+      [[limit_x_lowest + 17, limit_y_lowest + 8]],
+      [[limit_x_lowest + 15, limit_y_lowest + 8]],
     ])
   test_contour_partially_outside = np.array([
       [[limit_x_lowest - 3, limit_y_lowest + 6]],
@@ -439,16 +439,16 @@ def get_test_contours(contour, image_width, image_height):
       [[limit_x_lowest + 15, limit_y_lowest - 5]],
     ])
   test_contour_fully_outside_bottom = np.array([
-      [[limit_x_lowest + 15, limit_y_highest + 8]],
-      [[limit_x_lowest + 17, limit_y_highest + 8]],
-      [[limit_x_lowest + 17, limit_y_highest + 11]],
-      [[limit_x_lowest + 15, limit_y_highest + 11]],
+      [[limit_x_lowest + 65, limit_y_highest + 8]],
+      [[limit_x_lowest + 67, limit_y_highest + 8]],
+      [[limit_x_lowest + 67, limit_y_highest + 11]],
+      [[limit_x_lowest + 65, limit_y_highest + 11]],
     ])
   test_contour_partially_outside_bottom = np.array([
-      [[limit_x_lowest + 15, limit_y_highest - 3]],
-      [[limit_x_lowest + 17, limit_y_highest - 3]],
-      [[limit_x_lowest + 17, limit_y_highest + 3]],
-      [[limit_x_lowest + 15, limit_y_highest + 3]],
+      [[limit_x_lowest + 65, limit_y_highest - 3]],
+      [[limit_x_lowest + 67, limit_y_highest - 3]],
+      [[limit_x_lowest + 67, limit_y_highest + 3]],
+      [[limit_x_lowest + 65, limit_y_highest + 3]],
     ])
   test_contours = [
     test_contour_fully_inside,
@@ -742,5 +742,61 @@ def visualize_distal_phalanx_shape():
               title='Self intercepting contour. Expected to be discarded.',
               minimize_image=False,
               show_convex_defects=False)
+  
+  ideal_distal_phalanx_second_finger = np.array(
+      [[[ 98,  35]],
+      [[ 97,  36]],
+      [[ 96,  36]],
+      [[ 94,  38]],
+      [[ 94,  39]],
+      [[ 93,  40]],
+      [[ 93,  42]],
+      [[ 94,  43]],
+      [[ 94,  44]],
+      [[ 95,  45]],
+      [[ 95,  47]],
+      [[ 96,  48]],
+      [[ 96,  50]],
+      [[ 95,  51]],
+      [[ 95,  54]],
+      [[ 94,  55]],
+      [[ 94,  56]],
+      [[ 93,  57]],
+      [[ 93,  58]],
+      [[ 88,  63]],
+      [[ 88,  67]],
+      [[ 90,  67]],
+      [[ 91,  68]],
+      [[ 98,  68]],
+      [[ 99,  69]],
+      [[104,  69]],
+      [[105,  68]],
+      [[111,  68]],
+      [[112,  67]],
+      [[115,  67]],
+      [[115,  63]],
+      [[110,  58]],
+      [[110,  57]],
+      [[109,  56]],
+      [[109,  55]],
+      [[108,  54]],
+      [[108,  50]],
+      [[109,  49]],
+      [[109,  46]],
+      [[110,  45]],
+      [[110,  44]],
+      [[111,  43]],
+      [[111,  41]],
+      [[110,  40]],
+      [[110,  37]],
+      [[109,  37]],
+      [[108,  36]],
+      [[106,  36]],
+      [[105,  35]]],
+      dtype=np.int32
+    )
+  show_contour(ideal_distal_phalanx_second_finger, padding=5,
+            title='Second distal phalanx occurence.',
+            minimize_image=False)
 
   plt.show()

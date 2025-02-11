@@ -347,8 +347,8 @@ class TestDistalPhalanxExpectedContour:
     phalanx.prepare(distal_phalanx_contour, 66, 151)
     square_contour = np.array([
       [[43, 116]],
-      [[48, 116]],
-      [[48, 118]],
+      [[54, 116]],
+      [[54, 118]],
       [[43, 118]],
     ])
     assert is_in_allowed_space(square_contour, phalanx) == False
@@ -374,8 +374,8 @@ class TestDistalPhalanxExpectedContour:
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
     square_contour = np.array([
-      [[32, 98]],
-      [[38, 98]],
+      [[32, 94]],
+      [[38, 94]],
       [[38, 102]],
       [[32, 102]],
     ])

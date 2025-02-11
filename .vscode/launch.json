@@ -26,7 +26,8 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "develop",
-        "test-execute",
+        "shape",
+        "distal-phalanx",
       ]
     },
   ]
