@@ -228,7 +228,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       in a top-left to bottom-right fashion (cv coords wise)'''
 
     height = self.min_area_rect[1][1] 
-    upper_bound = int(height * 2)
+    upper_bound = int(height * 2.5)
     lower_bound = int(height)
 
     width = self.min_area_rect[1][0]

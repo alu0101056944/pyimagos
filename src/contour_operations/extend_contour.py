@@ -69,6 +69,9 @@ class ExtendContour(ContourOperation):
     if len(contour_b) < 2:
       return None
 
+    if len(contour_a) < 1:
+      return None
+
     index_a, closest_index, second_index = self._find_closest_pair(
       fixed_contour_a,
       fixed_contour_b

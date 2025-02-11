@@ -264,3 +264,15 @@ class TestExtendOperation:
 
     assert np.array_equal(contours[0], expected_contour_a)
     assert np.array_equal(contours[1], expected_contour_b)
+
+  def test_extend_from_cero_points(self):
+    contours = [
+      np.array([[4, 12], [4, 16], [8, 16], [8, 12]]),
+      np.array([])
+    ]
+
+    invasion_count = 1
+    extendOperation = ExtendContour(1, 0, 30, 30, invasion_count)
+    contours = extendOperation.generate_new_contour(contours)
+
+    assert contours is None

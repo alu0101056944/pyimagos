@@ -56,6 +56,9 @@ class JoinContour(ContourOperation):
     if len(contour_b) == 0:
       return None
 
+    if len(contour_a) == 0:
+      return None
+
     if self.point_id1 is not None:
       # calculate closest index in contour b to point1
       point1 = fixed_contour_a[self.point_id1]

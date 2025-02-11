@@ -131,3 +131,13 @@ class TestJoinOperation:
     )
 
     assert np.array_equal(contours[0], expected_contour)
+
+  def test_join_from_cero_points(self):
+    contours = [
+      np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
+      np.array([])
+    ]
+    joinOperation = JoinContour(1, 0)
+    contours = joinOperation.generate_new_contour(contours)
+
+    assert contours is None
