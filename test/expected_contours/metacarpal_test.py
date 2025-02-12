@@ -3,258 +3,164 @@ Universidad de La Laguna
 Máster en Ingeniería Informática
 Trabajo de Final de Máster
 Pyimagos development
-
-Visualization of the shape testing for metacarpal phalanx
 '''
 
-from PIL import Image
-import numpy as np
-import cv2 as cv
-import matplotlib.pyplot as plt
+import pytest
 
-from src.main_develop_test_distal_phalanx import (
-  create_minimal_image_from_contours,
-  calculate_positional_image,
+import numpy as np
+
+from src.expected_contours.metacarpal import (
+  ExpectedContourMetacarpal
 )
 
-def calculate_attributes(contour, show_convex_defects: bool = True) -> list:
-  contour = np.reshape(contour, (-1, 2))
+class TestMetacarpalExpectedContour:
 
-  area = cv.contourArea(contour)
+  @pytest.fixture(scope='class')
+  def metacarpal_contour(self):
+    yield np.array(
+      [[[ 17,  54]],
+       [[ 16,  55]],
+       [[ 12,  55]],
+       [[ 11,  56]],
+       [[  9,  56]],
+       [[  8,  57]],
+       [[  7,  57]],
+       [[  6,  58]],
+       [[  5,  58]],
+       [[  3,  60]],
+       [[  3,  61]],
+       [[  2,  62]],
+       [[  2,  63]],
+       [[  3,  64]],
+       [[  3,  68]],
+       [[  2,  69]],
+       [[  2,  72]],
+       [[  6,  76]],
+       [[  6,  77]],
+       [[  9,  80]],
+       [[  9,  81]],
+       [[ 11,  83]],
+       [[ 11,  84]],
+       [[ 14,  87]],
+       [[ 14,  88]],
+       [[ 16,  90]],
+       [[ 16,  91]],
+       [[ 17,  92]],
+       [[ 17,  93]],
+       [[ 18,  94]],
+       [[ 18,  95]],
+       [[ 19,  96]],
+       [[ 19,  97]],
+       [[ 21,  99]],
+       [[ 21, 100]],
+       [[ 22, 101]],
+       [[ 22, 102]],
+       [[ 23, 103]],
+       [[ 23, 104]],
+       [[ 24, 105]],
+       [[ 24, 106]],
+       [[ 25, 107]],
+       [[ 25, 108]],
+       [[ 26, 109]],
+       [[ 26, 110]],
+       [[ 27, 111]],
+       [[ 27, 112]],
+       [[ 28, 113]],
+       [[ 28, 114]],
+       [[ 29, 115]],
+       [[ 29, 116]],
+       [[ 30, 117]],
+       [[ 30, 119]],
+       [[ 31, 120]],
+       [[ 31, 123]],
+       [[ 32, 124]],
+       [[ 32, 128]],
+       [[ 33, 129]],
+       [[ 33, 138]],
+       [[ 34, 139]],
+       [[ 34, 141]],
+       [[ 35, 142]],
+       [[ 35, 143]],
+       [[ 38, 146]],
+       [[ 40, 146]],
+       [[ 41, 147]],
+       [[ 44, 147]],
+       [[ 45, 148]],
+       [[ 47, 148]],
+       [[ 48, 147]],
+       [[ 49, 147]],
+       [[ 50, 146]],
+       [[ 50, 145]],
+       [[ 52, 143]],
+       [[ 52, 142]],
+       [[ 54, 140]],
+       [[ 54, 139]],
+       [[ 57, 136]],
+       [[ 57, 135]],
+       [[ 59, 133]],
+       [[ 59, 132]],
+       [[ 61, 130]],
+       [[ 61, 129]],
+       [[ 62, 128]],
+       [[ 60, 126]],
+       [[ 60, 125]],
+       [[ 59, 125]],
+       [[ 50, 116]],
+       [[ 50, 115]],
+       [[ 48, 113]],
+       [[ 48, 112]],
+       [[ 46, 110]],
+       [[ 46, 109]],
+       [[ 44, 107]],
+       [[ 44, 106]],
+       [[ 43, 105]],
+       [[ 43, 104]],
+       [[ 42, 103]],
+       [[ 42, 102]],
+       [[ 41, 101]],
+       [[ 41, 100]],
+       [[ 40,  99]],
+       [[ 40,  98]],
+       [[ 39,  97]],
+       [[ 39,  96]],
+       [[ 38,  95]],
+       [[ 38,  93]],
+       [[ 37,  92]],
+       [[ 37,  91]],
+       [[ 36,  90]],
+       [[ 36,  89]],
+       [[ 35,  88]],
+       [[ 35,  86]],
+       [[ 34,  85]],
+       [[ 34,  83]],
+       [[ 33,  82]],
+       [[ 33,  80]],
+       [[ 32,  79]],
+       [[ 32,  70]],
+       [[ 31,  69]],
+       [[ 31,  66]],
+       [[ 30,  65]],
+       [[ 30,  63]],
+       [[ 22,  55]],
+       [[ 20,  55]],
+       [[ 19,  54]]],
+       dtype=np.int32
+    ) 
 
-  rect = cv.minAreaRect(contour)
-  width, height = rect[1]
-  if width and height > 0:
-    aspect_ratio = max(width, height) / min(width, height)
-  else:
-    aspect_ratio = 0
+  def test_empty_contour(self):
+    phalanx = ExpectedContourMetacarpal(1)
+    phalanx.prepare([], 66, 151)
+    shape_score = phalanx.shape_restrictions()
+    assert shape_score == float('inf')
 
-  solidity = (width * height) / (
-      cv.contourArea(cv.convexHull(contour))
-  )
+  def test_ideal_shape_accepted(self, metacarpal_contour):
+    phalanx = ExpectedContourMetacarpal(1)
+    phalanx.prepare(metacarpal_contour, 66, 151)
+    shape_score = phalanx.shape_restrictions()
+    assert shape_score != float('inf')
 
-  if show_convex_defects:
-    significant_convexity_defects = 0
-    hull_area = cv.contourArea(cv.convexHull(contour))
-    hull = cv.convexHull(contour, returnPoints=False)
-    defects = cv.convexityDefects(contour, hull)
-    if defects is not None:
-      for i in range(defects.shape[0]):
-        start_index, end_index, farthest_point_index, distance = defects[i, 0]
-
-        start = contour[start_index]
-        end = contour[end_index]
-        farthest = contour[farthest_point_index]
-
-        defect_area = cv.contourArea(np.array([start, end, farthest]))
-
-        if defect_area / hull_area > 0.07:
-          significant_convexity_defects += 1
-  else:
-    significant_convexity_defects = -1
-
-  moments = cv.moments(contour)
-  hu_moments = cv.HuMoments(moments)
-  hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
-
-  reference_hu_moments = np.array(
-    [
-     -0.37473269,
-    -0.84061534,
-    -3.91968783,
-    -4.34543824,
-    -8.4969161,
-    -5.00217622,
-    -9.01736599
-    ],
-    dtype=np.float64
-  )
-  difference = np.linalg.norm(hu_moments - reference_hu_moments)
-
-  return (
-    area,
-    aspect_ratio,
-    solidity,
-    significant_convexity_defects,
-    hu_moments,
-    difference
-  )
-
-def prepare_image_showing_shape(contours, approximated_contour, image_width,
-                                image_height, title, test_contour=None,
-                                show_convex_defects: bool = True):
-
-  # Separator (vertical)
-  separator_color = (255, 255, 255)
-  separator_width = 2
-  separator_column = np.full(
-    (image_height, separator_width, 3),
-    separator_color,
-    dtype=np.uint8
-  )
-
-  # First: blank image
-  blank_image = np.zeros((image_height, image_width, 3), dtype=np.uint8)
-  # Draw contours on blank image
-  for i, contour in enumerate(contours):
-    color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
-    if len(contour) > 0:
-      cv.drawContours(blank_image, contours, i, color, 1)
-
-  # Second: Approximated image
-  approximated_image = np.zeros((image_height, image_width, 3), dtype=np.uint8)
-  cv.drawContours(approximated_image, [approximated_contour], 0, (200, 200, 0),
-                  1)
-
-  # Third: minimum bounding box
-  bounding_box_image = np.zeros((image_height, image_width, 3), dtype=np.uint8)
-  contour = np.reshape(contours[0], (-1, 2))
-  rect = cv.minAreaRect(contour)
-  bounding_rect_contour = cv.boxPoints(rect)
-  bounding_rect_contour = np.int32(bounding_rect_contour) # to int
-  cv.drawContours(bounding_box_image, [bounding_rect_contour], 0, (0, 255, 0),
-                  1)
-  
-  # Fourth: convex hull
-  convex_hull_image = np.zeros((image_height, image_width, 3), dtype=np.uint8)
-  hull = cv.convexHull(contour)
-  cv.drawContours(convex_hull_image, [hull], 0, (0, 255, 0), 1)
-
-  # Fifth: hull convexity defects
-  if show_convex_defects:
-    hull_area = cv.contourArea(hull)
-    hull_defects_image = np.zeros((image_height, image_width, 3), dtype=np.uint8)
-    cv.drawContours(hull_defects_image, [hull], 0, (0, 255, 0), 2)
-    hull_indices = cv.convexHull(contour, returnPoints=False)
-    defects = cv.convexityDefects(contour, hull_indices)
-    if defects is not None:
-      for i in range(defects.shape[0]):
-        start_index, end_index, farthest_point_index, distance = defects[i, 0]
-
-        start = contour[start_index]
-        end = contour[end_index]
-        farthest = contour[farthest_point_index]
-
-        defect_area = cv.contourArea(np.array([start, end, farthest]))
-
-        cv.line(hull_defects_image, start, end, (255, 0, 0), 1)
-        if defect_area / hull_area > 0.07:
-          cv.circle(hull_defects_image, farthest, 1, (0, 255, 255), -1)
-        else:
-          cv.circle(hull_defects_image, farthest, 1, (0, 140, 45), -1)
-
-    concatenated = np.concatenate(
-      (
-        blank_image,
-        separator_column,
-        approximated_image,
-        separator_column,
-        bounding_box_image,
-        separator_column,
-        convex_hull_image,
-        separator_column,
-        hull_defects_image
-      ),
-      axis=1
-    )
-  else:
-    concatenated = np.concatenate(
-      (
-        blank_image,
-        separator_column,
-        approximated_image,
-        separator_column,
-        bounding_box_image,
-        separator_column,
-        convex_hull_image,
-      ),
-      axis=1
-    )
-
-
-  fig = plt.figure()
-  plt.imshow(concatenated)
-  plt.title(title)
-  plt.axis('off')
-  fig.canvas.manager.set_window_title(title)
-
-  (
-    area,
-    aspect_ratio,
-    solidity,
-    significant_convex_hull_defects,
-    hu_moments,
-    difference
-  ) = calculate_attributes(contour, show_convex_defects)
-  text = f'area={area}\naspect_ratio={aspect_ratio}\n' \
-    f'solidity={solidity}\n' \
-    f'significant_convex_hull_defects={significant_convex_hull_defects}\n' \
-    f'hu_moments={hu_moments}\n' \
-    f'difference={difference}'
-  plt.text(0, 1.24, text, transform=plt.gca().transAxes,
-           verticalalignment='bottom', horizontalalignment='left')
-  
-  positional_view_image = calculate_positional_image(
-                                                    contour,
-                                                    bounding_rect_contour,
-                                                    rect,
-                                                    concatenated.shape[1],
-                                                    image_height,
-                                                    test_contour)
-  fig = plt.figure()
-  plt.imshow(positional_view_image)
-  plt.title(title)
-  plt.axis('off')
-  fig.canvas.manager.set_window_title(title)
-
-def show_contour(contour, test_contour=None, padding=0,
-                 title='metacarpal variation', minimize_image: bool = True,
-                 show_convex_defects: bool = True):
-  contour = np.reshape(contour, (-1, 2))
-  x_values = contour[:, 0]
-  y_values = contour[:, 1]
-
-  max_x = int(np.max(x_values))
-  max_y = int(np.max(y_values))
-
-  blank_image = np.zeros((max_y + 5, max_x + 5), dtype=np.uint8)
-
-  if minimize_image:
-    minimal_image, adjusted_contours = create_minimal_image_from_contours(
-      blank_image,
-      [contour],
-      padding
-    )
-    minimal_image = cv.cvtColor(minimal_image, cv.COLOR_GRAY2RGB)
-    contours = adjusted_contours
-  else:
-    minimal_image = blank_image
-    contours = [contour]
-
-  epsilon = 0.8 * cv.arcLength(contours[0], closed=True)
-  approximated_contour = cv.approxPolyDP(contours[0], epsilon, True)
-  approximated_contour = np.reshape(approximated_contour, (-1, 2))
-
-  prepare_image_showing_shape(contours, approximated_contour,
-                              image_width=minimal_image.shape[1],
-                              image_height=minimal_image.shape[0],
-                              title=title,
-                              test_contour=test_contour,
-                              show_convex_defects=show_convex_defects)
-
-def visualize_metacarpal_shape():
-  borders_detected = Image.open('docs/metacarpal_closed.jpg')
-  borders_detected = np.array(borders_detected)
-  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
-
-  _, thresh = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
-  contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL,
-                              cv.CHAIN_APPROX_SIMPLE)
-
-  show_contour(contours[0], padding=5,
-               title='metacarpal original.', minimize_image=False)
-  
-  under_80_area = np.array(
+  def test_shape_under_80_area(self):
+    under_80_metacarpal = np.array(
       [[[ 4,  0]],
        [[ 3,  1]],
        [[ 2,  1]],
@@ -281,108 +187,121 @@ def visualize_metacarpal_shape():
        [[ 7,  2]],
        [[ 6,  1]],
        [[ 5,  1]]],
-    dtype=np.int32
-  )
-  show_contour(under_80_area, padding=5, title='Under 80 area metacarpal.')
+      dtype=np.int32
+    )
+    phalanx = ExpectedContourMetacarpal(1)
+    phalanx.prepare(under_80_metacarpal, 40, 100)
+    shape_score = phalanx.shape_restrictions()
+    assert shape_score == float('inf')
 
-  bad_aspect_ratio = np.array(
-    [[[ 29,  75]],
-    [[ 28,  76]],
-    [[ 24,  76]],
-    [[ 23,  77]],
-    [[ 21,  77]],
-    [[ 20,  78]],
-    [[ 19,  78]],
-    [[ 18,  79]],
-    [[ 17,  79]],
-    [[ 15,  81]],
-    [[ 15,  82]],
-    [[ 14,  83]],
-    [[ 14,  84]],
-    [[ 15,  85]],
-    [[ 15,  89]],
-    [[ 14,  90]],
-    [[ 14,  93]],
-    [[ 19,  98]],
-    [[ 20,  98]],
-    [[ 21,  99]],
-    [[ 21, 100]],
-    [[ 22, 101]],
-    [[ 22, 102]],
-    [[ 23, 103]],
-    [[ 23, 104]],
-    [[ 24, 105]],
-    [[ 24, 106]],
-    [[ 25, 107]],
-    [[ 25, 108]],
-    [[ 26, 109]],
-    [[ 26, 110]],
-    [[ 27, 111]],
-    [[ 27, 112]],
-    [[ 28, 113]],
-    [[ 28, 114]],
-    [[ 29, 115]],
-    [[ 29, 116]],
-    [[ 30, 117]],
-    [[ 30, 119]],
-    [[ 31, 120]],
-    [[ 31, 123]],
-    [[ 32, 124]],
-    [[ 32, 128]],
-    [[ 33, 129]],
-    [[ 33, 138]],
-    [[ 34, 139]],
-    [[ 34, 141]],
-    [[ 35, 142]],
-    [[ 35, 143]],
-    [[ 38, 146]],
-    [[ 40, 146]],
-    [[ 41, 147]],
-    [[ 44, 147]],
-    [[ 45, 148]],
-    [[ 47, 148]],
-    [[ 48, 147]],
-    [[ 49, 147]],
-    [[ 50, 146]],
-    [[ 50, 145]],
-    [[ 52, 143]],
-    [[ 52, 142]],
-    [[ 54, 140]],
-    [[ 54, 139]],
-    [[ 57, 136]],
-    [[ 57, 135]],
-    [[ 59, 133]],
-    [[ 59, 132]],
-    [[ 61, 130]],
-    [[ 61, 129]],
-    [[ 62, 128]],
-    [[ 60, 126]],
-    [[ 60, 125]],
-    [[ 59, 125]],
-    [[ 50, 116]],
-    [[ 50, 115]],
-    [[ 48, 113]],
-    [[ 48, 112]],
-    [[ 46, 110]],
-    [[ 46, 107]],
-    [[ 45, 106]],
-    [[ 45, 101]],
-    [[ 44, 100]],
-    [[ 44,  91]],
-    [[ 43,  90]],
-    [[ 43,  87]],
-    [[ 42,  86]],
-    [[ 42,  84]],
-    [[ 34,  76]],
-    [[ 32,  76]],
-    [[ 31,  75]]],
-    dtype=np.int32
-  )
-  show_contour(bad_aspect_ratio, padding=5,
-               title='Bad aspect ratio metacarpal.')
+  def test_bad_aspect_ratio(self):
+    bad_aspect_ratio = np.array(
+      [[[ 29,  75]],
+      [[ 28,  76]],
+      [[ 24,  76]],
+      [[ 23,  77]],
+      [[ 21,  77]],
+      [[ 20,  78]],
+      [[ 19,  78]],
+      [[ 18,  79]],
+      [[ 17,  79]],
+      [[ 15,  81]],
+      [[ 15,  82]],
+      [[ 14,  83]],
+      [[ 14,  84]],
+      [[ 15,  85]],
+      [[ 15,  89]],
+      [[ 14,  90]],
+      [[ 14,  93]],
+      [[ 19,  98]],
+      [[ 20,  98]],
+      [[ 21,  99]],
+      [[ 21, 100]],
+      [[ 22, 101]],
+      [[ 22, 102]],
+      [[ 23, 103]],
+      [[ 23, 104]],
+      [[ 24, 105]],
+      [[ 24, 106]],
+      [[ 25, 107]],
+      [[ 25, 108]],
+      [[ 26, 109]],
+      [[ 26, 110]],
+      [[ 27, 111]],
+      [[ 27, 112]],
+      [[ 28, 113]],
+      [[ 28, 114]],
+      [[ 29, 115]],
+      [[ 29, 116]],
+      [[ 30, 117]],
+      [[ 30, 119]],
+      [[ 31, 120]],
+      [[ 31, 123]],
+      [[ 32, 124]],
+      [[ 32, 128]],
+      [[ 33, 129]],
+      [[ 33, 138]],
+      [[ 34, 139]],
+      [[ 34, 141]],
+      [[ 35, 142]],
+      [[ 35, 143]],
+      [[ 38, 146]],
+      [[ 40, 146]],
+      [[ 41, 147]],
+      [[ 44, 147]],
+      [[ 45, 148]],
+      [[ 47, 148]],
+      [[ 48, 147]],
+      [[ 49, 147]],
+      [[ 50, 146]],
+      [[ 50, 145]],
+      [[ 52, 143]],
+      [[ 52, 142]],
+      [[ 54, 140]],
+      [[ 54, 139]],
+      [[ 57, 136]],
+      [[ 57, 135]],
+      [[ 59, 133]],
+      [[ 59, 132]],
+      [[ 61, 130]],
+      [[ 61, 129]],
+      [[ 62, 128]],
+      [[ 60, 126]],
+      [[ 60, 125]],
+      [[ 59, 125]],
+      [[ 50, 116]],
+      [[ 50, 115]],
+      [[ 48, 113]],
+      [[ 48, 112]],
+      [[ 46, 110]],
+      [[ 46, 107]],
+      [[ 45, 106]],
+      [[ 45, 101]],
+      [[ 44, 100]],
+      [[ 44,  91]],
+      [[ 43,  90]],
+      [[ 43,  87]],
+      [[ 42,  86]],
+      [[ 42,  84]],
+      [[ 34,  76]],
+      [[ 32,  76]],
+      [[ 31,  75]]],
+      dtype=np.int32
+    )
+    phalanx = ExpectedContourMetacarpal(1)
+    phalanx.prepare(bad_aspect_ratio, 66, 151)
+    shape_score = phalanx.shape_restrictions()
+    assert shape_score == float('inf')
 
-  larger_aspect_contour = np.array(
-    [[[ 24,  30]],
+  def test_second_occurence_aspect_ratio_tolerance_fault(
+    self,
+    metacarpal_contour
+  ):
+    distal_1 = ExpectedContourMetacarpal(1)
+    distal_1.prepare(metacarpal_contour, 66, 151)
+    distal_2 = ExpectedContourMetacarpal(2, distal_1)
+    larger_aspect_contour = np.array(
+      [[[ 24,  30]],
        [[ 23,  31]],
        [[ 19,  31]],
        [[ 18,  32]],
@@ -534,14 +453,15 @@ def visualize_metacarpal_shape():
        [[ 29,  31]],
        [[ 27,  31]],
        [[ 26,  30]]],
-    dtype=np.int32
-  )
-  show_contour(larger_aspect_contour, padding=5,
-               title='Second occurrence non within range metacarpal aspect' \
-               ' ratio\'s.')
+      dtype=np.int32
+    )
+    distal_2.prepare(larger_aspect_contour, 86, 140)
+    score = distal_2.shape_restrictions()
+    assert score == float('inf')
 
-  high_solidity = np.array(
-    [[[ 33,  56]],
+  def test_solidity_too_high(self):
+    high_solidity = np.array(
+      [[[ 33,  56]],
        [[ 32,  57]],
        [[ 31,  57]],
        [[ 30,  58]],
@@ -680,12 +600,16 @@ def visualize_metacarpal_shape():
        [[ 35,  59]],
        [[ 34,  58]],
        [[ 34,  57]]],
-    dtype=np.int32
-  )
-  show_contour(high_solidity, padding=5, title='High solidity metacarpal.')
-  
-  over_convex_defects = np.array(
-   [[[ 41,  54]],
+      dtype=np.int32
+    )
+    phalanx = ExpectedContourMetacarpal(1)
+    phalanx.prepare(high_solidity, 60, 140)
+    shape_value = phalanx.shape_restrictions()
+    assert shape_value == float('inf')
+
+  def test_too_many_convexity_defects(self):
+    over_convex_defects = np.array(
+      [[[ 41,  54]],
        [[ 40,  55]],
        [[ 36,  55]],
        [[ 35,  56]],
@@ -827,13 +751,16 @@ def visualize_metacarpal_shape():
        [[ 46,  55]],
        [[ 44,  55]],
        [[ 43,  54]]],
-    dtype=np.int32
-  )
-  show_contour(over_convex_defects, padding=5,
-               title='Too many significant convexity defects metacarpal.')
+      dtype=np.int32
+    )
+    phalanx = ExpectedContourMetacarpal(1)
+    phalanx.prepare(over_convex_defects, 60, 140)
+    shape_value = phalanx.shape_restrictions()
+    assert shape_value == float('inf')
 
-  under_convex_defects = np.array(
-    [[[ 41,  54]],
+  def test_too_few_convexity_defects(self):
+    under_convex_defects = np.array(
+      [[[ 41,  54]],
        [[ 40,  55]],
        [[ 36,  55]],
        [[ 35,  56]],
@@ -985,9 +912,38 @@ def visualize_metacarpal_shape():
        [[ 46,  55]],
        [[ 44,  55]],
        [[ 43,  54]]],
-       dtype=np.int32
-  )
-  show_contour(under_convex_defects, padding=5,
-               title='Too few significant convexity defects metacarpal.')
+      dtype=np.int32
+    )
+    phalanx = ExpectedContourMetacarpal(1)
+    phalanx.prepare(under_convex_defects, 60, 140)
+    shape_value = phalanx.shape_restrictions()
+    assert shape_value == float('inf')
 
-  plt.show()
+  def test_self_interception_contour_is_discarded(self):
+    self_intercepting_contour = np.array(
+      [[25, 66],
+      [24, 67],
+      [21, 67],
+      [32, 68],
+      [32, 82],
+      [22, 84],
+      [22, 87],
+      [21, 88],
+      [21, 89],
+      [20, 91],
+      [19, 92],
+      [19, 96],
+      [20, 97],
+      [31, 97],
+      [32, 82],
+      [32, 68],
+      [31, 67],
+      [28, 67],
+      [27, 66]],
+      dtype=np.int32
+    )
+
+    phalanx = ExpectedContourMetacarpal(1)
+    phalanx.prepare(self_intercepting_contour, 32, 97)
+    score = phalanx.shape_restrictions()
+    assert score == float('inf')

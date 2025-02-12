@@ -37,17 +37,53 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     self.first_encounter = first_encounter
     self.first_in_branch = first_in_branch
     self.ends_branchs_sequence = ends_branchs_sequence
+    self._aspect_ratio = None
+    self.reference_hu_moments = np.array(
+      [
+        -0.37473269,
+        -0.84061534,
+        -3.91968783,
+        -4.34543824,
+        -8.4969161,
+        -5.00217622,
+        -9.01736599
+      ],
+      dtype=np.float64
+    )
+    self.orientation_line = None
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''
     self.image_width = image_width
     self.image_height = image_height
+    if len(contour) == 0:
+      self.contour = []
+      return
 
     self.contour = np.reshape(contour, (-1, 2))
+
+    x_values = self.contour[:, 0]
+    y_values = self.contour[:, 1]
+    min_x = int(np.min(x_values))
+    min_y = int(np.min(y_values))
+    max_x = int(np.max(x_values))
+    max_y = int(np.max(y_values))
+    if image_width < max_x - min_x:
+      raise ValueError('Image width is not enough to cover the whole contour.')
+    if image_height < max_y - min_y:
+      raise ValueError('Image height is not enough to cover the whole contour.')
+
     rect = cv.minAreaRect(contour)
     self.min_area_rect = rect
     bounding_rect_contour = cv.boxPoints(rect)
     bounding_rect_contour = np.int32(bounding_rect_contour) # to int
+
+    height = self.min_area_rect[1][1]
+    width = self.min_area_rect[1][0]
+
+    if height == 0 or width == 0:
+      return float('inf')
+    self._aspect_ratio = max(width, height) / min(width, height)
 
     self.top_left_corner, i = get_top_left_corner(
       bounding_rect_contour,
@@ -65,6 +101,25 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     self.bottom_left_corner = bounding_rect_contour[
       (i + 3) % len(bounding_rect_contour)
     ].tolist()
+
+    bottom_midpoint = (
+      (self.bottom_left_corner[0] + self.bottom_right_corner[0]) // 2,
+      (self.bottom_left_corner[1] + self.bottom_right_corner[1]) // 2
+    )
+
+    moments = cv.moments(self.contour)
+    if moments["m00"] != 0: # Avoid division by zero
+      centroid_x = int(moments["m10"] / moments["m00"])
+      centroid_y = int(moments["m01"] / moments["m00"])
+      centroid = (centroid_x, centroid_y)
+    else:
+      top_midpoint = (
+        (self.top_left_corner[0] + self.top_right_corner[0]) // 2,
+        (self.top_left_corner[1] + self.top_right_corner[1]) // 2
+      )
+      centroid = top_midpoint
+
+    self.orientation_line = [bottom_midpoint, centroid]
 
   def next_contour_restrictions(self) -> list:
     if not self.ends_branchs_sequence:
@@ -93,86 +148,63 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
       ]
 
   def shape_restrictions(self) -> list:
+    if len(self.contour) == 0:
+      return float('inf')
+
     area = cv.contourArea(self.contour)
-    if area < 100:
+    if area < 80:
       return float('inf')
-
-    epsilon = 0.02 * cv.arcLength(self.contour, closed=True)
-    approximated_contour = cv.approxPolyDP(self.contour, epsilon, True)
-    approximated_contour = np.reshape(approximated_contour, (-1, 2))
-
-    if len(approximated_contour) < 3:
+ 
+    if self._aspect_ratio < 2.5:
       return float('inf')
+    
+    if self.encounter_amount > 1:
+      first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
+      TOLERANCE = 0.3
+      if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
+        return float('inf')
 
-    angles = []
-    for i in range(len(approximated_contour)):
-      p1 = approximated_contour[i - 1]
-      p2 = approximated_contour[i]
-      p3 = approximated_contour[(i + 1) % len(approximated_contour)]
-
-      v1 = p1 - p2
-      v2 = p3 - p2
-      angle = np.degrees(
-        np.arctan2(
-          np.linalg.det([v1, v2]),
-          np.dot(v1, v2)
-        )
-      )
-
-      angles.append(angle)
-
-    angles_abs = [abs(angle) for angle in angles]
-    average_angle = sum(angles_abs) / len(angles_abs)
-
-    curvature_score = 0
-    for i in range(1, len(self.contour) - 1):
-      p1 = self.contour[i - 1]
-      p2 = self.contour[i]
-      p3 = self.contour[i + 1]
-
-      v1 = p1 - p2
-      v2 = p3 - p2
-
-      angle = np.degrees(np.arctan2(np.linalg.det([v1, v2]), np.dot(v1, v2)))
-      curvature_score += abs(angle)
-
-    if len(self.contour) > 0:
-      curvature_score /= len(self.contour)
-    else:
-      curvature_score = 0
-
-    score = area / 100
-
-    if self.encounter_amount == 1: # little finger
-      score -= (abs(average_angle - 180) * 0.8)
-      score -= (curvature_score * 0.05)
-      if len(approximated_contour) < 2 or len(approximated_contour) > 4:
-        score -= 5
-    elif self.encounter_amount == 2: # ring finger
-      score -= (abs(average_angle - 180) * 0.8)
-      score -= (curvature_score * 0.05)
-      if len(approximated_contour) < 2 or len(approximated_contour) > 4:
-        score -= 5
-    elif self.encounter_amount == 3: # middle finger
-      score -= (abs(average_angle - 180) * 0.7)
-      score -= (curvature_score * 0.05)
-      if len(approximated_contour) < 2 or len(approximated_contour) > 4:
-        score -= 5
-    elif self.encounter_amount == 4: # index finger
-      score -= (abs(average_angle - 180) * 0.6)
-      score -= (curvature_score * 0.05)
-      if len(approximated_contour) < 2 or len(approximated_contour) > 4:
-        score -= 5
-    elif self.encounter_amount == 5: # thumb finger
-      score -= (abs(average_angle - 180) * 0.6)
-      score -= (curvature_score * 0.05)
-      if len(approximated_contour) < 2 or len(approximated_contour) > 4:
-        score -= 5
-
-    if score < 1:
+    if len(self.contour) < 3:
       return float('inf')
+    
+    min_rect_width = self.min_area_rect[1][0]
+    min_rect_height = self.min_area_rect[1][1]
+    hull = cv.convexHull(self.contour)
+    solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+    if solidity > 1.35:
+      return float('inf')
+    
+    try:
+      hull_area = cv.contourArea(hull)
+      significant_convexity_defects = 0
+      hull_indices = cv.convexHull(self.contour, returnPoints=False)
+      defects = cv.convexityDefects(self.contour, hull_indices)
+      if defects is not None:
+        for i in range(defects.shape[0]):
+          start_index, end_index, farthest_point_index, distance = defects[i, 0]
 
-    return [True, score]
+          start = self.contour[start_index]
+          end = self.contour[end_index]
+          farthest = self.contour[farthest_point_index]
+
+          defect_area = cv.contourArea(np.array([start, end, farthest]))
+
+          if defect_area / hull_area > 0.06:
+            significant_convexity_defects += 1
+
+      if significant_convexity_defects != 2:
+        return float('inf')
+    except cv.error as e:
+      error_message = str(e).lower()
+      if 'not monotonous' in error_message:
+        return float('inf')
+
+    moments = cv.moments(self.contour)
+    hu_moments = cv.HuMoments(moments)
+    hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
+
+    difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+    return difference
 
   def branch_start_position_restrictions(self) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other

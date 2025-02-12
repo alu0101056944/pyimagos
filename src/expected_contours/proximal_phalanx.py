@@ -125,18 +125,30 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
   def next_contour_restrictions(self) -> list:
     height = self.min_area_rect[1][1] 
     bottom_bound = int(height * 3)
-
+    width = int(self.min_area_rect[1][0])
     ERROR_PADDING = 4
     return [
       [
-        self.bottom_right_corner + [ERROR_PADDING, 0],
-        self.top_right_corner + [ERROR_PADDING, 0],
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
+        self.orientation_line[0] + np.array(
+          [width // 2 + ERROR_PADDING + 4,
+          width // 2 + ERROR_PADDING + 4]
+        ),
+        self.orientation_line[1] + np.array(
+          [width // 2 + ERROR_PADDING + 2,
+          width // 2 + ERROR_PADDING + 2]
+        ),
+        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_left_corner - [ERROR_PADDING, 0],
-        self.top_left_corner - [ERROR_PADDING, 0],
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+        self.orientation_line[0] - np.array(
+          [width // 2 + ERROR_PADDING,
+          width // 2 + ERROR_PADDING]
+        ),
+        self.orientation_line[1] - np.array(
+          [width // 2 + ERROR_PADDING,
+          width // 2 + ERROR_PADDING]
+        ),
+        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
       [
         np.array(self.bottom_left_corner),
@@ -144,8 +156,8 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_left_corner + [0, bottom_bound],
-        self.bottom_right_corner + [0, bottom_bound],
+        self.bottom_left_corner + np.array([0, bottom_bound]),
+        self.bottom_right_corner + np.array([0, bottom_bound]),
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
     ]
