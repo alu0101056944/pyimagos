@@ -8,10 +8,8 @@ Pyimagos development
 import pytest
 
 import numpy as np
-import cv2 as cv
 
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
-from src.main_execute import is_in_allowed_space
 
 class TestMedialPhalanxExpectedContour:
 

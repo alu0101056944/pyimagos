@@ -50,6 +50,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       ],
       dtype=np.float64
     )
+    self.orientation_line = None
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''

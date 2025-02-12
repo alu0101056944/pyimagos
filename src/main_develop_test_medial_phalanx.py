@@ -56,13 +56,13 @@ def calculate_attributes(contour, show_convex_defects: bool = True) -> list:
 
   reference_hu_moments = np.array(
     [
-      -0.59893488,
-      -1.62052591,
-      -2.46926287,
-      -3.46397177,
-      -6.4447155,
-      -4.28778216,
-      -7.03097531
+      -0.70441841,
+      -2.11182333,
+      -3.80250783,
+      -4.94659795,
+      -9.39066072,
+      -6.30047546,
+      -9.60233336
     ],
     dtype=np.float64
   )
@@ -191,7 +191,9 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
   plt.text(0, 1.24, text, transform=plt.gca().transAxes,
            verticalalignment='bottom', horizontalalignment='left')
   
-  positional_view_image = calculate_positional_image(bounding_rect_contour,
+  positional_view_image = calculate_positional_image(
+                                                    contour,
+                                                    bounding_rect_contour,
                                                     rect,
                                                     concatenated.shape[1],
                                                     image_height,

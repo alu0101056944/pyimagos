@@ -50,6 +50,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
       ],
       dtype=np.float64
     )
+    self.orientation_line = None
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''
@@ -101,30 +102,61 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
       (i + 3) % len(bounding_rect_contour)
     ].tolist()
 
+    bottom_midpoint = (
+      (self.bottom_left_corner[0] + self.bottom_right_corner[0]) // 2,
+      (self.bottom_left_corner[1] + self.bottom_right_corner[1]) // 2
+    )
+
+    moments = cv.moments(self.contour)
+    if moments["m00"] != 0: # Avoid division by zero
+      centroid_x = int(moments["m10"] / moments["m00"])
+      centroid_y = int(moments["m01"] / moments["m00"])
+      centroid = (centroid_x, centroid_y)
+    else:
+      top_midpoint = (
+        (self.top_left_corner[0] + self.top_right_corner[0]) // 2,
+        (self.top_left_corner[1] + self.top_right_corner[1]) // 2
+      )
+      centroid = top_midpoint
+
+    self.orientation_line = [bottom_midpoint, centroid]
+
   def next_contour_restrictions(self) -> list:
     height = self.min_area_rect[1][1] 
     bottom_bound = int(height * 4)
-
+    width = int(self.min_area_rect[1][0])
     ERROR_PADDING = 4
     return [
       [
-        self.bottom_right_corner + [ERROR_PADDING, 0],
-        self.top_right_corner + [ERROR_PADDING, 0],
+        self.orientation_line[0] + np.array(
+          [width // 2 + ERROR_PADDING + 19,
+          width // 2 + ERROR_PADDING + 19]
+        ),
+        self.orientation_line[1] + np.array(
+          [width // 2 + ERROR_PADDING + 13,
+          width // 2 + ERROR_PADDING + 13]
+        ),
+        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+      ],
+      [
+        self.orientation_line[0] - np.array(
+          [width // 2 + ERROR_PADDING,
+          width // 2 + ERROR_PADDING]
+        ),
+        self.orientation_line[1] - np.array(
+          [width // 2 + ERROR_PADDING,
+          width // 2 + ERROR_PADDING]
+        ),
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
       [
-        self.bottom_left_corner - [ERROR_PADDING, 0],
-        self.top_left_corner - [ERROR_PADDING, 0],
+        np.array(self.bottom_left_corner),
+        np.array(self.bottom_right_corner),
         AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
       ],
       [
-        self.bottom_left_corner,
-        self.bottom_right_corner,
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
-      ],
-      [
-        self.bottom_left_corner + [0, bottom_bound],
-        self.bottom_right_corner + [0, bottom_bound],
+        self.bottom_left_corner + np.array([0, bottom_bound]),
+        self.bottom_right_corner + np.array([0, bottom_bound]),
         AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
       ],
     ]
@@ -137,7 +169,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
     if area < 80:
       return float('inf')
     
-    if self._aspect_ratio < 1.3:
+    if self._aspect_ratio < 1.2:
       return float('inf')
 
     if self.encounter_amount > 1:
