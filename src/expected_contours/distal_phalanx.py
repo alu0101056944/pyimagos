@@ -51,6 +51,10 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       dtype=np.float64
     )
     self.orientation_line = None
+    self.direction_right = None
+    self.direction_left = None
+    self.direction_top = None
+    self.direction_bottom = None
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''
@@ -121,43 +125,88 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
     self.orientation_line = [bottom_midpoint, centroid]
 
+    self.direction_right = (
+      np.array(self.bottom_right_corner) - np.array(self.bottom_left_corner)
+    )
+    self.direction_right = (
+      self.direction_right / np.linalg.norm(self.direction_right)
+    )
+
+    self.direction_left = (
+      np.array(self.bottom_left_corner) - np.array(self.bottom_right_corner)
+    )
+    self.direction_left = (
+      self.direction_left / np.linalg.norm(self.direction_left)
+    )
+
+    self.direction_top = (
+      np.array(self.top_right_corner) - np.array(self.bottom_right_corner)
+    )
+    self.direction_top = self.direction_top / np.linalg.norm(self.direction_top)
+
+    self.direction_bottom = (
+      np.array(self.bottom_right_corner) - np.array(self.top_right_corner)
+    )
+    self.direction_bottom = self.direction_bottom / np.linalg.norm(self.direction_bottom)
+
   def next_contour_restrictions(self) -> list:
     height = self.min_area_rect[1][1]
     bottom_bound = int(height * 4)
     width = int(self.min_area_rect[1][0])
-    ERROR_PADDING = 7
+    ERROR_PADDING = 12
+
     return [
       [
-        self.orientation_line[0] + np.array(
-          [width // 2 + ERROR_PADDING,
-          width // 2 + ERROR_PADDING]
+        self.orientation_line[0] + (
+          self.direction_right * (width // 2 + ERROR_PADDING + 13)
         ),
-        self.orientation_line[1] + np.array(
-          [width // 2 + ERROR_PADDING,
-          width // 2 + ERROR_PADDING]
+        self.orientation_line[1] + (
+          self.direction_right * (width // 2 + ERROR_PADDING + 13)
         ),
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+        [
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
+        ]
       ],
       [
-        self.orientation_line[0] - np.array(
-          [width // 2 + ERROR_PADDING,
-          width // 2 + ERROR_PADDING]
+        self.orientation_line[0] + (
+          self.direction_left * (width // 2 + ERROR_PADDING + 4)
         ),
-        self.orientation_line[1] - np.array(
-          [width // 2 + ERROR_PADDING,
-          width // 2 + ERROR_PADDING]
+        self.orientation_line[1] + (
+          self.direction_left * (width // 2 + ERROR_PADDING + 4)
         ),
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
+        [
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+        ]
       ],
       [
-        np.array(self.bottom_left_corner),
-        np.array(self.bottom_right_corner),
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+        np.array(self.bottom_left_corner).astype(np.int32) + (
+          self.direction_top * 14
+        ),
+        np.array(self.bottom_right_corner).astype(np.int32) + (
+          self.direction_top * 14
+        ),
+        [
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+        ]
       ],
       [
-        self.bottom_left_corner + np.array([0, bottom_bound]),
-        self.bottom_right_corner + np.array([0, bottom_bound]),
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
+        self.bottom_left_corner + self.direction_bottom * bottom_bound,
+        self.bottom_right_corner + self.direction_bottom * bottom_bound,
+        [
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
+        ]
       ],
     ]
 
@@ -166,15 +215,15 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       return float('inf')
 
     area = cv.contourArea(self.contour)
-    if area <= 80:
+    if area <= 10:
       return float('inf')
     
-    if self._aspect_ratio < 1.2:
+    if self._aspect_ratio < 1.1:
       return float('inf')
     
     if self.encounter_amount > 1:
       first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
-      TOLERANCE = 0.3
+      TOLERANCE = 0.65
       if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
         return float('inf')
 
@@ -185,7 +234,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     min_rect_height = self.min_area_rect[1][1]
     hull = cv.convexHull(self.contour)
     solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
-    if solidity > 1.3:
+    if solidity > 1.46:
       return float('inf')
     
     try:
@@ -206,7 +255,9 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
           if defect_area / hull_area > 0.08:
             significant_convexity_defects += 1
 
-      if significant_convexity_defects != 2:
+      if self.encounter_amount == 5 and significant_convexity_defects != 1:
+        return float('inf')
+      elif self.encounter_amount != 5 and significant_convexity_defects != 2:
         return float('inf')
     except cv.error as e:
       error_message = str(e).lower()
@@ -233,37 +284,103 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     lower_bound = int(height)
 
     width = self.min_area_rect[1][0]
-    right_bound = int(width * 5)
+    right_bound = int(width * 3)
     ERROR_PADDING = 1
 
-    return [
-      [
-        self.top_left_corner - np.array([0, upper_bound]),
-        self.top_right_corner - np.array([0, upper_bound]),
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL 
-      ],
-      [
-        self.bottom_left_corner + np.array([0, lower_bound]),
-        self.bottom_right_corner + np.array([0, lower_bound]),
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
-      ],
-      [
-        self.orientation_line[0] + np.array(
-          [width // 2 + ERROR_PADDING,
-          width // 2 + ERROR_PADDING]
-        ),
-        self.orientation_line[1] + np.array(
-          [width // 2 + ERROR_PADDING,
-          width // 2 + ERROR_PADDING]
-        ),
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
-      ],
-      [
-        self.bottom_right_corner + np.array([right_bound, 0]),
-        self.top_right_corner + np.array([right_bound, 0]),
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
-      ],
-    ]
+    if self.encounter_amount != 4:
+      return [
+        [
+          self.top_left_corner + self.direction_top * upper_bound,
+          self.top_right_corner + self.direction_top * upper_bound,
+          [
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+          ]
+        ],
+        [
+          self.bottom_left_corner + self.direction_bottom * lower_bound,
+          self.bottom_right_corner + self.direction_bottom * lower_bound,
+          [
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
+          ]
+        ],
+        [
+          self.orientation_line[0] + (
+            self.direction_right * (width // 2 + ERROR_PADDING)
+          ),
+          self.orientation_line[1] + (
+            self.direction_right * (width // 2 + ERROR_PADDING)
+          ),
+          [
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+          ]
+        ],
+        [
+          self.bottom_right_corner + self.direction_right * right_bound,
+          self.top_right_corner + self.direction_right * right_bound,
+          [
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
+          ]
+        ],
+      ]
+    else:
+      return [
+        [
+          self.top_left_corner + self.direction_top,
+          self.top_right_corner + self.direction_top,
+          [
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+          ]
+        ],
+        [
+          self.bottom_left_corner + self.direction_bottom * int(height * 8),
+          self.bottom_right_corner + self.direction_bottom * int(height * 8),
+          [
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
+          ]
+        ],
+        [
+          self.orientation_line[0] + (
+            self.direction_right * (width // 2 + ERROR_PADDING)
+          ),
+          self.orientation_line[1] + (
+            self.direction_right * (width // 2 + ERROR_PADDING)
+          ),
+          [
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+          ]
+        ],
+        [
+          self.bottom_right_corner + self.direction_right * int(width * 4.5),
+          self.top_right_corner + self.direction_right * int(width * 4.5),
+          [
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
+          ]
+        ],
+      ]
 
   def measure(self) -> dict:
     return {}

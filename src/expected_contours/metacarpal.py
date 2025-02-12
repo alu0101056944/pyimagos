@@ -51,6 +51,10 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
       dtype=np.float64
     )
     self.orientation_line = None
+    self.direction_right = None
+    self.direction_left = None
+    self.direction_top = None
+    self.direction_bottom = None
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''
@@ -121,6 +125,30 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
 
     self.orientation_line = [bottom_midpoint, centroid]
 
+    self.direction_right = (
+      np.array(self.bottom_right_corner) - np.array(self.bottom_left_corner)
+    )
+    self.direction_right = (
+      self.direction_right / np.linalg.norm(self.direction_right)
+    )
+
+    self.direction_left = (
+      np.array(self.bottom_left_corner) - np.array(self.bottom_right_corner)
+    )
+    self.direction_left = (
+      self.direction_left / np.linalg.norm(self.direction_left)
+    )
+
+    self.direction_top = (
+      np.array(self.top_right_corner) - np.array(self.bottom_right_corner)
+    )
+    self.direction_top = self.direction_top / np.linalg.norm(self.direction_top)
+
+    self.direction_bottom = (
+      np.array(self.bottom_right_corner) - np.array(self.top_right_corner)
+    )
+    self.direction_bottom = self.direction_bottom / np.linalg.norm(self.direction_bottom)
+
   def next_contour_restrictions(self) -> list:
     if not self.ends_branchs_sequence:
       return self.first_in_branch.branch_start_position_restrictions()
@@ -131,19 +159,38 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
       left_bound = int(width * 6)
       return [
         [
-          self.bottom_left_corner + [0, ERROR_PADDING],
-          self.bottom_right_corner + [0, ERROR_PADDING],
-          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+          self.bottom_left_corner + (
+            self.direction_top * ERROR_PADDING
+          ),
+          self.bottom_right_corner + (
+            self.direction_top * ERROR_PADDING
+          ),
+          [
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+          ]
         ],
         [
-          self.bottom_left_corner - [left_bound, 0],
-          self.top_left_corner - [left_bound, 0],
-          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+          self.bottom_left_corner + self.direction_left * left_bound,
+          self.top_left_corner + self.direction_left * left_bound,
+          [
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+          ]
         ],
         [
-          self.bottom_right_corner + [right_bound, 0],
-          self.top_right_corner + [right_bound, 0],
-          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
+          self.bottom_right_corner + self.direction_right * right_bound,
+          self.top_right_corner + self.direction_right * right_bound,
+          [
+            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
+            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
+          ]
         ],
       ]
 
@@ -152,7 +199,7 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
       return float('inf')
 
     area = cv.contourArea(self.contour)
-    if area < 80:
+    if area < 10:
       return float('inf')
  
     if self._aspect_ratio < 2.5:
@@ -160,7 +207,7 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     
     if self.encounter_amount > 1:
       first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
-      TOLERANCE = 0.3
+      TOLERANCE = 0.6
       if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
         return float('inf')
 
@@ -192,7 +239,9 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
           if defect_area / hull_area > 0.06:
             significant_convexity_defects += 1
 
-      if significant_convexity_defects != 2:
+      if self.encounter_amount == 5 and significant_convexity_defects != 1:
+        return float('inf')
+      elif self.encounter_amount != 5 and significant_convexity_defects != 2:
         return float('inf')
     except cv.error as e:
       error_message = str(e).lower()

@@ -178,9 +178,10 @@ def is_in_allowed_space(contour: list,
   for position_restriction in position_restrictions:
     x1, y1 = position_restriction[0]
     x2, y2 = position_restriction[1]
-    allowed_side = position_restriction[2]
+    allowed_side_array = position_restriction[2]
 
     if x2 == x1:
+      allowed_side = allowed_side_array[3]
       # Vertical line case handling
       for point in contour:
         x, y = point[0]
@@ -201,6 +202,13 @@ def is_in_allowed_space(contour: list,
       m = (y2 - y1) / (x2 - x1)
       b = y1 - m * x1
 
+      if m > 0:
+        allowed_side = allowed_side_array[0]
+      elif m < 0:
+        allowed_side = allowed_side_array[1]
+      else:
+        allowed_side = allowed_side_array[2]
+
       for point in contour:
         x, y = point[0]
         line_y = m * x + b
@@ -216,6 +224,7 @@ def is_in_allowed_space(contour: list,
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
           if y > line_y:
             return False
+
   return True
 
 def get_best_contour_alternative(contours: list, inside_indices: list,
@@ -235,70 +244,70 @@ def get_best_contour_alternative(contours: list, inside_indices: list,
     state['committed_total_value'] = state['committed_total_value'] + score
     alternatives.append(state)
 
-  for i in inside_indices:
-    for j in range(len(contours[i])):
-      cut_operation = CutContour(i, j, image_width, image_height)
-      new_contours = cut_operation.generate_new_contour(contours)
-      if new_contours is not None:
-        state = dict(reference_state)
-        state['contours_committed'] = list(reference_state['contours_committed'])
-        state['contours_committed'].append(new_contours[i])
-        state['contours'] = new_contours
-        state['chosen_contour_index'] = i
-        instance = expected_contours[len(state['contours_committed']) - 1]
-        instance.prepare(new_contours[i], image_width, image_height)
-        score = instance.shape_restrictions()
-        state['committed_total_value'] = state['committed_total_value'] + score
-        alternatives.append(state)
+  # for i in inside_indices:
+  #   for j in range(len(contours[i])):
+  #     cut_operation = CutContour(i, j, image_width, image_height)
+  #     new_contours = cut_operation.generate_new_contour(contours)
+  #     if new_contours is not None:
+  #       state = dict(reference_state)
+  #       state['contours_committed'] = list(reference_state['contours_committed'])
+  #       state['contours_committed'].append(new_contours[i])
+  #       state['contours'] = new_contours
+  #       state['chosen_contour_index'] = i
+  #       instance = expected_contours[len(state['contours_committed']) - 1]
+  #       instance.prepare(new_contours[i], image_width, image_height)
+  #       score = instance.shape_restrictions()
+  #       state['committed_total_value'] = state['committed_total_value'] + score
+  #       alternatives.append(state)
 
-        state = dict(reference_state)
-        state['contours_committed'] = list(reference_state['contours_committed'])
-        state['contours_committed'].append(new_contours[i])
-        state['contours'] = new_contours
-        state['chosen_contour_index'] = len(new_contours) - 1
-        instance = expected_contours[len(state['contours_committed']) - 1]
-        instance.prepare(new_contours[len(new_contours) - 1], image_width,
-                         image_height)
-        score = instance.shape_restrictions()
-        state['committed_total_value'] = state['committed_total_value'] + score
-        alternatives.append(state)
+  #       state = dict(reference_state)
+  #       state['contours_committed'] = list(reference_state['contours_committed'])
+  #       state['contours_committed'].append(new_contours[i])
+  #       state['contours'] = new_contours
+  #       state['chosen_contour_index'] = len(new_contours) - 1
+  #       instance = expected_contours[len(state['contours_committed']) - 1]
+  #       instance.prepare(new_contours[len(new_contours) - 1], image_width,
+  #                        image_height)
+  #       score = instance.shape_restrictions()
+  #       state['committed_total_value'] = state['committed_total_value'] + score
+  #       alternatives.append(state)
   
-  invasion_counts = [1, 2, 3, 4]
-  for i in inside_indices:
-    for j in inside_indices:
-      if i != j:
-        for invasion_count in invasion_counts:
-          extend_operation = ExtendContour(
-            i,
-            j,
-            image_width,
-            image_height,
-            invasion_count
-          )
-          new_contours = extend_operation.generate_new_contour(contours)
-          if new_contours is not None:
-            state = dict(reference_state)
-            state['contours_committed'] = list(reference_state['contours_committed'])
-            state['contours'] = new_contours
-            state['chosen_contour_index'] = i
-            instance = expected_contours[len(state['contours_committed']) - 1]
-            instance.prepare(new_contours[i], image_width, image_height)
-            score = instance.shape_restrictions()
-            state['committed_total_value'] = state['committed_total_value'] + score
-            alternatives.append(state)
+  # invasion_counts = [1, 2, 3, 4]
+  # for i in inside_indices:
+  #   for j in inside_indices:
+  #     if i != j:
+  #       for invasion_count in invasion_counts:
+  #         extend_operation = ExtendContour(
+  #           i,
+  #           j,
+  #           image_width,
+  #           image_height,
+  #           invasion_count
+  #         )
+  #         new_contours = extend_operation.generate_new_contour(contours)
+  #         if new_contours is not None:
+  #           state = dict(reference_state)
+  #           state['contours_committed'] = list(reference_state['contours_committed'])
+  #           state['contours'] = new_contours
+  #           state['chosen_contour_index'] = i
+  #           instance = expected_contours[len(state['contours_committed']) - 1]
+  #           instance.prepare(new_contours[i], image_width, image_height)
+  #           score = instance.shape_restrictions()
+  #           state['committed_total_value'] = state['committed_total_value'] + score
+  #           alternatives.append(state)
 
-        join_operation = JoinContour(i, j)
-        new_contours = join_operation.generate_new_contour(contours)
-        if new_contours is not None:
-          state = dict(reference_state)
-          state['contours_committed'] = list(reference_state['contours_committed'])
-          state['contours'] = new_contours
-          state['chosen_contour_index'] = i
-          instance = expected_contours[len(state['contours_committed']) - 1]
-          instance.prepare(new_contours[i], image_width, image_height)
-          score = instance.shape_restrictions()
-          state['committed_total_value'] = state['committed_total_value'] + score
-          alternatives.append(state)
+  #       join_operation = JoinContour(i, j)
+  #       new_contours = join_operation.generate_new_contour(contours)
+  #       if new_contours is not None:
+  #         state = dict(reference_state)
+  #         state['contours_committed'] = list(reference_state['contours_committed'])
+  #         state['contours'] = new_contours
+  #         state['chosen_contour_index'] = i
+  #         instance = expected_contours[len(state['contours_committed']) - 1]
+  #         instance.prepare(new_contours[i], image_width, image_height)
+  #         score = instance.shape_restrictions()
+  #         state['committed_total_value'] = state['committed_total_value'] + score
+  #         alternatives.append(state)
 
   best_alternative = None
   min_value = float('inf')

@@ -189,7 +189,9 @@ def test_execute():
 
 @develop.command()
 @click.argument("filename")
-def contour(filename: str):
+@click.option('--write_file', is_flag=True, default=False,
+              help='Output to a file instead of to console.')
+def contour(filename: str, write_file: bool):
   '''Given a binary image, print its contour.'''
   input_image = Image.open(filename)
   borders_detected = np.array(input_image)
@@ -201,8 +203,21 @@ def contour(filename: str):
     cv.CHAIN_APPROX_SIMPLE
   )
 
-  print('Contours found in the image:')
-  print(contours)
+  if not contours:
+    output_string = "No contours found in the image."
+  else:
+    output_string = "Contours found in the image:\n"
+    for contour in contours:
+      output_string += str(contour) + "\n"
+
+  if write_file:
+    base_filename = os.path.splitext(os.path.basename(filename))[0]
+    output_filename = f"{base_filename}_contours.txt"
+    with open(output_filename, 'w') as f:
+      f.write(output_string)
+    click.echo(f"Contours written to: {output_filename}")
+  else:
+    click.echo(output_string)
 
 @develop.command()
 @click.argument("filename")

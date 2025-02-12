@@ -74,6 +74,7 @@ def calculate_positional_image(
 
   if test_contours is not None:
     for i in range(len(test_contours)):
+      test_contours[i] = test_contours[i].astype(np.int32)
       color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
       cv.drawContours(image, test_contours, i, color, 1)
 

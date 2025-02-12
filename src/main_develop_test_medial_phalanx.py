@@ -135,7 +135,7 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
         defect_area = cv.contourArea(np.array([start, end, farthest]))
 
         cv.line(hull_defects_image, start, end, (255, 0, 0), 1)
-        if defect_area / hull_area > 0.07:
+        if defect_area / hull_area > 0.06:
           cv.circle(hull_defects_image, farthest, 1, (0, 255, 255), -1)
         else:
           cv.circle(hull_defects_image, farthest, 1, (0, 140, 45), -1)

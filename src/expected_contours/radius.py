@@ -61,7 +61,7 @@ class ExpectedContourRadius(ExpectedContour):
 
   def shape_restrictions(self) -> list:
     area = cv.contourArea(self.contour)
-    if area < 100:
+    if area < 10:
       return float('inf')
 
     epsilon = 0.02 * cv.arcLength(self.contour, closed=True)
