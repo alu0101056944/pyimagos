@@ -235,7 +235,13 @@ def hu_moments(filename: str):
 
   moments = cv.moments(contours[0])
   hu_moments = cv.HuMoments(moments)
-  hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
+  hu_moments = np.absolute(hu_moments)
+  hu_moments_no_zeros = np.where( # to avoid DivideByZero
+    hu_moments == 0,
+    np.finfo(float).eps,
+    hu_moments
+  )
+  hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
   print('Hu moments:')
   print(hu_moments)

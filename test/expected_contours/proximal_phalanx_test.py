@@ -112,29 +112,21 @@ class TestProximalPhalanxExpectedContour:
     shape_score = phalanx.shape_restrictions()
     assert shape_score != float('inf')
 
-  def test_shape_under_80_area(self):
-    under_80_proximal_phalanx = np.array(
-      [[[ 1,  1]],
-      [[ 1,  9]],
-      [[ 0, 10]],
-      [[ 0, 11]],
-      [[ 1, 11]],
-      [[ 2, 10]],
-      [[ 3, 10]],
-      [[ 4, 11]],
-      [[ 5, 11]],
-      [[ 6, 10]],
-      [[ 6,  7]],
-      [[ 5,  6]],
-      [[ 5,  3]],
-      [[ 6,  2]],
-      [[ 6,  1]],
-      [[ 5,  2]],
-      [[ 2,  2]]],
+  def test_shape_under_10_area(self):
+    under_10_proximal_phalanx = np.array(
+      [[[0, 0]],
+      [[0, 2]],
+      [[1, 3]],
+      [[0, 4]],
+      [[3, 4]],
+      [[3, 3]],
+      [[2, 2]],
+      [[3, 1]],
+      [[3, 0]]],
       dtype=np.int32
     )
     phalanx = ExpectedContourProximalPhalanx(1)
-    phalanx.prepare(under_80_proximal_phalanx, 40, 100)
+    phalanx.prepare(under_10_proximal_phalanx, 40, 100)
     shape_score = phalanx.shape_restrictions()
     assert shape_score == float('inf')
 

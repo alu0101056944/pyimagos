@@ -55,7 +55,13 @@ def calculate_attributes(contour, show_convex_defects: bool = True) -> list:
 
   moments = cv.moments(contour)
   hu_moments = cv.HuMoments(moments)
-  hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
+  hu_moments = np.absolute(hu_moments)
+  hu_moments_no_zeros = np.where( # to avoid DivideByZero
+    hu_moments == 0,
+    np.finfo(float).eps,
+    hu_moments
+  )
+  hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
   reference_hu_moments = np.array(
     [

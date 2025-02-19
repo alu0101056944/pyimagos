@@ -78,26 +78,18 @@ class TestMedialPhalanxExpectedContour:
     shape_score = phalanx.shape_restrictions()
     assert shape_score != float('inf')
 
-  def test_shape_under_80_area(self):
-    under_80_medial_phalanx = np.array(
-      [[[ 0,  0]],
-      [[ 0, 12]],
-      [[ 5, 12]],
-      [[ 7, 10]],
-      [[ 6,  9]],
-      [[ 6,  4]],
-      [[ 5,  3]],
-      [[ 6,  2]],
-      [[ 6,  1]],
-      [[ 7,  0]],
-      [[ 6,  0]],
-      [[ 5,  1]],
-      [[ 2,  1]],
-      [[ 1,  0]]],
+  def test_shape_under_10_area(self):
+    under_10_medial_phalanx = np.array(
+      [[[0, 0]],
+ [[0, 3]],
+ [[3, 3]],
+ [[2, 2]],
+ [[3, 1]],
+ [[3, 0]]],
       dtype=np.int32
     )
     phalanx = ExpectedContourMedialPhalanx(1)
-    phalanx.prepare(under_80_medial_phalanx, 40, 100)
+    phalanx.prepare(under_10_medial_phalanx, 40, 100)
     shape_score = phalanx.shape_restrictions()
     assert shape_score == float('inf')
 

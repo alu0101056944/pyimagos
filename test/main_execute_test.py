@@ -3737,7 +3737,13 @@ class TestMainExecute:
 
           hu_moments = cv.moments(contour)
           hu_moments = cv.HuMoments(hu_moments)
-          hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
+          hu_moments = np.absolute(hu_moments)
+          hu_moments_no_zeros = np.where( # to avoid DivideByZero
+            hu_moments == 0,
+            np.finfo(float).eps,
+            hu_moments
+          )
+          hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
           
           difference = np.linalg.norm(hu_moments - reference_hu_moments)
           assert difference < 1e-06

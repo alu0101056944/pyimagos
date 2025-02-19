@@ -52,7 +52,13 @@ def calculate_attributes(contour, show_convex_defects: bool = True) -> list:
 
   moments = cv.moments(contour)
   hu_moments = cv.HuMoments(moments)
-  hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
+  hu_moments = np.absolute(hu_moments)
+  hu_moments_no_zeros = np.where( # to avoid DivideByZero
+    hu_moments == 0,
+    np.finfo(float).eps,
+    hu_moments
+  )
+  hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
   reference_hu_moments = np.array(
     [
@@ -251,27 +257,19 @@ def visualize_proximal_phalanx_shape():
   show_contour(contours[0], padding=5,
                title='proximal phalanx original.', minimize_image=False)
   
-  under_80_area = np.array(
-    [[[ 1,  1]],
-    [[ 1,  9]],
-    [[ 0, 10]],
-    [[ 0, 11]],
-    [[ 1, 11]],
-    [[ 2, 10]],
-    [[ 3, 10]],
-    [[ 4, 11]],
-    [[ 5, 11]],
-    [[ 6, 10]],
-    [[ 6,  7]],
-    [[ 5,  6]],
-    [[ 5,  3]],
-    [[ 6,  2]],
-    [[ 6,  1]],
-    [[ 5,  2]],
-    [[ 2,  2]]],
+  under_10_area = np.array(
+      [[[0, 0]],
+      [[0, 2]],
+      [[1, 3]],
+      [[0, 4]],
+      [[3, 4]],
+      [[3, 3]],
+      [[2, 2]],
+      [[3, 1]],
+      [[3, 0]]],
     dtype=np.int32
   )
-  show_contour(under_80_area, padding=5, title='Under 80 area proximal phalanx.')
+  show_contour(under_10_area, padding=5, title='Under 10 area proximal phalanx.')
 
   bad_aspect_ratio = np.array(
     [[[ 50,  92]],

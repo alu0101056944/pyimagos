@@ -52,7 +52,13 @@ def calculate_attributes(contour, show_convex_defects: bool = True) -> list:
 
   moments = cv.moments(contour)
   hu_moments = cv.HuMoments(moments)
-  hu_moments = (np.log10(np.absolute(hu_moments))).flatten()
+  hu_moments = np.absolute(hu_moments)
+  hu_moments_no_zeros = np.where( # to avoid DivideByZero
+    hu_moments == 0,
+    np.finfo(float).eps,
+    hu_moments
+  )
+  hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
   reference_hu_moments = np.array(
     [
@@ -251,24 +257,18 @@ def visualize_medial_phalanx_shape():
   show_contour(contours[0], padding=5,
                title='medial phalanx original.', minimize_image=False)
   
-  under_80_area = np.array(
-    [[[ 0,  0]],
-    [[ 0, 12]],
-    [[ 5, 12]],
-    [[ 7, 10]],
-    [[ 6,  9]],
-    [[ 6,  4]],
-    [[ 5,  3]],
-    [[ 6,  2]],
-    [[ 6,  1]],
-    [[ 7,  0]],
-    [[ 6,  0]],
-    [[ 5,  1]],
-    [[ 2,  1]],
-    [[ 1,  0]]],
+  under_area = np.array(
+[[[1, 1]],
+ [[0, 2]],
+ [[0, 5]],
+ [[3, 5]],
+ [[3, 4]],
+ [[2, 3]],
+ [[3, 2]],
+ [[2, 1]]],
     dtype=np.int32
   )
-  show_contour(under_80_area, padding=5, title='Under 80 area medial phalanx.')
+  show_contour(under_area, padding=5, title='Under 10 area medial phalanx.')
 
   bad_aspect_ratio = np.array(
     [[[0, 0]],

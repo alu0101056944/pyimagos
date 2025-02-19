@@ -78,75 +78,45 @@ class TestDistalPhalanxExpectedContour:
     shape_score = phalanx.shape_restrictions()
     assert shape_score != float('inf')
 
-  def test_shape_under_80_area(self):
-    under_80_distal_phalanx = np.array(
-      [[[28,  80]],
-      [[27,  80]],
-      [[26,  80]],
-      [[26,  80]],
-      [[27,  82]],
-      [[27,  83]],
-      [[28,  84]],
-      [[28,  85]],
-      [[27,  86]],
-      [[27,  88]],
-      [[26,  89]],
-      [[26,  90]],
-      [[26,  91]],
-      [[27,  92]],
-      [[28,  92]],
-      [[29,  92]],
-      [[30,  92]],
-      [[31,  92]],
-      [[32,  92]],
-      [[32,  92]],
-      [[33,  91]],
-      [[33,  91]],
-      [[35,  91]],
-      [[36,  90]],
-      [[36,  89]],
-      [[34,  88]],
-      [[33,  86]],
-      [[32,  85]],
-      [[32,  84]],
-      [[32,  83]],
-      [[33,  82]],
-      [[33,  80]],
-      [[31,  80]],
-      [[30,  79]],
-      [[29,  80]]],
+  def test_shape_under_10_area(self):
+    under_10_distal_phalanx = np.array(
+      [[[0, 0]],
+      [[0, 2]],
+      [[1, 3]],
+      [[0, 4]],
+      [[3, 4]],
+      [[3, 3]],
+      [[2, 2]],
+      [[3, 1]],
+      [[3, 0]]],
       dtype=np.int32
     )
     phalanx = ExpectedContourDistalPhalanx(1)
-    phalanx.prepare(under_80_distal_phalanx, 40, 100)
+    phalanx.prepare(under_10_distal_phalanx, 40, 100)
     shape_score = phalanx.shape_restrictions()
     assert shape_score == float('inf')
 
   def test_bad_aspect_ratio(self):
     bad_aspect_ratio = np.array(
-      [[[84, 120]],
-      [[81, 120]],
-      [[78, 120]],
-      [[78, 120]],
-      [[81, 123]],
-      [[81, 123]],
-      [[84, 126]],
-      [[84, 126]],
-      [[81, 129]],
-      [[78, 132]],
-      [[78, 137]],
-      [[79, 138]],
-      [[84, 138]],
-      [[87, 138]],
-      [[90, 138]],
-      [[93, 138]],
-      [[94, 138]],
-      [[98, 135]],
-      [[93, 126]],
-      [[96, 123]],
-      [[97, 120]],
-      [[93, 120]],
-      [[87, 120]]],
+      [[[ 1,  3]],
+      [[ 3,  5]],
+      [[ 4,  5]],
+      [[ 6,  7]],
+      [[ 5,  8]],
+      [[ 4,  8]],
+      [[ 3,  9]],
+      [[ 2,  9]],
+      [[ 1, 10]],
+      [[ 1, 14]],
+      [[10, 14]],
+      [[11, 13]],
+      [[12, 13]],
+      [[13, 12]],
+      [[ 7,  6]],
+      [[ 8,  5]],
+      [[ 9,  5]],
+      [[11,  3]],
+      [[12,  3]]],
       dtype=np.int32
     )
     phalanx = ExpectedContourDistalPhalanx(1)
@@ -161,79 +131,99 @@ class TestDistalPhalanxExpectedContour:
     distal_1 = ExpectedContourDistalPhalanx(1)
     distal_1.prepare(distal_phalanx_contour, 66, 151)
     distal_2 = ExpectedContourDistalPhalanx(2, distal_1)
-    larger_aspect_contour = np.array([
-      [[25, 59]],
-      [[24, 60]],
-      [[21, 60]],
-      [[19, 62]],
-      [[19, 65]],
-      [[20, 66]],
-      [[20, 67]],
-      [[21, 68]],
-      [[21, 73]],
-      [[22, 74]],
-      [[22, 81]],
-      [[23, 82]],
-      [[23, 83]],
-      [[22, 84]],
-      [[22, 87]],
-      [[21, 88]],
-      [[21, 89]],
-      [[20, 90]],
-      [[20, 91]],
-      [[19, 92]],
-      [[19, 96]],
-      [[20, 97]],
-      [[31, 97]],
-      [[32, 96]],
-      [[35, 96]],
-      [[36, 95]],
-      [[39, 95]],
-      [[40, 94]],
-      [[41, 94]],
-      [[40, 93]],
-      [[40, 92]],
-      [[41, 91]],
-      [[40, 90]],
-      [[39, 90]],
-      [[34, 85]],
-      [[34, 84]],
-      [[32, 82]],
-      [[32, 79]],
-      [[31, 78]],
-      [[31, 68]],
-      [[32, 67]],
-      [[32, 61]],
-      [[31, 60]],
-      [[28, 60]],
-      [[27, 59]]],
+    larger_aspect_contour = np.array(
+      [[[ 41,  88]],
+      [[ 40,  89]],
+      [[ 37,  89]],
+      [[ 35,  91]],
+      [[ 35,  94]],
+      [[ 36,  95]],
+      [[ 36,  96]],
+      [[ 37,  97]],
+      [[ 37,  99]],
+      [[ 38, 100]],
+      [[ 38, 102]],
+      [[ 39, 103]],
+      [[ 39, 106]],
+      [[ 40, 107]],
+      [[ 40, 140]],
+      [[ 39, 141]],
+      [[ 39, 145]],
+      [[ 40, 146]],
+      [[ 51, 146]],
+      [[ 52, 145]],
+      [[ 55, 145]],
+      [[ 56, 144]],
+      [[ 59, 144]],
+      [[ 60, 143]],
+      [[ 61, 143]],
+      [[ 60, 142]],
+      [[ 60, 141]],
+      [[ 61, 140]],
+      [[ 60, 139]],
+      [[ 59, 139]],
+      [[ 54, 134]],
+      [[ 54, 133]],
+      [[ 52, 131]],
+      [[ 52, 128]],
+      [[ 51, 127]],
+      [[ 51, 123]],
+      [[ 50, 122]],
+      [[ 50, 117]],
+      [[ 49, 116]],
+      [[ 49, 112]],
+      [[ 48, 111]],
+      [[ 48, 103]],
+      [[ 47, 102]],
+      [[ 47,  97]],
+      [[ 48,  96]],
+      [[ 48,  90]],
+      [[ 47,  89]],
+      [[ 44,  89]],
+      [[ 43,  88]]],
       dtype=np.int32
     )
-    distal_2.prepare(larger_aspect_contour, 22, 38)
+    distal_2.prepare(larger_aspect_contour, 61, 147)
     score = distal_2.shape_restrictions()
     assert score == float('inf')
 
   def test_solidity_too_high(self):
     high_solidity = np.array(
-      [[[ 2,  0]],
-      [[ 0,  2]],
-      [[ 0,  6]],
+      [[[ 5,  4]],
+      [[ 3,  6]],
+      [[ 3,  7]],
+      [[ 4,  8]],
+      [[ 4, 10]],
       [[ 5, 11]],
-      [[ 0, 16]],
-      [[ 0, 26]],
-      [[ 3, 29]],
-      [[13, 29]],
-      [[18, 24]],
-      [[16, 22]],
-      [[16, 21]],
-      [[11, 16]],
-      [[11, 15]],
-      [[ 8, 12]],
-      [[ 8,  0]]],
+      [[ 5, 12]],
+      [[ 6, 13]],
+      [[ 6, 15]],
+      [[ 7, 16]],
+      [[ 7, 17]],
+      [[ 8, 18]],
+      [[ 7, 19]],
+      [[ 7, 20]],
+      [[ 4, 23]],
+      [[ 4, 24]],
+      [[ 2, 26]],
+      [[ 2, 35]],
+      [[ 5, 38]],
+      [[20, 38]],
+      [[21, 37]],
+      [[21, 36]],
+      [[23, 34]],
+      [[23, 33]],
+      [[24, 32]],
+      [[20, 28]],
+      [[20, 27]],
+      [[12, 19]],
+      [[12, 18]],
+      [[ 8, 14]],
+      [[ 8,  4]]],
       dtype=np.int32
     )
     phalanx = ExpectedContourDistalPhalanx(1)
-    phalanx.prepare(high_solidity, 20, 30)
+    phalanx.prepare(high_solidity, 24, 38)
     shape_value = phalanx.shape_restrictions()
     assert shape_value == float('inf')
 
@@ -289,12 +279,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[20, 106]],
-      [[23, 106]],
-      [[23, 108]],
-      [[20, 108]],
-    ])
+    square_contour = np.array(
+      [[[14., 88.]],
+       [[16., 88.]],
+       [[16., 91.]],
+       [[14., 91.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == True
 
   def test_contour_partially_outside_allowed_area_left(
@@ -303,12 +293,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[12, 106]],
-      [[16, 106]],
-      [[16, 108]],
-      [[12, 108]],
-    ])
+    square_contour = np.array(
+      [[[-4., 89.]],
+       [[ 2., 89.]],
+       [[ 2., 91.]],
+       [[-4., 91.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == False
 
   def test_contour_fully_outside_allowed_area_left(
@@ -317,12 +307,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[8, 106]],
-      [[10, 106]],
-      [[10, 108]],
-      [[8, 108]],
-    ])
+    square_contour = np.array(
+      [[[-9., 93.]],
+       [[-6., 93.]],
+       [[-6., 95.]],
+       [[-9., 95.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == False
 
   def test_contour_fully_outside_allowed_area_right(
@@ -331,12 +321,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[48, 106]],
-      [[50, 106]],
-      [[50, 108]],
-      [[48, 108]],
-    ])
+    square_contour = np.array(
+      [[[73., 97.]],
+       [[76., 97.]],
+       [[76., 99.]],
+       [[73., 99.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == False
 
   def test_contour_partially_outside_allowed_area_right(
@@ -345,12 +335,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[43, 116]],
-      [[54, 116]],
-      [[54, 118]],
-      [[43, 118]],
-    ])
+    square_contour = np.array(
+      [[[ 67., 101.]],
+       [[ 73., 101.]],
+       [[ 73., 103.]],
+       [[ 67., 103.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == False
 
   def test_contour_fully_outside_allowed_area_top(
@@ -359,12 +349,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[32, 88]],
-      [[38, 88]],
-      [[38, 92]],
-      [[32, 92]],
-    ])
+    square_contour = np.array(
+      [[[14., 75.]],
+       [[16., 75.]],
+       [[16., 78.]],
+       [[14., 78.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == False
 
   def test_contour_partially_outside_allowed_area_top(
@@ -373,12 +363,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[32, 94]],
-      [[38, 94]],
-      [[38, 102]],
-      [[32, 102]],
-    ])
+    square_contour = np.array(
+      [[[14., 80.]],
+       [[16., 80.]],
+       [[16., 86.]],
+       [[14., 86.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == False
 
   def test_contour_fully_outside_allowed_area_bottom(
@@ -387,12 +377,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[32, 192]],
-      [[38, 192]],
-      [[38, 198]],
-      [[32, 198]],
-    ])
+    square_contour = np.array(
+      [[[ 64., 193.]],
+       [[ 66., 193.]],
+       [[ 66., 196.]],
+       [[ 64., 196.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == False
 
   def test_contour_partially_outside_allowed_area_bottom(
@@ -401,12 +391,12 @@ class TestDistalPhalanxExpectedContour:
   ):
     phalanx = ExpectedContourDistalPhalanx(1)
     phalanx.prepare(distal_phalanx_contour, 66, 151)
-    square_contour = np.array([
-      [[32, 183]],
-      [[38, 183]],
-      [[38, 189]],
-      [[32, 189]],
-    ])
+    square_contour = np.array(
+      [[[ 64., 182.]],
+       [[ 66., 182.]],
+       [[ 66., 188.]],
+       [[ 64., 188.]]]
+    )
     assert is_in_allowed_space(square_contour, phalanx) == False
 
   def test_overlap_does_not_throw_error_for_convexity_defects(self):
@@ -456,3 +446,7 @@ class TestDistalPhalanxExpectedContour:
     phalanx.prepare(self_intercepting_contour, 32, 97)
     score = phalanx.shape_restrictions()
     assert score == float('inf')
+
+  def test_fifth_finger_aspect_ratio(self):
+    pass
+    # TODO fill fifth finger aspect ratio test
