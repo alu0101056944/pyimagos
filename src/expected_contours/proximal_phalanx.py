@@ -34,6 +34,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
     self.image_width = None
     self.image_height = None
     self.ends_branchs_sequence = None
+    self.min_area_rect = None
     self.encounter_amount = encounter_amount
     self.first_encounter = first_encounter
     self.first_in_branch = first_in_branch

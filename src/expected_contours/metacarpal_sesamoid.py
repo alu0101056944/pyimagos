@@ -27,6 +27,7 @@ class ExpectedContourMetacarpalSesamoid(ExpectedContour):
     self.image_width = None
     self.image_height = None
     self.ends_branchs_sequence = None
+    self.min_area_rect = None
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''
