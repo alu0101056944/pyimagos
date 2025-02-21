@@ -289,7 +289,7 @@ def visualize_radius_shape():
     dtype=np.int32
   )
   show_contour(low_area, padding=5,
-               title='Under 200 area radius.')
+               title='Under 250 area radius.')
 
   aspect_ratio = np.array(
     [[[14,  0]],

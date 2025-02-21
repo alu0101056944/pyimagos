@@ -39,6 +39,7 @@ from src.main_develop_test_medial_phalanx import visualize_medial_phalanx_shape
 from src.main_develop_test_proximal_phalanx import visualize_proximal_phalanx_shape
 from src.main_develop_test_metacarpal import visualize_metacarpal_shape
 from src.main_develop_test_radius import visualize_radius_shape
+from src.main_develop_test_ulna import visualize_ulna_shape
 from src.main_develop_test_execute import visualize_execute_tests
 
 @click.group()
@@ -187,6 +188,11 @@ def metacarpal():
 def radius():
   '''Image visualization of the radius shape'''
   visualize_radius_shape()
+
+@shape.command()
+def ulna():
+  '''Image visualization of the ulna shape'''
+  visualize_ulna_shape()
 
 @develop.command()
 def test_execute():
