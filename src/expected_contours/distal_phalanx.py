@@ -355,8 +355,8 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
           ]
         ],
         [
-          self.bottom_left_corner + self.direction_bottom * int(height * 8),
-          self.bottom_right_corner + self.direction_bottom * int(height * 8),
+          self.bottom_left_corner + self.direction_bottom * int(height * 9),
+          self.bottom_right_corner + self.direction_bottom * int(height * 9),
           [
             AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
             AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
@@ -366,10 +366,10 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
         ],
         [
           self.orientation_line[0] + (
-            self.direction_right * (width // 2 + ERROR_PADDING)
+            self.direction_right * (width // 2 + ERROR_PADDING - 15)
           ),
           self.orientation_line[1] + (
-            self.direction_right * (width // 2 + ERROR_PADDING)
+            self.direction_right * (width // 2 + ERROR_PADDING - 15)
           ),
           [
             AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
@@ -379,8 +379,8 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
           ]
         ],
         [
-          self.bottom_right_corner + self.direction_right * int(width * 4.5),
-          self.top_right_corner + self.direction_right * int(width * 4.5),
+          self.bottom_right_corner + self.direction_right * int(width * 6),
+          self.top_right_corner + self.direction_right * int(width * 6),
           [
             AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
             AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1

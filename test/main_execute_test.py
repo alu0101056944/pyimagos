@@ -3727,7 +3727,7 @@ class TestMainExecute:
 
     def check_if_contour_included(contour):
       assertion_passed = False
-      for complete_contour in complete_contours:
+      for i in range(len(complete_contours)):
         try:
           reference_hu_moments = cv.moments(contour)
           reference_hu_moments = cv.HuMoments(reference_hu_moments)

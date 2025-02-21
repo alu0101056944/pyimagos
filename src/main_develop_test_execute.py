@@ -27,7 +27,8 @@ def show_contours_position_restrictions(
     padding=5,
     title='Position restrictions visualization',
     minimize_image: bool = True,
-    show_position_restrictions: bool = True
+    show_position_restrictions: bool = True,
+    contour_map_mask: list = None,
 ):
   all_points = np.concatenate(contours)
   all_points = np.reshape(all_points, (-1, 2))
@@ -58,46 +59,57 @@ def show_contours_position_restrictions(
   if show_position_restrictions:
     for i, expected_contour in enumerate(expected_contours):
       contour_index = contour_map[i]
-      expected_contour.prepare(contours[contour_index], minimal_image.shape[1],
-                              minimal_image.shape[0])
-      color = (
-        (contour_index + 1) * 123 % 256,
-        (contour_index + 1) * 456 % 256,
-        (contour_index + 1) * 789 % 256
-      )
-      
-      if not expected_contour.ends_branchs_sequence:
-        position_restrictions = expected_contour.next_contour_restrictions()
-      else:
-        position_restrictions = (
-          expected_contour.first_in_branch.branch_start_position_restrictions()
+      if contour_map_mask is not None and contour_index in contour_map_mask:
+        expected_contour.prepare(
+          contours[contour_index],
+          minimal_image.shape[1],
+          minimal_image.shape[0]
         )
-
-      for position_restriction in position_restrictions:
-        point_a = position_restriction[0]
-        point_b = position_restriction[1]
-        direction = point_b - point_a
-        direction = direction / np.linalg.norm(direction)
-        point_a = (point_a - direction * minimal_image.shape[1]).astype(int)
-        point_b = (point_b + direction * minimal_image.shape[1]).astype(int)
-        cv.line(
-          minimal_image,
-          point_a,
-          point_b,
-          color,
-          1
+        color = (
+          (contour_index + 1) * 123 % 256,
+          (contour_index + 1) * 456 % 256,
+          (contour_index + 1) * 789 % 256
         )
+        
+        if not expected_contour.ends_branchs_sequence:
+          position_restrictions = expected_contour.next_contour_restrictions()
+        else:
+          try:
+            position_restrictions = (
+              expected_contour
+              .first_in_branch
+              .branch_start_position_restrictions()
+            )
+          except TypeError:
+            print('Error: First in branch expected contour not prepared for ' \
+                  f'contour index {contour_index} at "{title}" case.')
+            position_restrictions = []
 
-      color_rect = (
-        max(0, ((contour_index + 1) * 123 % 256) - 50),
-        max(0, ((contour_index + 1) * 456 % 256) - 50),
-        max(0, ((contour_index + 1) * 789 % 256) - 50),
-      )
-      rect = cv.minAreaRect(contours[contour_index])
-      bounding_rect_contour = cv.boxPoints(rect)
-      bounding_rect_contour = np.int32(bounding_rect_contour) # to int
-      cv.drawContours(minimal_image, [bounding_rect_contour], 0, color_rect,
-                      1)
+        for position_restriction in position_restrictions:
+          point_a = position_restriction[0]
+          point_b = position_restriction[1]
+          direction = point_b - point_a
+          direction = direction / np.linalg.norm(direction)
+          point_a = (point_a - direction * minimal_image.shape[1]).astype(int)
+          point_b = (point_b + direction * minimal_image.shape[1]).astype(int)
+          cv.line(
+            minimal_image,
+            point_a,
+            point_b,
+            color,
+            1
+          )
+
+        color_rect = (
+          max(0, ((contour_index + 1) * 123 % 256) - 50),
+          max(0, ((contour_index + 1) * 456 % 256) - 50),
+          max(0, ((contour_index + 1) * 789 % 256) - 50),
+        )
+        rect = cv.minAreaRect(contours[contour_index])
+        bounding_rect_contour = cv.boxPoints(rect)
+        bounding_rect_contour = np.int32(bounding_rect_contour) # to int
+        cv.drawContours(minimal_image, [bounding_rect_contour], 0, color_rect,
+                        1)
 
   fig = plt.figure()
   plt.imshow(minimal_image)
@@ -1692,7 +1704,7 @@ def visualize_execute_tests():
     minimize_image=False,
   )
 
-  contours_all_fingers = [
+  contours = [
       np.array([[[317, 252]],
       [[316, 253]],
       [[314, 253]],
@@ -3373,27 +3385,6 @@ def visualize_execute_tests():
     first_encounter=expected_contours[3]
   )
 
-  contours_all_fingers = [
-    contours_all_fingers[12],
-    contours_all_fingers[9],
-    contours_all_fingers[7],
-    contours_all_fingers[1],
-    contours_all_fingers[16],
-    contours_all_fingers[13],
-    contours_all_fingers[8],
-    contours_all_fingers[3],
-    contours_all_fingers[18],
-    contours_all_fingers[15],
-    contours_all_fingers[11],
-    contours_all_fingers[4],
-    contours_all_fingers[17],
-    contours_all_fingers[14],
-    contours_all_fingers[10],
-    contours_all_fingers[5],
-    contours_all_fingers[6],
-    contours_all_fingers[2],
-    contours_all_fingers[0],
-  ]
   contour_map = [
     12,
     9,
@@ -3416,13 +3407,83 @@ def visualize_execute_tests():
     0,
   ]
 
+  contour_map_mask = [
+    12,
+    9,
+    7,
+    1,
+  ]
   show_contours_position_restrictions(
     expected_contours,
     contour_map,
-    contours_all_fingers,
+    contours,
     padding=5,
-    title='Full hand.',
+    title='Full hand. First fingers.',
     minimize_image=False,
+    contour_map_mask=contour_map_mask
+  )
+
+  contour_map_mask = [
+    16,
+    13,
+    8,
+    3,
+  ]
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='Full hand. Second fingers.',
+    minimize_image=False,
+    contour_map_mask=contour_map_mask
+  )
+
+  contour_map_mask = [
+    18,
+    15,
+    11,
+    4,
+  ]
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='Full hand. Third fingers.',
+    minimize_image=False,
+    contour_map_mask=contour_map_mask
+  )
+
+  contour_map_mask = [
+    17,
+    14,
+    10,
+    5,
+  ]
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='Full hand. Fourth fingers.',
+    minimize_image=False,
+    contour_map_mask=contour_map_mask
+  )
+
+  contour_map_mask = [
+    6,
+    2,
+    0,
+  ]
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='Full hand. Fifth fingers.',
+    minimize_image=False,
+    contour_map_mask=contour_map_mask
   )
 
   plt.show()
