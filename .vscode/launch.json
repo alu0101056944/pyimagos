@@ -6,7 +6,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["test/main_execute_test.py"]
+      "args": ["test/expected_contours/radius_test.py"]
     },
     {
       "name": "Python Debugger: Python File",
@@ -26,7 +26,8 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "develop",
-        "test-execute",
+        "shape",
+        "radius",
       ]
     },
   ]
