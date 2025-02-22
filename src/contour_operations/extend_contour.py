@@ -15,7 +15,7 @@ up to the opposite side and extends <invasion_count> laterally.
 
 import numpy as np
 
-from src.contour_operations.utils import find_opposite_point_with_normals
+from src.contour_operations.utils import find_opposite_point
 from src.contour_operations.contour_operation import ContourOperation
 from src.contour_operations.utils import segments_intersect
 
@@ -53,6 +53,11 @@ class ExtendContour(ContourOperation):
     else:
       return None
 
+  def _unify_contours(self, contour_a, contour_b) -> list:
+    polygons = []
+    pass
+
+
   def generate_new_contour(self, contours: list) -> list:
     contours = list(contours)
 
@@ -61,9 +66,11 @@ class ExtendContour(ContourOperation):
     fixed_contour_a = np.reshape(contour_a, (-1, 2))
     fixed_contour_b = np.reshape(contour_b, (-1, 2))
 
-    if len(contour_b) < 1:
-      contours[self.contour_id2] = np.array([], dtype=np.int64)
-      return contours
+    if len(contour_b) < 2:
+      return None
+
+    if len(contour_a) < 1:
+      return None
 
     index_a, closest_index, second_index = self._find_closest_pair(
       fixed_contour_a,
@@ -78,36 +85,15 @@ class ExtendContour(ContourOperation):
       axis=0
     )
 
-    if len(contour_b) < 3:
-      # Three points is just short of minimum 3 to be able to calculate the normal
-      # because the normal needs the start point and next point and previous
-      # point and because those are exactly three points then the normal will
-      # not intersect
-
-      contour_b = np.insert(
-        contour_b,
-        closest_index + 1,
-        contour_b[closest_index],
-        axis=0
-      )
-      
-      contour_b_new = [
-        *contour_b[closest_index::-1].tolist(),
-        *contour_b[closest_index + 1:].tolist(),
-      ],
-
-      contour_a = np.insert(contour_a, index_a + 1, *contour_b_new, axis=0)
-      
-      contours[self.contour_id2] = np.array([], dtype=np.int64)
-      contours[self.contour_id1] = contour_a
-      return contours
-
-    opposite_index_b = find_opposite_point_with_normals(
+    opposite_index_b = find_opposite_point(
       fixed_contour_b,
       closest_index,
       self.image_width,
       self.image_height
     )
+
+    if opposite_index_b is None:
+      return None
 
     # track 1 is opposite negative and closest positive
     # track 2 is opposite positive and closest negative
@@ -126,11 +112,15 @@ class ExtendContour(ContourOperation):
           match_at_track_2 or cross_at_track_2):
         break
 
-      opposite_positive_next = fixed_contour_b[(opposite_index_b + i) % len(fixed_contour_b)]
-      opposite_negative_next = fixed_contour_b[(opposite_index_b - i) % len(fixed_contour_b)]
+      opposite_increased_index = (opposite_index_b + i) % len(fixed_contour_b)
+      opposite_decreased_index = (opposite_index_b - i) % len(fixed_contour_b)
+      closest_increased_index = (closest_index + i) % len(fixed_contour_b)
+      closest_decreased_index = (closest_index - i) % len(fixed_contour_b)
 
-      closest_positive_next = fixed_contour_b[(closest_index + i) % len(fixed_contour_b)]
-      closest_negative_next = fixed_contour_b[(closest_index - i) % len(fixed_contour_b)]
+      opposite_positive_next = fixed_contour_b[opposite_increased_index]
+      opposite_negative_next = fixed_contour_b[opposite_decreased_index]
+      closest_positive_next = fixed_contour_b[closest_increased_index]
+      closest_negative_next = fixed_contour_b[closest_decreased_index]
 
       # When the result in the same track is the same point
       result_match_track_1 = (
@@ -140,21 +130,47 @@ class ExtendContour(ContourOperation):
         np.array_equal(opposite_positive_next, closest_negative_next)
       )
 
-      result_cross_track_1 = (
-        (opposite_index_b - i) % len(fixed_contour_b) < (
-          (closest_index + i) % len(fixed_contour_b)
+      result_cross_track_1 = False
+      result_cross_track_2 = False
+      if closest_index <= opposite_index_b:
+        result_cross_track_1 = (
+          opposite_decreased_index < closest_increased_index
         )
-      )
-      result_cross_track_2 = (
-        (opposite_index_b + i) % len(fixed_contour_b) < (
-          (closest_index - i) % len(fixed_contour_b)
+
+        wrapped_at_track_2 = (
+          closest_decreased_index == len(fixed_contour_b) - 1 or
+          opposite_increased_index == 0
         )
-      )
+        if wrapped_at_track_2:
+          result_cross_track_2 = (
+            opposite_increased_index > closest_decreased_index
+          )
+        else:
+          result_cross_track_2 = (
+            opposite_increased_index < closest_decreased_index
+          )
+      else:
+        result_cross_track_2 = (
+          opposite_decreased_index > closest_increased_index
+        )
+
+        wrapped_at_track_1 = (
+          closest_decreased_index == 0 or
+          opposite_increased_index == len(fixed_contour_b) - 1
+        )
+        if wrapped_at_track_1:
+          result_cross_track_1 = (
+            opposite_increased_index < closest_decreased_index
+          )
+        else:
+          result_cross_track_1 = (
+            opposite_increased_index > closest_decreased_index
+          )
 
       if not match_at_track_1 and not cross_at_track_1:
         if result_match_track_1:
           track_1_closest_positive.append(
-            (closest_index + i) % len(fixed_contour_b)
+            closest_increased_index
           )
           match_at_track_1 = True
         elif result_cross_track_1:
@@ -162,16 +178,16 @@ class ExtendContour(ContourOperation):
         else:
           track_1_opposite_negative.insert(
             0,
-            (opposite_index_b - i) % len(fixed_contour_b)
+            opposite_decreased_index
           )
           track_1_closest_positive.append(
-            (closest_index + i) % len(fixed_contour_b)
+            closest_increased_index
           )
 
       if not match_at_track_2 and not cross_at_track_2:
         if result_match_track_2:
           track_2_opposite_positive.append(
-            (closest_index - i) % len(fixed_contour_b)
+            opposite_increased_index
           )
           match_at_track_2 = True
         elif result_cross_track_2:
@@ -179,10 +195,10 @@ class ExtendContour(ContourOperation):
         else:
           track_2_closest_negative.insert(
             0,
-            (closest_index - i) % len(fixed_contour_b)
+            closest_decreased_index
           )
           track_2_opposite_positive.append(
-            (opposite_index_b + i) % len(fixed_contour_b)
+            opposite_increased_index
           )
 
     contour_b_partial_indices = [
@@ -218,5 +234,7 @@ class ExtendContour(ContourOperation):
 
     contours[self.contour_id1] = contour_a
     contours[self.contour_id2] = contour_b
+
+    # contours = self._unify_contours(contour_a, contour_b)
 
     return contours

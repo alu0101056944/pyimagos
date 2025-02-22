@@ -18,6 +18,7 @@ from PIL import Image
 import cv2 as cv
 from PIL import Image
 import click
+import numpy as np
 
 from src.main_execute import process_radiograph
 from src.main_estimate_ideal import estimate_age_from_ideal_contour
@@ -33,6 +34,13 @@ from src.main_develop_test_extend import visualize_tests_extend
 from src.main_develop_corner_order import visualize_topleft_corner
 from src.main_develop_find_contour_corner import find_contour_corner
 from src.main_develop_find_sesamoid import find_sesamoid_main
+from src.main_develop_test_distal_phalanx import visualize_distal_phalanx_shape
+from src.main_develop_test_medial_phalanx import visualize_medial_phalanx_shape
+from src.main_develop_test_proximal_phalanx import visualize_proximal_phalanx_shape
+from src.main_develop_test_metacarpal import visualize_metacarpal_shape
+from src.main_develop_test_radius import visualize_radius_shape
+from src.main_develop_test_ulna import visualize_ulna_shape
+from src.main_develop_test_execute import visualize_execute_tests
 
 @click.group()
 def cli() -> None:
@@ -150,6 +158,105 @@ def find_corner() -> None:
 def find_sesamoid() -> None:
   '''Show image representations for sesamoid search near fifth metacarpal.''' 
   find_sesamoid_main()
+
+@develop.group()
+def shape() -> None:
+  '''Image representations for the different shapes.''' 
+  pass
+
+@shape.command()
+def distal_phalanx():
+  '''Image visualization of the distal phalanx 1 (leftmost) shape'''
+  visualize_distal_phalanx_shape()
+
+@shape.command()
+def medial_phalanx():
+  '''Image visualization of the medial phalanx 1 (leftmost) shape'''
+  visualize_medial_phalanx_shape()
+
+@shape.command()
+def proximal_phalanx():
+  '''Image visualization of the proximal phalanx 1 (leftmost) shape'''
+  visualize_proximal_phalanx_shape()
+
+@shape.command()
+def metacarpal():
+  '''Image visualization of the metacarpal 1 (leftmost) shape'''
+  visualize_metacarpal_shape()
+
+@shape.command()
+def radius():
+  '''Image visualization of the radius shape'''
+  visualize_radius_shape()
+
+@shape.command()
+def ulna():
+  '''Image visualization of the ulna shape'''
+  visualize_ulna_shape()
+
+@develop.command()
+def test_execute():
+  '''Image visualization of the execute tests'''
+  visualize_execute_tests()
+
+@develop.command()
+@click.argument("filename")
+@click.option('--write_file', is_flag=True, default=False,
+              help='Output to a file instead of to console.')
+def contour(filename: str, write_file: bool):
+  '''Given a binary image, print its contour.'''
+  input_image = Image.open(filename)
+  borders_detected = np.array(input_image)
+  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+  _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(
+    thresholded,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  )
+
+  if not contours:
+    output_string = "No contours found in the image."
+  else:
+    output_string = "Contours found in the image:\n"
+    for contour in contours:
+      output_string += str(contour) + "\n"
+
+  if write_file:
+    base_filename = os.path.splitext(os.path.basename(filename))[0]
+    output_filename = f"{base_filename}_contours.txt"
+    with open(output_filename, 'w') as f:
+      f.write(output_string)
+    click.echo(f"Contours written to: {output_filename}")
+  else:
+    click.echo(output_string)
+
+@develop.command()
+@click.argument("filename")
+def hu_moments(filename: str):
+  '''Given a binary image, print its hu moments'''
+  input_image = Image.open(filename)
+  borders_detected = np.array(input_image)
+  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+  _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(
+    thresholded,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  )
+
+  moments = cv.moments(contours[0])
+  hu_moments = cv.HuMoments(moments)
+  hu_moments = np.absolute(hu_moments)
+  hu_moments_no_zeros = np.where( # to avoid DivideByZero
+    hu_moments == 0,
+    np.finfo(float).eps,
+    hu_moments
+  )
+  hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+
+  print('Hu moments:')
+  print(hu_moments)
 
 if __name__ == '__main__':
     cli()

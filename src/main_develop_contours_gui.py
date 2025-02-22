@@ -229,7 +229,7 @@ class ContourViewer:
 def visualize_contours(filename: str) -> None:
   input_image = Image.open(filename)
   input_image = np.asarray(input_image)
-  gaussian_blurred = cv.GaussianBlur(input_image, (5, 5), 0)
+  gaussian_blurred = cv.GaussianBlur(input_image, (3, 3), 0)
 
   borders_detected = cv.Canny(gaussian_blurred, 40, 135)
   borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,

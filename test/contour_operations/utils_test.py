@@ -12,7 +12,8 @@ import numpy as np
 from src.contour_operations.utils import blend_colors_with_alpha
 from src.contour_operations.utils import segments_intersect
 from src.contour_operations.utils import line_segment_intersection
-from src.contour_operations.utils import find_opposite_point_with_normals
+from src.contour_operations.utils import find_opposite_point
+from src.contour_operations.utils import filter_internal_interceptions
 
 class TestContourUtils:
 
@@ -356,7 +357,7 @@ class TestContourUtils:
   def test_normal_one_point(self):
     contour = np.array([[15, 15]], dtype=np.int32)
     image_size = 30
-    opposite_point_index = find_opposite_point_with_normals(
+    opposite_point_index = find_opposite_point(
       contour,
       0,
       image_size,
@@ -367,7 +368,7 @@ class TestContourUtils:
   def test_normal_two_point(self):
     contour = np.array([[15, 15], [20, 15]], dtype=np.int32)
     image_size = 30
-    opposite_point_index = find_opposite_point_with_normals(
+    opposite_point_index = find_opposite_point(
       contour,
       0,
       image_size,
@@ -381,19 +382,19 @@ class TestContourUtils:
     ]
     contour = contours[0]
     image_size = 30
-    opposite_point_index = find_opposite_point_with_normals(
+    opposite_point_index = find_opposite_point(
       contour,
       0,
       image_size,
       image_size
     )
-    assert opposite_point_index == 2
+    assert opposite_point_index == 1
 
   def test_normal_square(self, contours):
     contour = contours[0]
 
     image_size = 30
-    opposite_point_index = find_opposite_point_with_normals(
+    opposite_point_index = find_opposite_point(
       contour,
       0,
       image_size,
@@ -409,7 +410,7 @@ class TestContourUtils:
     contour = contours[0]
 
     image_size = 30
-    opposite_point_index = find_opposite_point_with_normals(
+    opposite_point_index = find_opposite_point(
       contour,
       0,
       image_size,
@@ -437,7 +438,7 @@ class TestContourUtils:
     contour = contours[0]
 
     image_size = 30
-    opposite_point_index = find_opposite_point_with_normals(
+    opposite_point_index = find_opposite_point(
       contour,
       0,
       image_size,
@@ -445,3 +446,332 @@ class TestContourUtils:
     )
     
     assert opposite_point_index == 15
+
+  def test_normal_isolated_start(self):
+    contour = np.array(
+      [
+        [165,   0],
+        [167,   0],
+        [168,   1],
+        [167,   2],
+        [168,   1],
+        [169,   1],
+        [170,   0]
+      ],
+    )
+
+    image_width = 415
+    image_height = 445
+    opposite_point_index = find_opposite_point(
+      contour,
+      0,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index == 2
+
+  def test_normal_no_float_precision_error(self):
+    contour = np.array(
+      [[184, 365],
+      [184, 366],
+      [191, 366],
+      [191, 365]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      1,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index == 3
+
+  def test_opposite_line_with_direction_change_case(self):
+    contour = np.array(
+      [[239, 168],
+      [238, 169],
+      [239, 170],
+      [239, 171],
+      [239, 170],
+      [238, 169]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      1,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index is None
+
+  def test_opposite_line_with_direction_change_inversed_reversed_case(self):
+    contour = np.array(
+      [[238, 167],
+      [239, 166],
+      [238, 165],
+      [238, 164],
+      [238, 165],
+      [239, 166]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      1,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index is None
+
+  def test_opposite_line_kite_shape(self):
+    contour = np.array(
+      [[120, 296],
+      [120, 303],
+      [119, 304],
+      [120, 303],
+      [120, 301],
+      [123, 298],
+      [123, 296]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      2,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index is None
+
+  def test_opposite_equal_points(self):
+    contour = np.array(
+      [[2, 2],
+      [2, 2],
+      [2, 2]]
+    )
+    image_size = 5
+    opposite_point_index = find_opposite_point(
+      contour,
+      0,
+      image_size,
+      image_size
+    )
+    assert opposite_point_index == None
+
+  def test_opposite_folded(self):
+    contour = np.array(
+      [
+        [3, 3],
+        [0, 4],
+        [0, 6],
+        [3, 6],
+        [5, 7],
+        [3, 8],
+        [0, 9],
+        [0, 11],
+        [3, 12],
+        [9, 7],
+        [3, 3]
+      ]
+    )
+    image_size = 10
+    opposite_point_index = find_opposite_point(
+      contour,
+      5,
+      image_size,
+      image_size
+    )
+    assert opposite_point_index == 8
+    
+  def test_only_external_intersections(self):
+    contour = np.array(
+      [
+        [50, 50],
+        [60, 50],
+        [60, 60],
+        [70, 60],
+        [70, 50],
+        [80, 50],
+        [80, 80],
+        [50, 80]
+      ]
+    )
+    image_width = 150
+    image_height = 150
+    opposite_point_index = find_opposite_point(
+      contour,
+      1,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index == 0
+
+  def test_complex_contour_opposite_point(self):
+    contour = np.array(
+      [
+        [100, 150],
+        [150, 100],
+        [200, 100],
+        [250, 150],
+        [200, 200],
+        [150, 200]
+      ]
+    )
+    image_width = 400
+    image_height = 400
+    opposite_point_index = find_opposite_point(
+      contour,
+      1,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index == 4
+
+  # estudiar cuando sucede el caso de forma cercana.
+  def test_opposite_line_with_direction_change_case_2(self):
+    contour = np.array(
+      [[239, 168],
+      [237, 169],
+      [239, 170],
+      [239, 171],
+      [239, 170],
+      [237, 169]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      1,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index is None
+
+  def test_opposite_line_with_direction_change_case_3(self):
+    contour = np.array(
+      [[239, 168],
+      [237, 169],
+      [238, 170],
+      [239, 171],
+      [239, 170],
+      [237, 169]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      1,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index is None
+
+  def test_opposite_line_with_direction_change_case_4(self):
+    contour = np.array(
+      [[239, 168],
+      [238, 168],
+      [237, 169],
+      [238, 170],
+      [239, 171],
+      [239, 170],
+      [237, 169]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      2,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index is None
+    
+
+  def test_opposite_line_with_direction_change_case_5(self):
+    contour = np.array(
+      [[239, 168],
+      [238, 168],
+      [237, 169],
+      [238, 170],
+      [239, 171],
+      [240, 171],
+      [240, 170],
+      [240, 171]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      2,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index == 6
+    
+
+  def test_opposite_line_with_direction_change_case_6(self):
+    contour = np.array(
+      [[239, 168],
+      [238, 168],
+      [237, 169],
+      [238, 170],
+      [239, 171],
+      [240, 171],
+      [240, 170],
+      [240, 171],
+      [239, 171]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      2,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index == 3
+
+  def test_opposite_line_with_direction_change_case_7(self):
+    contour = np.array(
+      [[239, 168],
+      [238, 168],
+      [237, 169],
+      [238, 170],
+      [239, 171],
+      [240, 171],
+      [240, 170],
+      [240, 171],
+      [238, 170],
+      [237, 169]]
+    )
+    image_width = 415
+    image_height = 416
+    opposite_point_index = find_opposite_point(
+      contour,
+      2,
+      image_width,
+      image_height
+    )
+    assert opposite_point_index is None
+
+  def test_none_input_to_filter_internal_interceptions(self):
+    no_opposite_point_contour = np.array(
+      [[239, 168],
+      [238, 168],
+      [237, 169],
+      [238, 170],
+      [239, 171],
+      [240, 171],
+      [240, 170],
+      [240, 171],
+      [238, 170],
+      [237, 169]]
+    )
+    filtered_interceptions = filter_internal_interceptions(
+      None,
+      2,
+      no_opposite_point_contour
+    )
+    assert filtered_interceptions is None

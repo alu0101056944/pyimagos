@@ -97,37 +97,39 @@ def find_sesamoid(image: np.array, contours: list) -> list:
     shape_value = sesamoid_instance.shape_restrictions()
     shape_values.append(shape_value)
 
-  sesamoid_contour_index = np.argmax(shape_values)
-  sesamoid_contour = contours[sesamoid_contour_index]
+  if len(shape_values) > 0:
+    sesamoid_contour_index = np.argmax(shape_values)
+    sesamoid_contour = contours[sesamoid_contour_index]
+  else:
+    sesamoid_contour = None
 
   return sesamoid_contour
 
   
 def _find_closest_pair(contour_a: list, contour_b: list):
-    overall_min_distance = float('inf')
-    overall_closest_pair = None
+  overall_min_distance = float('inf')
+  overall_closest_pair = None
 
-    for i, point_a in enumerate(contour_a):
-      distances = np.sqrt(np.sum((contour_b - point_a) ** 2, axis=1))
+  for i, point_a in enumerate(contour_a):
+    distances = np.sqrt(np.sum((contour_b - point_a) ** 2, axis=1))
 
-      sorted_indices = np.argsort(distances)
+    sorted_indices = np.argsort(distances)
 
-      min_distance_local = distances[sorted_indices[0]]
-      min_distance_index = sorted_indices[0]
-      second_min_distance_index = sorted_indices[1] if len(distances) > 1 else None
+    min_distance_local = distances[sorted_indices[0]]
+    min_distance_index = sorted_indices[0]
+    second_min_distance_index = sorted_indices[1] if len(distances) > 1 else None
 
-      if min_distance_local < overall_min_distance:
-        overall_min_distance = min_distance_local
-        overall_closest_pair = (i, min_distance_index, second_min_distance_index)
-    
-    if overall_closest_pair is not None:
-      index_a = overall_closest_pair[0]
-      min_index = overall_closest_pair[1]
-      second_min_index = overall_closest_pair[2]
-      return index_a, min_index, second_min_index
-    else:
-      return None
-
+    if min_distance_local < overall_min_distance:
+      overall_min_distance = min_distance_local
+      overall_closest_pair = (i, min_distance_index, second_min_distance_index)
+  
+  if overall_closest_pair is not None:
+    index_a = overall_closest_pair[0]
+    min_index = overall_closest_pair[1]
+    second_min_index = overall_closest_pair[2]
+    return index_a, min_index, second_min_index
+  else:
+    return None
 
 def case_1():
   borders_detected = Image.open('docs/radiography_ideal_a_with_sesamoid_minimal.jpg')
@@ -150,16 +152,16 @@ def case_1():
     contour_colors
   )
 
-  sorted = sorted(contours, key=get_bounding_box_xy)
+  sorted_contours = sorted(contours, key=get_bounding_box_xy)
   segmentation = {
-    'metacarpal1': sorted[1],
-    'metacarpal2': sorted[3],
-    'metacarpal3': sorted[5],
-    'metacarpal4': sorted[6],
-    'metacarpal5': sorted[7],
-    'intersesamoid': sorted[8],
-    'ulna': sorted[0],
-    'radius': sorted[4]
+    'metacarpal1': sorted_contours[1],
+    'metacarpal2': sorted_contours[3],
+    'metacarpal3': sorted_contours[5],
+    'metacarpal4': sorted_contours[6],
+    'metacarpal5': sorted_contours[7],
+    'intersesamoid': sorted_contours[8],
+    'ulna': sorted_contours[0],
+    'radius': sorted_contours[4]
   }
 
   # Used to map the contours by consecutive executions:
@@ -174,10 +176,10 @@ def case_1():
 
   METACARPAL_BONES_AMOUNT = 5
   measurements = {}
-  for i in range(len(METACARPAL_BONES_AMOUNT)):
+  for i in range(METACARPAL_BONES_AMOUNT):
     instance = ExpectedContourMetacarpal(i + 1)
     instance.prepare(
-      segmentation[f'metacarpal{i}'],
+      segmentation[f'metacarpal{i + 1}'],
       image_width=contours_drawn_image.shape[1],
       image_height=contours_drawn_image.shape[0]
     )
@@ -203,31 +205,28 @@ def case_1():
   measurements.update(measurements_dict)
 
 
+  # get the sesamoid contour and then its measurements
   sesamoid_contour = find_sesamoid(contours_drawn_image, contours)
-
-  # calculate closest distance between metacarpal and it's sesamoid
-  index_a, closest_index_b, _ = _find_closest_pair(
-    segmentation['metacarpal5'],
-    sesamoid_contour
-  )
-
-  sesamoid_distance = np.sqrt(
-    np.sum(
-      (
-        segmentation['metacarpal5'][index_a] - (
-        sesamoid_contour[closest_index_b])
-      ) ** 2
+  if sesamoid_contour:
+    index_a, closest_index_b, _ = _find_closest_pair(
+      segmentation['metacarpal5'],
+      sesamoid_contour
     )
-  )
 
-  measurements['inter-sesamoid_distance'] = sesamoid_distance
+    sesamoid_distance = np.sqrt(
+      np.sum(
+        (
+          segmentation['metacarpal5'][index_a] - (
+          sesamoid_contour[closest_index_b])
+        ) ** 2
+      )
+    )
+
+    measurements['inter-sesamoid_distance'] = sesamoid_distance
   
   measurement_values = measurements.values()
-  min_value_index = np.argmin(measurement_values)
-  min_value = measurement_values[min_value_index]
-  max_value_index = np.argmax(measurement_values)
-  max_value = measurement_values[max_value_index]
-  
+  min_value = min(measurement_values)
+  max_value = max(measurement_values)
   measurements_normalized = {
     key: (
      (value - min_value) / (max_value - min_value)
@@ -241,7 +240,7 @@ def case_1():
     atlas_measurements = BONE_AGE_ATLAS[age_key]
     difference = 0
     for measurement_name in atlas_measurements.keys():
-      if measurements_normalized[measurement_name]:
+      if measurement_name in measurements_normalized:
         difference = difference + (
           np.absolute(
             atlas_measurements[measurement_name] - (

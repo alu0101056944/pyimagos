@@ -11,76 +11,188 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 
-from src.contour_operations.utils import  find_opposite_point_with_normals
+from src.contour_operations.utils import  find_opposite_point
 
-def calculate_normal(contour, point_id, image_width, image_height):
-  start_point = contour[point_id]
-  num_points = len(contour)
+def create_minimal_image_from_contours(image: np.array,
+                                       contours: list,
+                                       padding = 0) -> np.array:
+  if not contours:
+    raise ValueError('Called main_execute.py:' \
+                     'create_minimal_image_from_contours(<contour>) with an ' \
+                      'empty contours array')
+  
+  all_points = np.concatenate(contours)
+  all_points = np.reshape(all_points, (-1, 2))
+  x_values = all_points[:, 0]
+  y_values = all_points[:, 1]
 
-  point_prev_idx = (point_id - 1) % num_points
-  point_next_idx = (point_id + 1) % num_points
-  point_prev = contour[point_prev_idx]
-  point_next = contour[point_next_idx]
-  tangent = point_next - point_prev
-  normal = np.array([-tangent[1], tangent[0]]) # Rotate 90 degrees
+  min_x = int(max(0, np.min(x_values)))
+  min_y = int(max(0, np.min(y_values)))
+  max_x = int(min(image.shape[1], np.max(x_values)))
+  max_y = int(min(image.shape[0], np.max(y_values)))
 
-  normal = normal / np.linalg.norm(normal) # normalization
+  roi_from_original = image[
+    max(0, min_y - padding):max_y + padding + 1,
+    max(0, min_x - padding):max_x + padding + 1
+  ]
+  roi_from_original = np.copy(roi_from_original)
 
-  maximum_distance = ((image_width ** 2) + (image_height ** 2)) ** 0.5
-  normal_projection_distance = maximum_distance
-
-  line_start = start_point
-  line_end_1 = start_point + normal * normal_projection_distance
-  line_end_2 = start_point - normal * normal_projection_distance
-
-  line_start = line_start.astype(np.int32)
-  line_end_1 = line_end_1.astype(np.int32)
-  line_end_2 = line_end_2.astype(np.int32)
-
-  return line_start, line_end_1, line_start, line_end_2
-
-
-def prepare_image_showing_normal(image_size, contours, contour_id, point_id,
-                                 title):
-    image = np.zeros((image_size, image_size, 3), dtype=np.uint8)
-
-    point_color = np.array((155, 155, 155), dtype=np.uint8)
-    for contour in contours:
-      for point in contour:
-        x, y = point
-        image[y, x] = point_color
-
-    start_point_color = np.array((0, 255, 0), dtype=np.uint8)
-    x1, y1 = contours[contour_id][point_id]
-    image[y1, x1] = start_point_color
-
-    opposite_point_index = find_opposite_point_with_normals(
-      contour,
-      point_id,
-      image_size,
-      image_size
+  # missing X padding correction on the left
+  if np.min(x_values) - padding < 0:
+    missing_pixel_amount = np.absolute(np.min(x_values) - padding)
+    roi_from_original = np.concatenate(
+      (
+        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
+                dtype=np.uint8),
+        roi_from_original,
+      ),
+      axis=1,
+      dtype=np.uint8
     )
+  
+  # missing X padding correction on the right
+  if np.max(x_values) + padding > image.shape[1]:
+    missing_pixel_amount = np.max(x_values) + padding - image.shape[1]
+    roi_from_original = np.concatenate(
+      (
+        roi_from_original,
+        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
+                dtype=np.uint8)
+      ),
+      axis=1,
+      dtype=np.uint8
+    )
+
+  # missing Y padding correction on top
+  if np.min(y_values) - padding < 0:
+    missing_pixel_amount = np.absolute(np.min(y_values) - padding)
+    roi_from_original = np.concatenate(
+      (
+        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
+                dtype=np.uint8),
+        roi_from_original,
+      ),
+      axis=0,
+      dtype=np.uint8
+    )
+  
+  # missing Y padding correction on bottom
+  if np.max(y_values) + padding > image.shape[0]:
+    missing_pixel_amount = np.max(y_values) + padding - image.shape[0]
+    roi_from_original = np.concatenate(
+      (
+        roi_from_original,
+        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
+                dtype=np.uint8),
+      ),
+      axis=0,
+      dtype=np.uint8
+    ) 
+
+  corrected_contours = [
+    points - np.array([[[min_x, min_y]]]) + padding for points in contours
+  ]
+
+  return roi_from_original, corrected_contours
+
+
+def prepare_image_showing_normal(image_width: int, image_height: int, contours,
+                                 contour_id, point_id, title,
+                                 minimize_image: bool = False,
+                                 draw_contours: bool = False):
+  image = np.zeros((image_width, image_height, 3), dtype=np.uint8)
+  contours = [np.reshape(contour, (-1, 1, 2)) for contour in contours]
+
+  if minimize_image:
+    image, corrected_contours = create_minimal_image_from_contours(
+      image,
+      contours
+    )
+    contours = corrected_contours
+
+  separator_color = (255, 255, 255)
+  separator_width = 2
+  separator_column = np.full(
+    (image.shape[0], separator_width, 3), separator_color, dtype=np.uint8
+  )
+
+  point_color = np.array((155, 155, 155), dtype=np.uint8)
+  for contour in contours:
+    for point in contour:
+      x, y = point[0].astype(np.int64)
+      image[y, x] = point_color
+
+  centroid_color = np.array((120, 100, 70), dtype=np.uint8)
+  global_centroid = np.mean(contours[0], axis=0).astype(np.int64)
+  x3, y3 = global_centroid[0]
+  image[y3, x3] = centroid_color
+
+  start_point_color = np.array((0, 255, 0), dtype=np.uint8)
+  x1, y1 = contours[contour_id][point_id][0].astype(np.int64)
+  image[y1, x1] = start_point_color
+
+  opposite_point_index = find_opposite_point(
+    contours[0],
+    point_id,
+    image_width,
+    image_height
+  )
+  if opposite_point_index is not None:
 
     without_normal_highlighted = np.copy(image)
 
     opposite_color = np.array((255, 0, 0), dtype=np.uint8)
-    x2, y2 = contours[0][opposite_point_index]
+    x2, y2 = contours[0][opposite_point_index][0].astype(np.int64)
     image[y2, x2] = opposite_color
 
-    with_normal_line = np.copy(without_normal_highlighted)
+    if draw_contours:
+      image_with_drawn_contours = np.copy(image)
+      cv.drawContours(image_with_drawn_contours,
+                      [contour.astype(np.int64) for contour in contours],
+                      -1, (0, 0, 255), 1)
 
-    normal_1_pa, normal_1_pb, normal_2_pa, normal_2_pb = calculate_normal(
-      contours[contour_id],
-      point_id,
-      image_size,
-      image_size,
-    )
+      image_with_drawn_contours[y1, x1] = start_point_color
+      image_with_drawn_contours[y2, x2] = opposite_color
 
-    cv.line(with_normal_line, normal_1_pa, normal_1_pb, (150, 0, 0), 1)
-    cv.line(with_normal_line, normal_2_pa, normal_2_pb, (255, 0, 0), 1)
+      concatenated = np.concatenate(
+        (
+          without_normal_highlighted,
+          separator_column,
+          image,
+          separator_column,
+          image_with_drawn_contours
+        ),
+        axis=1
+      )
+    else:
+      concatenated = np.concatenate(
+        (
+          without_normal_highlighted,
+          separator_column,
+          image
+         ),
+        axis=1
+      )
+
+    fig = plt.figure()
+    plt.imshow(concatenated)
+    plt.title(title)
+    plt.axis('off')
+    fig.canvas.manager.set_window_title(title)
+  else:
+    image_with_drawn_contours = np.copy(image)
+    cv.drawContours(image_with_drawn_contours,
+                    [contour.astype(np.int64) for contour in contours],
+                    -1, (0, 0, 255), 1)
+
+    image_with_drawn_contours[y1, x1] = start_point_color
 
     concatenated = np.concatenate(
-      (without_normal_highlighted, image, with_normal_line),
+      (
+        image,
+        separator_column,
+        image_with_drawn_contours
+      ),
       axis=1
     )
 
@@ -90,24 +202,25 @@ def prepare_image_showing_normal(image_size, contours, contour_id, point_id,
     plt.axis('off')
     fig.canvas.manager.set_window_title(title)
 
+
 def test_normals_square():
   contours = [
     np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
   ]
-  prepare_image_showing_normal(30, contours, 0, 0, 'Test normal square ' \
-                               '(green=start, red=opposite)')
+  prepare_image_showing_normal(30, 30, contours, 0, 0, 'Test normal square ' \
+                               '(green=start, red=opposite)', draw_contours=True)
 
   contours = [
       np.array([[5, 5], [10, 15], [15, 5]]),
   ]
-  prepare_image_showing_normal(30, contours, 0, 0, 'Test normal triangle ' \
-                              '(green=start, red=opposite)')
+  prepare_image_showing_normal(30, 30, contours, 0, 0, 'Test normal triangle ' \
+                              '(green=start, red=opposite)', draw_contours=True)
   
   contours = [
       np.array([[5,5], [10, 3], [13, 8], [5, 12], [1, 10], [1, 8]]),
   ]
-  prepare_image_showing_normal(20, contours, 0, 0, 'Test normal concave ' \
-                              '(green=start, red=opposite)')
+  prepare_image_showing_normal(30, 20, contours, 0, 0, 'Test normal concave ' \
+                              '(green=start, red=opposite)', draw_contours=True)
 
   # Circle
   radius = 7
@@ -122,9 +235,267 @@ def test_normals_square():
   contours = [
       np.array(points)
   ]
-  prepare_image_showing_normal(30, contours, 0, 0, 'Test normal circle ' \
-                            '(green=start, red=opposite)')
+  prepare_image_showing_normal(30, 30, contours, 0, 0, 'Test normal circle ' \
+                            '(green=start, red=opposite)', draw_contours=True)
+  
+  contours = [
+    np.array(
+      [
+        [165,   0],
+        [167,   0],
+        [168,   1],
+        [167,   2],
+        [168,   1],
+        [169,   1],
+        [170,   0]
+      ],
+    )
+  ]
+  image_width = 415
+  image_height = 445
+  prepare_image_showing_normal(image_width, image_height, contours, 0, 0,
+                               'Test isolated start.', minimize_image=True,
+                               draw_contours=True)
+  
+  contour = np.array(
+    [[184, 365],
+    [184, 366],
+    [191, 366],
+    [191, 365]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 1,
+                               'Test two parallel lines.', minimize_image=True,
+                               draw_contours=True)
 
+  contour = np.array(
+    [[239, 168],
+    [238, 169],
+    [239, 170],
+    [239, 171],
+    [239, 170],
+    [238, 169]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 1,
+                               'Test line with direction change.',
+                               minimize_image=True, draw_contours=True)
+  
+  contour = np.array(
+    [[238, 167],
+    [239, 166],
+    [238, 165],
+    [238, 164],
+    [238, 165],
+    [239, 166]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 1,
+                               'Test line with direction change.' \
+                                'Reversed and inversed.', minimize_image=True,
+                                draw_contours=True)
+  
+  contour = np.array(
+    [[120, 296],
+    [120, 303],
+    [119, 304],
+    [120, 303],
+    [120, 301],
+    [123, 298],
+    [123, 296]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 2,
+                               'Test kite shape', minimize_image=True,
+                               draw_contours=True)
+  
+  contour = np.array([
+    # Outer part of the C
+    [20, 20], [20, 40], [30, 50],
+    [50, 50], [60, 40], [60, 20],
+    [50, 10], [30, 10],
+    # Inner part of the C (hole)
+    [24, 24], [24, 36], [32, 44],
+    [44, 44], [52, 36], [52, 24],
+    [44, 16], [32, 16],
+  ])
+  image_width = 300
+  image_height = 300
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 2,
+                               'Test C shape', minimize_image=True,
+                               draw_contours=True)
+  
+  contour = np.array(
+    [
+      [3, 3],
+      [0, 4],
+      [0, 6],
+      [3, 6],
+      [5, 7],
+      [3, 8],
+      [0, 9],
+      [0, 11],
+      [3, 12],
+      [9, 7],
+      [3, 3]
+    ]
+  )
+  image_size = 15
+  prepare_image_showing_normal(image_size, image_size, [contour], 0, 5,
+                               'Test folded', minimize_image=True,
+                               draw_contours=True)
+  
+  contour = np.array(
+    [
+      [50, 50],
+      [60, 50],
+      [60, 60],
+      [70, 60],
+      [70, 50],
+      [80, 50],
+      [80, 80],
+      [50, 80]
+    ]
+  )
+  image_width = 150
+  image_height = 150
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 1,
+                               'Test only external intersections.',
+                               minimize_image=True, draw_contours=True)
+
+  contour = np.array(
+    [
+      [0, 15],
+      [3, 12],
+      [5, 10],
+      [7, 12],
+      [10, 15],
+      [0, 17],
+      [3, 14],
+      [5, 12],
+      [7, 14],
+      [10, 17],
+    ]
+  )
+  image_width = 400
+  image_height = 400
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 1,
+                               'Test concave fail shape.',
+                               minimize_image=True, draw_contours=True)
+  
+  contour = np.array(
+    [
+      [100, 150],
+      [150, 100],
+      [200, 100],
+      [250, 150],
+      [200, 200],
+      [150, 200]
+    ]
+  )
+  image_width = 400
+  image_height = 400
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 1,
+                               'Test complex contour shape.',
+                               minimize_image=True, draw_contours=True)
+  
+  contour = np.array(
+    [[239, 168],
+    [237, 169],
+    [239, 170],
+    [239, 171],
+    [239, 170],
+    [237, 169]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 1,
+                               'Test line with direction change, 2.',
+                               minimize_image=True, draw_contours=True)
+
+  contour = np.array(
+    [[239, 168],
+    [237, 169],
+    [238, 170],
+    [239, 171],
+    [239, 170],
+    [237, 169]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 1,
+                               'Test line with direction change, 3.',
+                               minimize_image=True, draw_contours=True)
+
+  contour = np.array(
+    [[239, 168],
+    [238, 168],
+    [237, 169],
+    [238, 170],
+    [239, 171],
+    [239, 170],
+    [237, 169]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 2,
+                               'Test line with direction change, 4.',
+                               minimize_image=True, draw_contours=True)
+  
+  contour = np.array(
+    [[239, 168],
+    [238, 168],
+    [237, 169],
+    [238, 170],
+    [239, 171],
+    [240, 171],
+    [240, 170],
+    [240, 171]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 2,
+                               'Test line with direction change, 5.',
+                               minimize_image=True, draw_contours=True)
+  
+  contour = np.array(
+    [[239, 168],
+    [238, 168],
+    [237, 169],
+    [238, 170],
+    [239, 171],
+    [240, 171],
+    [240, 170],
+    [240, 171],
+    [239, 171]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 2,
+                               'Test line with direction change, 6.',
+                               minimize_image=True, draw_contours=True)
+  
+  contour = np.array(
+    [[239, 168],
+    [238, 168],
+    [237, 169],
+    [238, 170],
+    [239, 171],
+    [240, 171],
+    [240, 170],
+    [240, 171],
+    [238, 170],
+    [237, 169]]
+  )
+  image_width = 415
+  image_height = 416
+  prepare_image_showing_normal(image_width, image_height, [contour], 0, 2,
+                               'Test line with direction change, 7.',
+                               minimize_image=True, draw_contours=True)
   plt.show()
 
 def visualize_tests_normals() -> None:

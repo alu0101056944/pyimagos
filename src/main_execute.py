@@ -22,13 +22,18 @@ from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.expected_contours.expected_contour import (
   ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
 )
+from src.expected_contours.expected_contour_of_branch import (
+  ExpectedContourOfBranch
+)
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
 from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalanx
 from src.expected_contours.metacarpal import ExpectedContourMetacarpal
 from src.expected_contours.ulna import ExpectedContourUlna
 from src.expected_contours.radius import ExpectedContourRadius
-from src.expected_contours.metacarpal_sesamoid import ExpectedContourMetacarpalSesamoid
+from src.expected_contours.metacarpal_sesamoid import (
+  ExpectedContourMetacarpalSesamoid
+)
 from constants import EXECUTION_DURATION_SECONDS
 from src.contour_operations.cut_contour import CutContour
 from src.contour_operations.extend_contour import ExtendContour
@@ -54,76 +59,76 @@ metacarpal_1 = ExpectedContourMetacarpal(
 
 distal_phalanx_2 = ExpectedContourDistalPhalanx(
   encounter_amount=2,
-  first_occurence=distal_phalanx_1
+  first_encounter=distal_phalanx_1
 )
 medial_phalanx_2 = ExpectedContourMedialPhalanx(
   encounter_amount=2,
-  first_occurence=medial_phalanx_1,
+  first_encounter=medial_phalanx_1,
   first_in_branch=distal_phalanx_2
 )
 proximal_phalanx_2 = ExpectedContourProximalPhalanx(
   encounter_amount=2,
-  first_occurence=proximal_phalanx_1,
+  first_encounter=proximal_phalanx_1,
   first_in_branch=distal_phalanx_2
 )
 metacarpal_2 = ExpectedContourMetacarpal(
   encounter_amount=2,
-  first_occurence=metacarpal_1,
+  first_encounter=metacarpal_1,
   first_in_branch=distal_phalanx_2
 )
 
 distal_phalanx_3 = ExpectedContourDistalPhalanx(
   encounter_amount=3,
-  first_occurence=distal_phalanx_1,
+  first_encounter=distal_phalanx_1,
 )
 medial_phalanx_3 = ExpectedContourMedialPhalanx(
   encounter_amount=3,
-  first_occurence=medial_phalanx_1,
+  first_encounter=medial_phalanx_1,
   first_in_branch=distal_phalanx_3
 )
 proximal_phalanx_3 = ExpectedContourProximalPhalanx(
   encounter_amount=3,
-  first_occurence=proximal_phalanx_1,
+  first_encounter=proximal_phalanx_1,
   first_in_branch=distal_phalanx_3
 )
 metacarpal_3 = ExpectedContourMetacarpal(
   encounter_amount=3,
-  first_occurence=metacarpal_1,
+  first_encounter=metacarpal_1,
   first_in_branch=distal_phalanx_3
 )
 
 distal_phalanx_4 = ExpectedContourDistalPhalanx(
   encounter_amount=4,
-  first_occurence=distal_phalanx_1,
+  first_encounter=distal_phalanx_1,
 )
 medial_phalanx_4 = ExpectedContourMedialPhalanx(
   encounter_amount=4,
-  first_occurence=medial_phalanx_1,
+  first_encounter=medial_phalanx_1,
   first_in_branch=distal_phalanx_4
 )
 proximal_phalanx_4 = ExpectedContourProximalPhalanx(
   encounter_amount=4,
-  first_occurence=proximal_phalanx_1,
+  first_encounter=proximal_phalanx_1,
   first_in_branch=distal_phalanx_4
 )
 metacarpal_4 = ExpectedContourMetacarpal(
   encounter_amount=4,
-  first_occurence=metacarpal_1,
+  first_encounter=metacarpal_1,
   first_in_branch=distal_phalanx_4
 )
 
 distal_phalanx_5 = ExpectedContourDistalPhalanx(
   encounter_amount=5,
-  first_occurence=distal_phalanx_1,
+  first_encounter=distal_phalanx_1,
 )
 proximal_phalanx_5 = ExpectedContourProximalPhalanx(
   encounter_amount=5,
-  first_occurence=proximal_phalanx_1,
+  first_encounter=proximal_phalanx_1,
   first_in_branch=distal_phalanx_5
 )
 metacarpal_5 = ExpectedContourMetacarpal(
   encounter_amount=5,
-  first_occurence=metacarpal_1,
+  first_encounter=metacarpal_1,
   first_in_branch=distal_phalanx_5,
   ends_branchs_sequence=True
 )
@@ -166,15 +171,22 @@ def find_closest_contours_to_point(point: np.array, contours: list) -> np.array:
   return sorted_index
 
 def is_in_allowed_space(contour: list,
-  last_expected_contour: ExpectedContour
+  last_expected_contour: ExpectedContour,
+  has_to_jump_to_next_branch: bool = False,
+  first_in_branch: ExpectedContour = None,
 ) -> bool:
-  position_restrictions = last_expected_contour.next_contour_restrictions()
+  if not has_to_jump_to_next_branch:
+    position_restrictions = last_expected_contour.next_contour_restrictions()
+  else:
+    position_restrictions = first_in_branch.branch_start_position_restrictions()
+
   for position_restriction in position_restrictions:
-    x1, y1 = position_restriction[0][0]
-    x2, y2 = position_restriction[1][0]
-    allowed_side = position_restriction[2]
+    x1, y1 = position_restriction[0]
+    x2, y2 = position_restriction[1]
+    allowed_side_array = position_restriction[2]
 
     if x2 == x1:
+      allowed_side = allowed_side_array[3]
       # Vertical line case handling
       for point in contour:
         x, y = point[0]
@@ -195,6 +207,13 @@ def is_in_allowed_space(contour: list,
       m = (y2 - y1) / (x2 - x1)
       b = y1 - m * x1
 
+      if m > 0:
+        allowed_side = allowed_side_array[0]
+      elif m < 0:
+        allowed_side = allowed_side_array[1]
+      else:
+        allowed_side = allowed_side_array[2]
+
       for point in contour:
         x, y = point[0]
         line_y = m * x + b
@@ -210,159 +229,214 @@ def is_in_allowed_space(contour: list,
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
           if y > line_y:
             return False
+
   return True
 
-def generate_contour_alternatives(contours: list, contour_id: int, 
-                                  reference_state: dict, image_width: int,
-                                  image_height: int) -> list:
+def get_best_contour_alternative(contours: list, inside_indices: list,
+                                 reference_state: dict, expected_contours: list,
+                                 image_width: int, image_height: int) -> list:
   alternatives = []
 
-  contour = contours[contour_id]
-  for i in range(len(contour)):
-    cut_operation = CutContour(contour_id, i, image_width, image_height)
-    new_contour = cut_operation.generate_new_contour(contours)
+  for i in inside_indices:
     state = dict(reference_state)
-    state['contours_committed'] = copy.deepcopy(reference_state)
-    state['contours'] = new_contour
-    state['contours_alternatives'] = []
-    state['has_generated_alternatives'] = False
+    state['contours_committed'] = list(reference_state['contours_committed'])
+    state['contours_committed'].append(contours[i])
+    state['contours'] = contours
+    state['chosen_contour_index'] = i
+    instance = expected_contours[len(state['contours_committed']) - 1]
+    instance.prepare(contours[i], image_width, image_height)
+    score = instance.shape_restrictions()
+    state['committed_total_value'] = state['committed_total_value'] + score
     alternatives.append(state)
+
+  # for i in inside_indices:
+  #   for j in range(len(contours[i])):
+  #     cut_operation = CutContour(i, j, image_width, image_height)
+  #     new_contours = cut_operation.generate_new_contour(contours)
+  #     if new_contours is not None:
+  #       state = dict(reference_state)
+  #       state['contours_committed'] = list(reference_state['contours_committed'])
+  #       state['contours_committed'].append(new_contours[i])
+  #       state['contours'] = new_contours
+  #       state['chosen_contour_index'] = i
+  #       instance = expected_contours[len(state['contours_committed']) - 1]
+  #       instance.prepare(new_contours[i], image_width, image_height)
+  #       score = instance.shape_restrictions()
+  #       state['committed_total_value'] = state['committed_total_value'] + score
+  #       alternatives.append(state)
+
+  #       state = dict(reference_state)
+  #       state['contours_committed'] = list(reference_state['contours_committed'])
+  #       state['contours_committed'].append(new_contours[i])
+  #       state['contours'] = new_contours
+  #       state['chosen_contour_index'] = len(new_contours) - 1
+  #       instance = expected_contours[len(state['contours_committed']) - 1]
+  #       instance.prepare(new_contours[len(new_contours) - 1], image_width,
+  #                        image_height)
+  #       score = instance.shape_restrictions()
+  #       state['committed_total_value'] = state['committed_total_value'] + score
+  #       alternatives.append(state)
   
-  invasion_counts = [1, 2, 3, 4]
-  for i in range(len(contours)):
-    for j in range(len(contours)):
-      for invasion_count in invasion_counts:
-        extend_operation = ExtendContour(
-          i,
-          j,
-          image_width,
-          image_height,
-          invasion_count
-        )
-        new_contour = extend_operation.generate_new_contour(contours)
-        state = dict(reference_state)
-        state['contours_committed'] = copy.deepcopy(reference_state)
-        state['contours'] = new_contour
-        state['contours_alternatives'] = []
-        state['has_generated_alternatives'] = False,
-        alternatives.append(state)
+  # invasion_counts = [1, 2, 3, 4]
+  # for i in inside_indices:
+  #   for j in inside_indices:
+  #     if i != j:
+  #       for invasion_count in invasion_counts:
+  #         extend_operation = ExtendContour(
+  #           i,
+  #           j,
+  #           image_width,
+  #           image_height,
+  #           invasion_count
+  #         )
+  #         new_contours = extend_operation.generate_new_contour(contours)
+  #         if new_contours is not None:
+  #           state = dict(reference_state)
+  #           state['contours_committed'] = list(reference_state['contours_committed'])
+  #           state['contours'] = new_contours
+  #           state['chosen_contour_index'] = i
+  #           instance = expected_contours[len(state['contours_committed']) - 1]
+  #           instance.prepare(new_contours[i], image_width, image_height)
+  #           score = instance.shape_restrictions()
+  #           state['committed_total_value'] = state['committed_total_value'] + score
+  #           alternatives.append(state)
 
-      join_operation = JoinContour(i, j)
-      new_contour = join_operation.generate_new_contour(contours)
-      state = dict(reference_state)
-      state['contours_committed'] = copy.deepcopy(reference_state)
-      state['contours'] = new_contour
-      state['contours_alternatives'] = []
-      state['has_generated_alternatives'] = False,
-      alternatives.append(state)
+  #       join_operation = JoinContour(i, j)
+  #       new_contours = join_operation.generate_new_contour(contours)
+  #       if new_contours is not None:
+  #         state = dict(reference_state)
+  #         state['contours_committed'] = list(reference_state['contours_committed'])
+  #         state['contours'] = new_contours
+  #         state['chosen_contour_index'] = i
+  #         instance = expected_contours[len(state['contours_committed']) - 1]
+  #         instance.prepare(new_contours[i], image_width, image_height)
+  #         score = instance.shape_restrictions()
+  #         state['committed_total_value'] = state['committed_total_value'] + score
+  #         alternatives.append(state)
 
-  return alternatives
+  best_alternative = None
+  min_value = float('inf')
+  for alternative in alternatives:
+    value = alternative['committed_total_value']
+    if value is not None and value < min_value:
+      min_value = value
+      best_alternative = alternative
 
-def min_contour_distance(contour1: list, contour2: list) -> float:
-  distances = np.sqrt(
-        np.sum((contour1[:, None] - contour2) ** 2, axis=2)
-    )  # contour1[:, None] adds dim, making it column for broadcasting purpose
-  min_distance = np.min(distances)
-  return min_distance
+  return best_alternative
 
-def search_complete_contours(initial_state_stack: dict,
+def search_complete_contours(contours: list,
+                             expected_contours: list,
                              search_duration_seconds: int,
                              image_width: int,
                              image_height: int) -> list:
-  complete_contours = []
+  if len(contours) == 0:
+    return []
+  
+  if len(expected_contours) == 0:
+    return []
 
-  state_stack = initial_state_stack
+  state_stack = []
+
+  min_score = float('inf')
+  best_contour_index = -1
+  for i in range(len(contours)):
+    expected_contour_class = expected_contours[0]
+    current_contour = contours[i]
+    expected_contour_class.prepare(
+      current_contour,
+      image_width,
+      image_height
+    )
+    score = expected_contour_class.shape_restrictions()
+    if score < min_score:
+      min_score = score
+      best_contour_index = i
+
+  if min_score < float('inf'):
+    state_stack.append({
+      'contours_committed': [contours[best_contour_index]],
+      'contours': contours,
+      'chosen_contour_index': best_contour_index,
+      'committed_total_value': min_score
+    })
+  else:
+    print('No valid contours encountered (score). Search stop.')
+    return []
+
   start_time = time.time()
   while True:
     elapsed_time = time.time() - start_time
     if elapsed_time >= search_duration_seconds:
-      break
+      # return []
+      # TODO turn this back on
+      pass
     print(f'Elapsed time: {elapsed_time:.2f} seconds')
 
     if len(state_stack) > 0:
       state = state_stack[0]
       contours = state['contours']
-      current_contour_index = state['current_contour_index']
-      current_contour = contours[current_contour_index]
-
+      chosen_contour_index = state['chosen_contour_index']
+      chosen_contour = contours[chosen_contour_index]
       expected_contour_class = (
-        expected_contours[len(state['contours_committed'])]
+        expected_contours[len(state['contours_committed']) - 1]
       )
+      expected_contour_class.prepare(chosen_contour, image_width, image_height)
 
-      expected_contour_class.prepare(
-        current_contour,
-        image_width,
-        image_height
-      )
+      if len(state['contours_committed']) == len(expected_contours):
+        print('Sucessful search. Search stop.')
 
-      restrictions = expected_contour_class.shape_restrictions()
-      current_contour_valid, current_contour_value = restrictions
-
-      if current_contour_valid:
-        if len(state['contours_committed']) == len(expected_contours) - 1:
-          print('Found an instance of contours that covers all expected' \
-                ' contours.')
-
-          complete_contours.append(copy.deepcopy(
-            [
-              [*state['contours_committed'], current_contour],
-              state['committed_total_value'] + current_contour_value
-            ]
-          ))
-        else:
-          contours_inside_area = filter(
-            lambda contour : (
-              is_in_allowed_space(contour, expected_contour_class)
-            ),
-            contours
-          )
-          if len(contours_inside_area) > 0:
-            new_state = dict(state)
-            new_state['contours_committed'] = copy.deepcopy(
-              state['contours_committed']
-            )
-            new_state['contours_committed'].append(current_contour)
-            new_state['contours'] = copy.deepcopy(contours)
-            new_state['contours_alternatives'] = []
-            new_state['has_generated_alternatives'] = False,
-            new_state['committed_total_value'] = (
-              new_state['committed_total_value'] + current_contour_value
-            )
-
-            distances = [
-              min_contour_distance(
-                current_contour,
-                contour2
-              ) for contour2 in contours_inside_area
-            ]
-            sorted_indices = np.argsort(distances)
-            new_state['current_contour_index'] = sorted_indices[0]
-
-      if not state['has_generated_alternatives']:
-        contours_alternatives = generate_contour_alternatives(
-          contours,
-          current_contour_index,
-          state
-        )
-        state['contours_alternatives'].extend(contours_alternatives)
-        state['has_generated_alternatives'] = True
-
-      if len(state['contours_alternatives']) == 0:
-        state_stack.pop(0)
+        return [(copy.deepcopy(
+          {
+            'contours_committed': state['contours_committed'],
+            'committed_total_value': state['committed_total_value'] + min_score
+          }
+        ))]
       else:
-        # Choose alternative
-        # TODO Dont just choose random alternative.
-        random_index = random.randnt(0, len(state['contours_alternatives'] - 1))
-        state_stack.insert(0, state['contours_alternatives'][random_index])
-        state['contours_alternatives'].pop(random_index)
+        contours_without_chosen = (
+          contours[:chosen_contour_index] + contours[chosen_contour_index + 1:]
+        )
+        ends_branchs_sequence = False
+        first_in_branch = None
+        if isinstance(expected_contour_class, ExpectedContourOfBranch):
+          ends_branchs_sequence = expected_contour_class.ends_branchs_sequence
+          first_in_branch = expected_contour_class.first_in_branch
+
+        contours_inside_area_indices = [
+          index
+          for index, contour in enumerate(contours_without_chosen)
+          if is_in_allowed_space(
+            contour,
+            expected_contour_class,
+            has_to_jump_to_next_branch=ends_branchs_sequence,
+            first_in_branch=first_in_branch
+          )
+        ]
+        if len(contours_inside_area_indices) > 0:
+          best_alternative = get_best_contour_alternative(
+            contours_without_chosen,
+            contours_inside_area_indices,
+            state,
+            expected_contours,
+            image_width,
+            image_height
+          )
+          if best_alternative is not None:
+            state_stack.pop(0)
+            state_stack.insert(0, best_alternative)
+          else:
+            print('No valid contour inside required area was found. Search stop.')
+            state_stack.pop(0)
+        else:
+          print('No contours inside required area were found. Search stop.')
+          state_stack.pop(0)
+      
     else:
       print('Search finished: explored all alternatives')
-      break
-
-  return complete_contours
+      return []
 
 def create_minimal_image_from_contours(image: np.array,
-                                       contours: list) -> np.array:
+                                       contours: list,
+                                       padding = 0) -> np.array:
   if not contours:
     raise ValueError('Called main_execute.py:' \
                      'create_minimal_image_from_contours(<contour>) with an ' \
@@ -373,15 +447,74 @@ def create_minimal_image_from_contours(image: np.array,
   x_values = all_points[:, 0]
   y_values = all_points[:, 1]
 
-  min_x = np.min(x_values)
-  min_y = np.min(y_values)
-  max_x = np.max(x_values)
-  max_y = np.max(y_values)
+  min_x = int(max(0, np.min(x_values)))
+  min_y = int(max(0, np.min(y_values)))
+  max_x = int(min(image.shape[1], np.max(x_values)))
+  max_y = int(min(image.shape[0], np.max(y_values)))
 
-  roi_from_original = image[min_y:max_y + 1, min_x:max_x + 1]
+  roi_from_original = image[
+    max(0, min_y - padding):max_y + padding + 1,
+    max(0, min_x - padding):max_x + padding + 1
+  ]
   roi_from_original = np.copy(roi_from_original)
 
-  return roi_from_original
+  # missing X padding correction on the left
+  if np.min(x_values) - padding < 0:
+    missing_pixel_amount = np.absolute(np.min(x_values) - padding)
+    roi_from_original = np.concatenate(
+      (
+        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
+                dtype=np.uint8),
+        roi_from_original,
+      ),
+      axis=1,
+      dtype=np.uint8
+    )
+  
+  # missing X padding correction on the right
+  if np.max(x_values) + padding > image.shape[1]:
+    missing_pixel_amount = np.max(x_values) + padding - image.shape[1]
+    roi_from_original = np.concatenate(
+      (
+        roi_from_original,
+        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
+                dtype=np.uint8)
+      ),
+      axis=1,
+      dtype=np.uint8
+    )
+
+  # missing Y padding correction on top
+  if np.min(y_values) - padding < 0:
+    missing_pixel_amount = np.absolute(np.min(y_values) - padding)
+    roi_from_original = np.concatenate(
+      (
+        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
+                dtype=np.uint8),
+        roi_from_original,
+      ),
+      axis=0,
+      dtype=np.uint8
+    )
+  
+  # missing Y padding correction on bottom
+  if np.max(y_values) + padding > image.shape[0]:
+    missing_pixel_amount = np.max(y_values) + padding - image.shape[0]
+    roi_from_original = np.concatenate(
+      (
+        roi_from_original,
+        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
+                dtype=np.uint8),
+      ),
+      axis=0,
+      dtype=np.uint8
+    ) 
+
+  corrected_contours = [
+    points - np.array([[[min_x, min_y]]]) + padding for points in contours
+  ]
+
+  return roi_from_original, corrected_contours
 
 def get_bounding_box_xy(contour):
   x, y, w, h = cv.boundingRect(contour)
@@ -400,7 +533,6 @@ def create_minimal_image_from_contour(image: np.array,
   cropped_image = image[y1:y2, x1:x2]
 
   return cropped_image
-
 
 def get_contours_in_region(image, contours, region_rect, padding):
   x, y, w, h = region_rect
@@ -454,77 +586,40 @@ def find_sesamoid(image: np.array, segmentation: dict, contours: list) -> list:
     shape_value = sesamoid_instance.shape_restrictions()
     shape_values.append(shape_value)
 
-  sesamoid_contour_index = np.argmax(shape_values)
-  sesamoid_contour = contours[sesamoid_contour_index]
+  if len(shape_values) > 0:
+    sesamoid_contour_index = np.argmax(shape_values)
+    sesamoid_contour = contours[sesamoid_contour_index]
+  else:
+    sesamoid_contour = None
 
   return sesamoid_contour
 
-def process_radiograph(filename: str, write_images: bool = False,
-                       show_images: bool = False,
-                       nofilter: bool = False,
-                       nosearch: bool = False,
-                       historygui: bool = False) -> None:
-  global expected_contours
-  if len(expected_contours) == 0:
-     raise ValueError("The global list 'expected_contours' must have at least one' \
-                      ' element to work correctly.")
+def _find_closest_pair(contour_a: list, contour_b: list):
+  overall_min_distance = float('inf')
+  overall_closest_pair = None
 
-  input_image = Image.open(filename)
-  input_image = transforms.ToTensor()(input_image)
+  for i, point_a in enumerate(contour_a):
+    distances = np.sqrt(np.sum((contour_b - point_a) ** 2, axis=1))
 
-  if not nofilter:
-    he_enchanced = ContrastEnhancement().process(input_image)
-    he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
-                                cv.CV_8U)
+    sorted_indices = np.argsort(distances)
 
-    # gaussian_blurred = cv.GaussianBlur(he_enchanced, (5, 5), 0)
-    gaussian_blurred = cv.GaussianBlur(input_image, (5, 5), 0)
-    borders_detected = cv.Canny(gaussian_blurred, 40, 135)
-    borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,
-                                    cv.CV_8U)
-  else:
-    borders_detected = input_image
+    min_distance_local = distances[sorted_indices[0]]
+    min_distance_index = sorted_indices[0]
+    second_min_distance_index = sorted_indices[1] if len(distances) > 1 else None
 
-  # Segmentation
-  contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
-                                cv.CHAIN_APPROX_SIMPLE)
+    if min_distance_local < overall_min_distance:
+      overall_min_distance = min_distance_local
+      overall_closest_pair = (i, min_distance_index, second_min_distance_index)
   
-  minimize_image_size = create_minimal_image_from_contours(borders_detected, contours)
-
-  if not nosearch:
-    current_contour_index = find_closest_contours_to_point([[0, 0]], contours)[0]
-
-    state_stack = [{
-      'contours_committed': [],
-      'contours': contours,
-      'contours_alternatives': [],
-      'current_contour_index': current_contour_index,
-      'has_generated_alternatives': False,
-      'committed_total_value': 0
-    }]
-
-    complete_contours = search_complete_contours(state_stack,
-                                                EXECUTION_DURATION_SECONDS)
-    complete_contours.sort(key=lambda item: item[1], reverse=True)
-    best_contours = complete_contours[0]
-
-    if historygui:
-      # Opens history gui
-      _ = ContourViewer(minimize_image_size, complete_contours)
+  if overall_closest_pair is not None:
+    index_a = overall_closest_pair[0]
+    min_index = overall_closest_pair[1]
+    second_min_index = overall_closest_pair[2]
+    return index_a, min_index, second_min_index
   else:
-    best_contours = contours
-
-  # Measurements processing
-    
-  segmentation = {
-    'metacarpal2': best_contours[7],
-    'metacarpal3': best_contours[11],
-    'metacarpal4': best_contours[15],
-    'metacarpal5': best_contours[18],
-    'ulna': best_contours[19],
-    'radius': best_contours[20]
-  }
-
+    return None
+  
+def measure(segmentation, image: np.array, contours: list) -> dict:
   measurements = {}
 
   metacarpal_instances=[
@@ -533,11 +628,12 @@ def process_radiograph(filename: str, write_images: bool = False,
     metacarpal_4,
     metacarpal_5,
   ]
-  for i in range(1, len(metacarpal_instances)):
+  for i in range(len(metacarpal_instances)):
+    instance = metacarpal_instances[i]
     instance.prepare(
-      segmentation[f'metacarpal{i}'],
-      image_width=minimize_image_size.shape[1],
-      image_height=minimize_image_size.shape[0]
+      segmentation[f'metacarpal{i + 2}'],
+      image_width=image.shape[1],
+      image_height=image.shape[0]
     )
     measurements_dict = instance.measure()
     measurements.update(measurements_dict)
@@ -545,8 +641,8 @@ def process_radiograph(filename: str, write_images: bool = False,
   instance = ulna
   instance.prepare(
     segmentation['ulna'],
-    image_width=minimize_image_size.shape[1],
-    image_height=minimize_image_size.shape[0]
+    image_width=image.shape[1],
+    image_height=image.shape[0]
   )
   measurements_dict = instance.measure()
   measurements.update(measurements_dict)
@@ -554,56 +650,58 @@ def process_radiograph(filename: str, write_images: bool = False,
   instance = radius
   instance.prepare(
     segmentation['radius'],
-    image_width=minimize_image_size.shape[1],
-    image_height=minimize_image_size.shape[0]
+    image_width=image.shape[1],
+    image_height=image.shape[0]
   )
   measurements_dict = instance.measure()
   measurements.update(measurements_dict)
 
-  sesamoid_contour = find_sesamoid(minimize_image_size, segmentation,
-                                   contours)
-  
-  # calculate closest distance between metacarpal and it's sesamoid
-  index_a, closest_index_b, _ = _find_closest_pair(
-    segmentation['metacarpal5'],
-    sesamoid_contour
+  # sesamoid measurements
+  sesamoid_contour = find_sesamoid(
+    image,
+    segmentation,
+    contours
   )
-
-  sesamoid_distance = np.sqrt(
-    np.sum(
-      (
-        segmentation['metacarpal5'][index_a] - (
-        sesamoid_contour[closest_index_b])
-      ) ** 2
+  if sesamoid_contour:
+    index_a, closest_index_b, _ = _find_closest_pair(
+      segmentation['metacarpal5'],
+      sesamoid_contour
     )
-  )
 
-  measurements['inter-sesamoid_distance'] = sesamoid_distance
+    sesamoid_distance = np.sqrt(
+      np.sum(
+        (
+          segmentation['metacarpal5'][index_a] - (
+          sesamoid_contour[closest_index_b])
+        ) ** 2
+      )
+    )
 
-  measurement_values = measurements.values()
-  min_value_index = np.argmin(measurement_values)
-  min_value = measurement_values[min_value_index]
-  max_value_index = np.argmax(measurement_values)
-  max_value = measurement_values[max_value_index]
+    measurements['inter-sesamoid_distance'] = sesamoid_distance
   
+  measurement_values = measurements.values()
+  min_value = min(measurement_values)
+  max_value = max(measurement_values)
   measurements_normalized = {
     key: (
      (value - min_value) / (max_value - min_value)
     ) for key, value in measurements.items()
   }
 
-  # Compare measurements with measurements atlas
+  return measurements_normalized
+
+def estimate_age(measurements: dict) -> float:
   lowest_difference = float('inf')
   age_output = None
   for age_key in BONE_AGE_ATLAS.keys():
     atlas_measurements = BONE_AGE_ATLAS[age_key]
     difference = 0
     for measurement_name in atlas_measurements.keys():
-      if measurements_normalized[measurement_name]:
+      if measurement_name in measurements:
         difference = difference + (
           np.absolute(
             atlas_measurements[measurement_name] - (
-              measurements_normalized[measurement_name]
+              measurements[measurement_name]
             )
           )
         )
@@ -611,21 +709,100 @@ def process_radiograph(filename: str, write_images: bool = False,
       lowest_difference = difference
       age_output = age_key
 
-  if float(age_output) < 18:
-    print('Sistema encuentra edad de individuo <18.')
-    print('El individuo es menor de edad.')
-  else:
-    print('Sistema encuentra edad de individuo >18.')
-    print('El individuo es mayor de edad.')
+  return float(age_output)
 
+def process_radiograph(filename: str,
+                       write_images: bool = False,
+                       show_images: bool = False,
+                       nofilter: bool = False,
+                       nosearch: bool = False,
+                       historygui: bool = False
+                      ) -> None:
+  global expected_contours
+  if len(expected_contours) == 0:
+     raise ValueError("The global list 'expected_contours' must have at least one' \
+                      ' element to work correctly.")
+
+  input_image = Image.open(filename)
+
+  if not nofilter:
+    input_image = transforms.ToTensor()(input_image)
+    he_enchanced = ContrastEnhancement().process(input_image)
+    he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
+                                cv.CV_8U)
+
+    gaussian_blurred = cv.GaussianBlur(he_enchanced, (5, 5), 0)
+    borders_detected = cv.Canny(gaussian_blurred, 40, 135)
+    borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,
+                                    cv.CV_8U)
+  else:
+    borders_detected = np.array(input_image)
+    borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+    _, thresh = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+    borders_detected = thresh
+
+  # Segmentation
+  successful_segmentation = False
+
+  contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
+                                cv.CHAIN_APPROX_SIMPLE)
+  
+  minimum_image, corrected_contours = create_minimal_image_from_contours(
+    borders_detected,
+    contours
+  )
+  contours = corrected_contours
+  image_width = minimum_image.shape[1]
+  image_height = minimum_image.shape[0]
+
+  if not nosearch:
+    complete_contours = search_complete_contours(contours,
+                                                 expected_contours,
+                                                 EXECUTION_DURATION_SECONDS,
+                                                 image_width,
+                                                 image_height)
+    complete_contours.sort(key=lambda item: item[1], reverse=True)
+    if len(complete_contours) > 0:
+      successful_segmentation = True
+      best_contours = complete_contours[0]
+
+    if historygui:
+      # Opens history gui
+      _ = ContourViewer(minimum_image, complete_contours)
+  else:
+    best_contours = contours
+
+  if successful_segmentation:
+    segmentation = {
+      'metacarpal2': best_contours[7],
+      'metacarpal3': best_contours[11],
+      'metacarpal4': best_contours[15],
+      'metacarpal5': best_contours[18],
+      'ulna': best_contours[19],
+      'radius': best_contours[20]
+    }
+  
+    measurements_normalized = measure(segmentation, minimum_image.shape[1],
+                                      minimum_image.shape[0])
+
+    estimated_age = estimate_age(measurements_normalized)
+
+    if estimated_age < 18:
+      print('System finds patient age <18.')
+      print('Patient is underage.')
+    else:
+      print('System finds patient age =>18.')
+      print('Patient is adult.')
+  else:
+    print('Could not estimate age due to unsuccessful bone segmentation.')
   if write_images:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
                f'execute_output.jpg',
-               minimize_image_size)
+               minimum_image)
   else:
     if show_images:
       cv.imshow(f'{os.path.basename(filename)}' \
                 f'execute_output.jpg',
-                minimize_image_size)
+                minimum_image)
       cv.waitKey(0)
       cv.destroyAllWindows()

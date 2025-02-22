@@ -6,14 +6,29 @@
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["test/contour_operations/join_test.py"]
+      "args": ["test/main_execute_test.py"]
     },
     {
       "name": "Python Debugger: Python File",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
-      "args": ["develop", "find-sesamoid"]
-    }
+      "args": [
+        "execute",
+        ".\\docs\\radiography_ideal_a_with_sesamoid_minimal.jpg",
+        "--nofilter"
+      ]
+    },
+    {
+      "name": "Main test file. Python Debugger: Python File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": [
+        "develop",
+        "shape",
+        "radius",
+      ]
+    },
   ]
 }

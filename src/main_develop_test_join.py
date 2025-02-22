@@ -79,23 +79,6 @@ def test_join():
   prepare_image_showing_join(contours, contours_new, 30,
                             'Weird shaped join(before, after)')
 
-  contours = [
-    np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
-    np.array([])
-  ]
-  joinOperation = JoinContour(0, 1)
-  contours_new = joinOperation.generate_new_contour(contours)
-  prepare_image_showing_join(contours, contours_new, 30,
-                              'Join with empty(before, after)')
-  
-  contours = [
-    np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
-    np.array([[16, 4]])
-  ]
-  joinOperation = JoinContour(0, 1)
-  contours_new = joinOperation.generate_new_contour(contours)
-  prepare_image_showing_join(contours, contours_new, 30,
-                            'Join with one point(before, after)')
 
   contours = [
     np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),

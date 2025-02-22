@@ -29,9 +29,7 @@ class TestJoinOperation:
     joinOperation = JoinContour(0, 1)
     contours = joinOperation.generate_new_contour(contours)
 
-    expected_contour = np.array([[4, 4], [4, 8], [8, 8], [8, 4]], np.int64)
-    assert np.array_equal(contours[0], expected_contour)
-    assert np.array_equal(contours[1], np.array([], dtype=np.int64))
+    assert contours is None
     
   def test_join_with_one_point(self):
     contours = [
@@ -43,11 +41,18 @@ class TestJoinOperation:
     assert len(contours[1]) == 0
 
     expected_contour = np.array(
-      [[4, 4], [4, 8], [8, 8], [8, 4], [16, 4], [16, 4], [8, 4]],
+      [[ 4,  4],
+      [ 4,  8],
+      [ 8,  8],
+      [ 8,  4],
+      [16,  4],
+      [16,  4],
+      [ 8,  4]],
       np.int64
     )
-    assert np.array_equal(contours[0], expected_contour)
 
+    assert np.array_equal(contours[0], expected_contour)
+   
   def test_join_with_two_points(self):
     contours = [
       np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
@@ -104,3 +109,35 @@ class TestJoinOperation:
       [6, 8]
     ], np.int64)
     assert np.array_equal(contours[0], expected_contour)
+
+  def test_join_same_point(self):
+    contours = [
+      np.array([[5, 5], [10, 5], [10, 10]]),
+      np.array([[5, 5], [5, 10], [10, 10]]),
+    ]
+    joinOperation = JoinContour(0, 1, point_id1=2, point_id2=2)
+    contours = joinOperation.generate_new_contour(contours)
+
+    expected_contour = np.array(
+      [[ 5,  5],
+      [10,  5],
+      [10, 10],
+      [10, 10],
+      [ 5,  5],
+      [ 5, 10],
+      [10, 10],
+      [10, 10]],
+      np.int64
+    )
+
+    assert np.array_equal(contours[0], expected_contour)
+
+  def test_join_from_cero_points(self):
+    contours = [
+      np.array([[4, 4], [4, 8], [8, 8], [8, 4]]),
+      np.array([])
+    ]
+    joinOperation = JoinContour(1, 0)
+    contours = joinOperation.generate_new_contour(contours)
+
+    assert contours is None
