@@ -22,13 +22,18 @@ from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.expected_contours.expected_contour import (
   ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
 )
+from src.expected_contours.expected_contour_of_branch import (
+  ExpectedContourOfBranch
+)
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
 from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalanx
 from src.expected_contours.metacarpal import ExpectedContourMetacarpal
 from src.expected_contours.ulna import ExpectedContourUlna
 from src.expected_contours.radius import ExpectedContourRadius
-from src.expected_contours.metacarpal_sesamoid import ExpectedContourMetacarpalSesamoid
+from src.expected_contours.metacarpal_sesamoid import (
+  ExpectedContourMetacarpalSesamoid
+)
 from constants import EXECUTION_DURATION_SECONDS
 from src.contour_operations.cut_contour import CutContour
 from src.contour_operations.extend_contour import ExtendContour
@@ -390,14 +395,20 @@ def search_complete_contours(contours: list,
         contours_without_chosen = (
           contours[:chosen_contour_index] + contours[chosen_contour_index + 1:]
         )
+        ends_branchs_sequence = False
+        first_in_branch = None
+        if isinstance(expected_contour_class, ExpectedContourOfBranch):
+          ends_branchs_sequence = expected_contour_class.ends_branchs_sequence
+          first_in_branch = expected_contour_class.first_in_branch
+
         contours_inside_area_indices = [
           index
           for index, contour in enumerate(contours_without_chosen)
           if is_in_allowed_space(
             contour,
             expected_contour_class,
-            has_to_jump_to_next_branch=expected_contour_class.ends_branchs_sequence,
-            first_in_branch=expected_contour_class.first_in_branch
+            has_to_jump_to_next_branch=ends_branchs_sequence,
+            first_in_branch=first_in_branch
           )
         ]
         if len(contours_inside_area_indices) > 0:

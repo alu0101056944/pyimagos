@@ -6,7 +6,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "pytest",
-      "args": ["test/expected_contours/ulna_test.py"]
+      "args": ["test/main_execute_test.py"]
     },
     {
       "name": "Python Debugger: Python File",

@@ -142,23 +142,31 @@ class ExpectedContourUlna(ExpectedContour):
 
   def next_contour_restrictions(self) -> list:
     width = self.min_area_rect[1][0]
-    right_bound = int(width * 4)
-    ERROR_PADDING = 10
+    ERROR_PADDING = 3
     return [
       [
-        self.top_right_corner - [0, ERROR_PADDING],
-        self.top_left_corner - [0, ERROR_PADDING],
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
+        np.array(self.top_right_corner) - 140,
+        np.array(self.top_left_corner) - 140,
+        [
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL,
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL,
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL,
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL,
+        ]
       ],
       [
-        self.bottom_right_corner,
-        self.top_right_corner,
-        AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL
-      ],
-      [
-        self.bottom_right_corner + [right_bound, 0],
-        self.top_right_corner + [right_bound, 0],
-        AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL
+        self.orientation_line[0] + (
+          self.direction_right * (width // 2 - ERROR_PADDING)
+        ),
+        self.orientation_line[1] + (
+          self.direction_right * (width // 2 - ERROR_PADDING)
+        ),
+        [
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+        ]
       ],
 
     ]

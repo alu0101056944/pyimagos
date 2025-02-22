@@ -56,6 +56,9 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     self.direction_left = None
     self.direction_top = None
     self.direction_bottom = None
+    self.max_y = None
+    self.min_x = None
+    self.max_x = None
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''
@@ -69,13 +72,13 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
 
     x_values = self.contour[:, 0]
     y_values = self.contour[:, 1]
-    min_x = int(np.min(x_values))
+    self.min_x = int(np.min(x_values))
     min_y = int(np.min(y_values))
-    max_x = int(np.max(x_values))
-    max_y = int(np.max(y_values))
-    if image_width < max_x - min_x:
+    self.max_x = int(np.max(x_values))
+    self.max_y = int(np.max(y_values))
+    if image_width < self.max_x - self.min_x:
       raise ValueError('Image width is not enough to cover the whole contour.')
-    if image_height < max_y - min_y:
+    if image_height < self.max_y - min_y:
       raise ValueError('Image height is not enough to cover the whole contour.')
 
     rect = cv.minAreaRect(contour)
@@ -151,49 +154,41 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     self.direction_bottom = self.direction_bottom / np.linalg.norm(self.direction_bottom)
 
   def next_contour_restrictions(self) -> list:
-    if not self.ends_branchs_sequence:
-      return self.first_in_branch.branch_start_position_restrictions()
-    else: # expect ulna
-      ERROR_PADDING = 10
-      width = self.min_area_rect[1][0]
-      right_bound = int(width)
-      left_bound = int(width * 6)
-      return [
+    width = self.min_area_rect[1][0]
+    right_bound = int(width)
+    left_bound = int(width * 7)
+    return [
+      [
+        np.array([0, self.max_y]),
+        np.array([self.image_width, self.max_y]),
         [
-          self.bottom_left_corner + (
-            self.direction_top * ERROR_PADDING
-          ),
-          self.bottom_right_corner + (
-            self.direction_top * ERROR_PADDING
-          ),
-          [
-            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
-            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
-            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
-            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
-          ]
-        ],
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+        ]
+      ],
+      [
+        np.array([self.min_x - left_bound, 0]),
+        np.array([self.min_x - left_bound, self.image_height]),
         [
-          self.bottom_left_corner + self.direction_left * left_bound,
-          self.top_left_corner + self.direction_left * left_bound,
-          [
-            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
-            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
-            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
-            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
-          ]
-        ],
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = 0
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # vertical
+        ]
+      ],
+      [
+        np.array([self.max_x + right_bound, 0]),
+        np.array([self.max_x + right_bound, self.image_height]),
         [
-          self.bottom_right_corner + self.direction_right * right_bound,
-          self.top_right_corner + self.direction_right * right_bound,
-          [
-            AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
-            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
-            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
-            AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
-          ]
-        ],
-      ]
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
+          AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = 0
+          AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # vertical
+        ]
+      ],
+    ]
 
   def shape_restrictions(self) -> list:
     if len(self.contour) == 0:
