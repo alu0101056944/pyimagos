@@ -54,16 +54,18 @@ def cli() -> None:
               help='Show last image result. Opens a window.')
 @click.option('--nofilter', is_flag=True, default=False,
               help='Skip image processing into borders detected.')
-@click.option('--nosearch', is_flag=True, default=False,
-              help='Skip image contours search.')
 @click.option('--historygui', is_flag=True, default=False,
               help='Open history gui to show best contours.')
 def execute(filename: str, write_files: bool, show: bool,
-            nofilter: bool, nosearch: bool, historygui: bool) -> None:
+            nofilter: bool, historygui: bool) -> None:
   '''Left hand radiography segmentation.'''
-  process_radiograph(filename, write_images=write_files,
-                      show_images=show, nofilter=nofilter,
-                      nosearch=nosearch, historygui=historygui)
+  process_radiograph(
+    filename,
+    write_images=write_files,
+    show_images=show,
+    nofilter=nofilter,
+    historygui=historygui
+  )
 
 @cli.command()
 def estimate() -> None:

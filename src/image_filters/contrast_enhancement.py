@@ -17,7 +17,7 @@ import torch
 import torchvision.transforms as transforms
 import cv2 as cv
 
-# from constants import MODEL_PATH
+# from constants import CONTRAST_MODEL_PATH
 from src.image_filters.image_filter import ImageFilter
 import src.vision_transformer as vits
 

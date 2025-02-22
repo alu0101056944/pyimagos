@@ -5,8 +5,9 @@
 Configuration constants
 '''
 
-MODEL_PATH = './model/dino_deitsmall8_pretrain.pth'
-EXECUTION_DURATION_SECONDS = 5
+CONTRAST_MODEL_PATH = './model/dino_deitsmall8_pretrain.pth'
+SEARCH_EXECUTION_DURATION_SECONDS = 5
+
 
 BONE_AGE_ATLAS = {
   '17.5': {

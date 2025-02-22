@@ -10,155 +10,37 @@ Processing steps of the radiograph
 import os.path
 from PIL import Image
 import time
-import random
 import copy
 
 import torchvision.transforms as transforms
 import numpy as np
 import cv2 as cv
+import matplotlib.pyplot as plt
 
 from src.main_develop_contours_gui import ContourViewer
 from src.image_filters.contrast_enhancement import ContrastEnhancement
-from src.expected_contours.expected_contour import (
-  ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
-)
-from src.expected_contours.expected_contour_of_branch import (
-  ExpectedContourOfBranch
-)
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
 from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalanx
 from src.expected_contours.metacarpal import ExpectedContourMetacarpal
 from src.expected_contours.ulna import ExpectedContourUlna
 from src.expected_contours.radius import ExpectedContourRadius
+from src.expected_contours.expected_contour import (
+  ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
+)
+from src.expected_contours.expected_contour_of_branch import (
+  ExpectedContourOfBranch
+)
 from src.expected_contours.metacarpal_sesamoid import (
   ExpectedContourMetacarpalSesamoid
 )
-from constants import EXECUTION_DURATION_SECONDS
-from src.contour_operations.cut_contour import CutContour
-from src.contour_operations.extend_contour import ExtendContour
-from src.contour_operations.join_contour import JoinContour
-from constants import BONE_AGE_ATLAS
-
-# From left-top to right-bottom of the image (0, 0) to (size x, size y)
-distal_phalanx_1 = ExpectedContourDistalPhalanx(
-  encounter_amount=1,
+# from src.contour_operations.cut_contour import CutContour
+# from src.contour_operations.extend_contour import ExtendContour
+# from src.contour_operations.join_contour import JoinContour
+from constants import (
+  SEARCH_EXECUTION_DURATION_SECONDS,
+  BONE_AGE_ATLAS,
 )
-medial_phalanx_1 = ExpectedContourMedialPhalanx(
-  encounter_amount=1,
-  first_in_branch=distal_phalanx_1
-)
-proximal_phalanx_1 = ExpectedContourProximalPhalanx(
-  encounter_amount=1,
-  first_in_branch=distal_phalanx_1
-)
-metacarpal_1 = ExpectedContourMetacarpal(
-  encounter_amount=1,
-  first_in_branch=distal_phalanx_1
-)
-
-distal_phalanx_2 = ExpectedContourDistalPhalanx(
-  encounter_amount=2,
-  first_encounter=distal_phalanx_1
-)
-medial_phalanx_2 = ExpectedContourMedialPhalanx(
-  encounter_amount=2,
-  first_encounter=medial_phalanx_1,
-  first_in_branch=distal_phalanx_2
-)
-proximal_phalanx_2 = ExpectedContourProximalPhalanx(
-  encounter_amount=2,
-  first_encounter=proximal_phalanx_1,
-  first_in_branch=distal_phalanx_2
-)
-metacarpal_2 = ExpectedContourMetacarpal(
-  encounter_amount=2,
-  first_encounter=metacarpal_1,
-  first_in_branch=distal_phalanx_2
-)
-
-distal_phalanx_3 = ExpectedContourDistalPhalanx(
-  encounter_amount=3,
-  first_encounter=distal_phalanx_1,
-)
-medial_phalanx_3 = ExpectedContourMedialPhalanx(
-  encounter_amount=3,
-  first_encounter=medial_phalanx_1,
-  first_in_branch=distal_phalanx_3
-)
-proximal_phalanx_3 = ExpectedContourProximalPhalanx(
-  encounter_amount=3,
-  first_encounter=proximal_phalanx_1,
-  first_in_branch=distal_phalanx_3
-)
-metacarpal_3 = ExpectedContourMetacarpal(
-  encounter_amount=3,
-  first_encounter=metacarpal_1,
-  first_in_branch=distal_phalanx_3
-)
-
-distal_phalanx_4 = ExpectedContourDistalPhalanx(
-  encounter_amount=4,
-  first_encounter=distal_phalanx_1,
-)
-medial_phalanx_4 = ExpectedContourMedialPhalanx(
-  encounter_amount=4,
-  first_encounter=medial_phalanx_1,
-  first_in_branch=distal_phalanx_4
-)
-proximal_phalanx_4 = ExpectedContourProximalPhalanx(
-  encounter_amount=4,
-  first_encounter=proximal_phalanx_1,
-  first_in_branch=distal_phalanx_4
-)
-metacarpal_4 = ExpectedContourMetacarpal(
-  encounter_amount=4,
-  first_encounter=metacarpal_1,
-  first_in_branch=distal_phalanx_4
-)
-
-distal_phalanx_5 = ExpectedContourDistalPhalanx(
-  encounter_amount=5,
-  first_encounter=distal_phalanx_1,
-)
-proximal_phalanx_5 = ExpectedContourProximalPhalanx(
-  encounter_amount=5,
-  first_encounter=proximal_phalanx_1,
-  first_in_branch=distal_phalanx_5
-)
-metacarpal_5 = ExpectedContourMetacarpal(
-  encounter_amount=5,
-  first_encounter=metacarpal_1,
-  first_in_branch=distal_phalanx_5,
-  ends_branchs_sequence=True
-)
-
-radius = ExpectedContourRadius()
-ulna = ExpectedContourUlna()
-
-expected_contours = [
-  distal_phalanx_1,
-  medial_phalanx_1,
-  proximal_phalanx_1,
-  metacarpal_1,
-  distal_phalanx_2,
-  medial_phalanx_2,
-  proximal_phalanx_2,
-  metacarpal_2,
-  distal_phalanx_3,
-  medial_phalanx_3,
-  proximal_phalanx_3,
-  metacarpal_3,
-  distal_phalanx_4,
-  medial_phalanx_4,
-  proximal_phalanx_4,
-  metacarpal_4,
-  distal_phalanx_5,
-  proximal_phalanx_5,
-  metacarpal_5,
-  ulna,
-  radius,
-]
 
 def find_closest_contours_to_point(point: np.array, contours: list) -> np.array:
   contour_distances = np.array([
@@ -360,7 +242,7 @@ def search_complete_contours(contours: list,
       'committed_total_value': min_score
     })
   else:
-    print('No valid contours encountered (score). Search stop.')
+    print('No valid contours encountered (all scores are "inf"). Search stop.')
     return []
 
   start_time = time.time()
@@ -424,14 +306,20 @@ def search_complete_contours(contours: list,
             state_stack.pop(0)
             state_stack.insert(0, best_alternative)
           else:
-            print('No valid contour inside required area was found. Search stop.')
+            print('No valid contour inside required area was found for ' \
+                  'expected contour ' \
+                  f'index={len(state['contours_committed']) - 1}.' \
+                    ' Search stop.')
             state_stack.pop(0)
         else:
-          print('No contours inside required area were found. Search stop.')
+          print('No contours inside required area were found for ' \
+                 'expected contour ' \
+                  f'index={len(state['contours_committed']) - 1}.' \
+                    ' Search stop.')
           state_stack.pop(0)
       
     else:
-      print('Search finished: explored all alternatives')
+      print('Search finished: explored all alternatives but found nothing valid.')
       return []
 
 def create_minimal_image_from_contours(image: np.array,
@@ -594,91 +482,16 @@ def find_sesamoid(image: np.array, segmentation: dict, contours: list) -> list:
 
   return sesamoid_contour
 
-def _find_closest_pair(contour_a: list, contour_b: list):
-  overall_min_distance = float('inf')
-  overall_closest_pair = None
-
-  for i, point_a in enumerate(contour_a):
-    distances = np.sqrt(np.sum((contour_b - point_a) ** 2, axis=1))
-
-    sorted_indices = np.argsort(distances)
-
-    min_distance_local = distances[sorted_indices[0]]
-    min_distance_index = sorted_indices[0]
-    second_min_distance_index = sorted_indices[1] if len(distances) > 1 else None
-
-    if min_distance_local < overall_min_distance:
-      overall_min_distance = min_distance_local
-      overall_closest_pair = (i, min_distance_index, second_min_distance_index)
-  
-  if overall_closest_pair is not None:
-    index_a = overall_closest_pair[0]
-    min_index = overall_closest_pair[1]
-    second_min_index = overall_closest_pair[2]
-    return index_a, min_index, second_min_index
-  else:
-    return None
-  
-def measure(segmentation, image: np.array, contours: list) -> dict:
+def measure(segmentation: list, image: np.array) -> dict:
   measurements = {}
 
-  metacarpal_instances=[
-    metacarpal_2,
-    metacarpal_3,
-    metacarpal_4,
-    metacarpal_5,
-  ]
-  for i in range(len(metacarpal_instances)):
-    instance = metacarpal_instances[i]
-    instance.prepare(
-      segmentation[f'metacarpal{i + 2}'],
-      image_width=image.shape[1],
-      image_height=image.shape[0]
-    )
-    measurements_dict = instance.measure()
-    measurements.update(measurements_dict)
+  for segment in segmentation:
+    contour = segment[0]
+    instance = segment[1]
+    instance.prepare(contour, image.shape[1], image.shape[0])
+    local_measurements = instance.measure()
+    measurements.update(local_measurements)
 
-  instance = ulna
-  instance.prepare(
-    segmentation['ulna'],
-    image_width=image.shape[1],
-    image_height=image.shape[0]
-  )
-  measurements_dict = instance.measure()
-  measurements.update(measurements_dict)
-
-  instance = radius
-  instance.prepare(
-    segmentation['radius'],
-    image_width=image.shape[1],
-    image_height=image.shape[0]
-  )
-  measurements_dict = instance.measure()
-  measurements.update(measurements_dict)
-
-  # sesamoid measurements
-  sesamoid_contour = find_sesamoid(
-    image,
-    segmentation,
-    contours
-  )
-  if sesamoid_contour:
-    index_a, closest_index_b, _ = _find_closest_pair(
-      segmentation['metacarpal5'],
-      sesamoid_contour
-    )
-
-    sesamoid_distance = np.sqrt(
-      np.sum(
-        (
-          segmentation['metacarpal5'][index_a] - (
-          sesamoid_contour[closest_index_b])
-        ) ** 2
-      )
-    )
-
-    measurements['inter-sesamoid_distance'] = sesamoid_distance
-  
   measurement_values = measurements.values()
   min_value = min(measurement_values)
   max_value = max(measurement_values)
@@ -711,18 +524,126 @@ def estimate_age(measurements: dict) -> float:
 
   return float(age_output)
 
+def get_expected_contours_model() -> list:
+  distal_phalanx_1 = ExpectedContourDistalPhalanx(
+    encounter_amount=1,
+  )
+  medial_phalanx_1 = ExpectedContourMedialPhalanx(
+    encounter_amount=1,
+  )
+  proximal_phalanx_1 = ExpectedContourProximalPhalanx(
+    encounter_amount=1,
+  )
+  metacarpal_1 = ExpectedContourMetacarpal(
+    encounter_amount=1,
+    ends_branchs_sequence=True,
+    first_in_branch=distal_phalanx_1,
+  )
+
+  distal_phalanx_2 = ExpectedContourDistalPhalanx(
+    encounter_amount=2,
+    first_encounter=distal_phalanx_1
+  )
+  medial_phalanx_2 = ExpectedContourMedialPhalanx(
+    encounter_amount=2,
+    first_encounter=medial_phalanx_1,
+  )
+  proximal_phalanx_2 = ExpectedContourProximalPhalanx(
+    encounter_amount=2,
+    first_encounter=proximal_phalanx_1,
+  )
+  metacarpal_2 = ExpectedContourMetacarpal(
+    encounter_amount=2,
+    first_encounter=metacarpal_1,
+    ends_branchs_sequence=True,
+    first_in_branch=distal_phalanx_2,
+  )
+
+  distal_phalanx_3 = ExpectedContourDistalPhalanx(
+    encounter_amount=3,
+    first_encounter=distal_phalanx_1,
+  )
+  medial_phalanx_3 = ExpectedContourMedialPhalanx(
+    encounter_amount=3,
+    first_encounter=medial_phalanx_1,
+  )
+  proximal_phalanx_3 = ExpectedContourProximalPhalanx(
+    encounter_amount=3,
+    first_encounter=proximal_phalanx_1,
+  )
+  metacarpal_3 = ExpectedContourMetacarpal(
+    encounter_amount=3,
+    first_encounter=metacarpal_1,
+    ends_branchs_sequence=True,
+    first_in_branch=distal_phalanx_3
+  )
+
+  distal_phalanx_4 = ExpectedContourDistalPhalanx(
+    encounter_amount=4,
+    first_encounter=distal_phalanx_1,
+  )
+  medial_phalanx_4 = ExpectedContourMedialPhalanx(
+    encounter_amount=4,
+    first_encounter=medial_phalanx_1,
+  )
+  proximal_phalanx_4 = ExpectedContourProximalPhalanx(
+    encounter_amount=4,
+    first_encounter=proximal_phalanx_1,
+  )
+  metacarpal_4 = ExpectedContourMetacarpal(
+    encounter_amount=4,
+    first_encounter=metacarpal_1,
+    ends_branchs_sequence=True,
+    first_in_branch=distal_phalanx_4
+  )
+
+  distal_phalanx_5 = ExpectedContourDistalPhalanx(
+    encounter_amount=5,
+    first_encounter=distal_phalanx_1,
+  )
+  proximal_phalanx_5 = ExpectedContourProximalPhalanx(
+    encounter_amount=5,
+    first_encounter=proximal_phalanx_1,
+  )
+  metacarpal_5 = ExpectedContourMetacarpal(
+    encounter_amount=5,
+    first_encounter=metacarpal_1,
+  )
+
+  radius = ExpectedContourRadius()
+  ulna = ExpectedContourUlna()
+
+  expected_contours_model = [
+    distal_phalanx_1,
+    medial_phalanx_1,
+    proximal_phalanx_1,
+    metacarpal_1,
+    distal_phalanx_2,
+    medial_phalanx_2,
+    proximal_phalanx_2,
+    metacarpal_2,
+    distal_phalanx_3,
+    medial_phalanx_3,
+    proximal_phalanx_3,
+    metacarpal_3,
+    distal_phalanx_4,
+    medial_phalanx_4,
+    proximal_phalanx_4,
+    metacarpal_4,
+    distal_phalanx_5,
+    proximal_phalanx_5,
+    metacarpal_5,
+    ulna,
+    radius,
+  ]
+  return expected_contours_model
+
 def process_radiograph(filename: str,
                        write_images: bool = False,
                        show_images: bool = False,
                        nofilter: bool = False,
-                       nosearch: bool = False,
                        historygui: bool = False
                       ) -> None:
-  global expected_contours
-  if len(expected_contours) == 0:
-     raise ValueError("The global list 'expected_contours' must have at least one' \
-                      ' element to work correctly.")
-
   input_image = Image.open(filename)
 
   if not nofilter:
@@ -742,8 +663,6 @@ def process_radiograph(filename: str,
     borders_detected = thresh
 
   # Segmentation
-  successful_segmentation = False
-
   contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
                                 cv.CHAIN_APPROX_SIMPLE)
   
@@ -755,35 +674,40 @@ def process_radiograph(filename: str,
   image_width = minimum_image.shape[1]
   image_height = minimum_image.shape[0]
 
-  if not nosearch:
-    complete_contours = search_complete_contours(contours,
-                                                 expected_contours,
-                                                 EXECUTION_DURATION_SECONDS,
-                                                 image_width,
-                                                 image_height)
-    complete_contours.sort(key=lambda item: item[1], reverse=True)
-    if len(complete_contours) > 0:
-      successful_segmentation = True
-      best_contours = complete_contours[0]
-
-    if historygui:
-      # Opens history gui
-      _ = ContourViewer(minimum_image, complete_contours)
-  else:
-    best_contours = contours
-
-  if successful_segmentation:
-    segmentation = {
-      'metacarpal2': best_contours[7],
-      'metacarpal3': best_contours[11],
-      'metacarpal4': best_contours[15],
-      'metacarpal5': best_contours[18],
-      'ulna': best_contours[19],
-      'radius': best_contours[20]
-    }
+  expected_contours = get_expected_contours_model()
+  complete_contours = search_complete_contours(
+    contours,
+    expected_contours,
+    SEARCH_EXECUTION_DURATION_SECONDS,
+    image_width,
+    image_height
   
-    measurements_normalized = measure(segmentation, minimum_image.shape[1],
-                                      minimum_image.shape[0])
+  )
+  best_contours = complete_contours[0]['contours_committed']
+  if historygui:
+    # Opens history gui
+    _ = ContourViewer(minimum_image, [best_contours])
+
+  if len(best_contours) > 0:
+    metacarpal2 = best_contours[7]
+    metacarpal3 = best_contours[11]
+    metacarpal4 = best_contours[15]
+    metacarpal5 = best_contours[18]
+    ulna = best_contours[19]
+    radius = best_contours[20]
+    segmentation = [
+      [metacarpal2, expected_contours[7]],
+      [metacarpal3, expected_contours[11]],
+      [metacarpal4, expected_contours[15]],
+      [metacarpal5, expected_contours[18]],
+      [ulna, expected_contours[19]],
+      [radius, expected_contours[20]],
+    ]
+
+    # TODO execute search again with another expected contours to get
+    # the sesamoid segmentation
+  
+    measurements_normalized = measure(segmentation, minimum_image)
 
     estimated_age = estimate_age(measurements_normalized)
 
@@ -795,14 +719,16 @@ def process_radiograph(filename: str,
       print('Patient is adult.')
   else:
     print('Could not estimate age due to unsuccessful bone segmentation.')
+
   if write_images:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
                f'execute_output.jpg',
                minimum_image)
   else:
     if show_images:
-      cv.imshow(f'{os.path.basename(filename)}' \
-                f'execute_output.jpg',
-                minimum_image)
-      cv.waitKey(0)
-      cv.destroyAllWindows()
+      fig = plt.figure()
+      plt.imshow(minimum_image)
+      plt.title('Minimum image')
+      plt.axis('off')
+      fig.canvas.manager.set_window_title('Minimum image')
+      plt.show()
