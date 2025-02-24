@@ -21,6 +21,7 @@ from src.image_filters.image_filter import ImageFilter
 from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.image_filters.attention_map_filter import AttentionMap
 from src.image_filters.gaussian_filter import GaussianBlurFilter
+from src.image_filters.canny import CannyFilter
 from src.image_filters.erosion import ErosionFilter
 from src.image_filters.opening import OpeningFilter
 from src.image_filters.dilation import DilationFilter
@@ -63,6 +64,13 @@ available_filters = {
       "params": {
         "kernel_size": {"type": "int", "min": 1, "max": 11, "default": 3, "step": 2},
         "sigma": {"type": "float", "min": 0.1, "max": 5.0, "default": 1, "step": 0.1},
+      }
+    },
+    "CannyFilter": {
+      "class": CannyFilter,
+      "params": {
+        "threshold_1": {"type": "int", "min": 0, "max": 255, "default": 40, "step": 1},
+        "threshold_2": {"type": "int", "min": 0, "max": 255, "default": 135, "step": 1},
       }
     },
     "ContrastEnhancement": {
