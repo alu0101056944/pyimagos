@@ -17,6 +17,10 @@ from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalan
 from src.expected_contours.metacarpal import ExpectedContourMetacarpal
 from src.expected_contours.ulna import ExpectedContourUlna
 from src.expected_contours.radius import ExpectedContourRadius
+from src.expected_contours.sesamoid import ExpectedContourSesamoid
+from src.expected_contours.metacarpal_sesamoid import (
+  ExpectedContourSesamoidMetacarpal
+)
 
 class TestMainExecute:
 
@@ -3997,8 +4001,8 @@ class TestMainExecute:
       contours,
       expected_contours,
       20,
-      120,
-      140,
+      400,
+      400,
     )
     assert len(complete_contours) == 1
 
@@ -4057,3 +4061,220 @@ class TestMainExecute:
     check_if_contour_included(ideal_ulna)
     check_if_contour_included(ideal_radius)
 
+  def test_only_metacarpal_and_sesamoid(self):
+    contours = [
+      np.array(
+        [[[317, 252]],
+        [[316, 253]],
+        [[314, 253]],
+        [[313, 254]],
+        [[309, 254]],
+        [[309, 255]],
+        [[306, 258]],
+        [[305, 258]],
+        [[303, 260]],
+        [[303, 261]],
+        [[301, 263]],
+        [[299, 263]],
+        [[298, 264]],
+        [[298, 265]],
+        [[292, 271]],
+        [[291, 271]],
+        [[287, 275]],
+        [[286, 275]],
+        [[284, 277]],
+        [[283, 277]],
+        [[280, 280]],
+        [[279, 280]],
+        [[277, 282]],
+        [[276, 282]],
+        [[275, 283]],
+        [[274, 283]],
+        [[273, 284]],
+        [[272, 284]],
+        [[271, 285]],
+        [[270, 285]],
+        [[268, 287]],
+        [[266, 287]],
+        [[265, 288]],
+        [[264, 288]],
+        [[263, 289]],
+        [[261, 289]],
+        [[260, 290]],
+        [[257, 290]],
+        [[256, 291]],
+        [[253, 291]],
+        [[252, 292]],
+        [[247, 292]],
+        [[246, 293]],
+        [[243, 293]],
+        [[242, 294]],
+        [[240, 294]],
+        [[239, 295]],
+        [[236, 295]],
+        [[235, 296]],
+        [[233, 296]],
+        [[230, 299]],
+        [[230, 303]],
+        [[232, 305]],
+        [[232, 306]],
+        [[235, 309]],
+        [[236, 309]],
+        [[237, 310]],
+        [[237, 311]],
+        [[238, 312]],
+        [[238, 315]],
+        [[239, 316]],
+        [[240, 316]],
+        [[242, 318]],
+        [[243, 318]],
+        [[244, 319]],
+        [[250, 319]],
+        [[251, 320]],
+        [[253, 320]],
+        [[254, 319]],
+        [[256, 319]],
+        [[257, 318]],
+        [[258, 318]],
+        [[259, 317]],
+        [[260, 317]],
+        [[261, 316]],
+        [[263, 316]],
+        [[265, 314]],
+        [[266, 314]],
+        [[267, 313]],
+        [[268, 313]],
+        [[271, 310]],
+        [[272, 310]],
+        [[277, 305]],
+        [[278, 305]],
+        [[280, 303]],
+        [[281, 303]],
+        [[283, 301]],
+        [[284, 301]],
+        [[286, 299]],
+        [[287, 299]],
+        [[289, 297]],
+        [[290, 297]],
+        [[292, 295]],
+        [[293, 295]],
+        [[294, 294]],
+        [[295, 294]],
+        [[296, 293]],
+        [[297, 293]],
+        [[299, 291]],
+        [[300, 291]],
+        [[301, 290]],
+        [[302, 290]],
+        [[304, 288]],
+        [[305, 288]],
+        [[306, 287]],
+        [[307, 287]],
+        [[308, 286]],
+        [[309, 286]],
+        [[311, 284]],
+        [[312, 284]],
+        [[314, 282]],
+        [[315, 282]],
+        [[316, 281]],
+        [[317, 281]],
+        [[318, 280]],
+        [[319, 280]],
+        [[321, 278]],
+        [[323, 278]],
+        [[324, 277]],
+        [[325, 277]],
+        [[326, 276]],
+        [[327, 276]],
+        [[328, 275]],
+        [[329, 275]],
+        [[331, 273]],
+        [[332, 273]],
+        [[332, 272]],
+        [[334, 270]],
+        [[334, 269]],
+        [[335, 268]],
+        [[335, 264]],
+        [[334, 263]],
+        [[334, 262]],
+        [[332, 260]],
+        [[331, 260]],
+        [[328, 257]],
+        [[327, 257]],
+        [[326, 256]],
+        [[325, 256]],
+        [[324, 255]],
+        [[323, 255]],
+        [[321, 253]],
+        [[320, 253]],
+        [[319, 252]]],
+        dtype=np.int32
+      ),
+      np.array(
+        [[[294, 250]],
+        [[293, 251]],
+        [[293, 255]],
+        [[294, 256]],
+        [[299, 256]],
+        [[300, 255]],
+        [[301, 255]],
+        [[302, 256]],
+        [[304, 256]],
+        [[305, 255]],
+        [[305, 252]],
+        [[304, 251]],
+        [[303, 251]],
+        [[302, 250]]],
+        dtype=np.int32
+      )
+    ]
+    expected_contours = [
+      ExpectedContourSesamoidMetacarpal(),
+      ExpectedContourSesamoid()
+    ]
+    complete_contours = search_complete_contours(
+      contours,
+      expected_contours,
+      20,
+      400,
+      400,
+    )
+    assert len(complete_contours) == 1
+
+    found_contours = complete_contours[0]['contours_committed']
+
+    assert len(found_contours) == 2
+
+    def check_if_contour_included(contour):
+      assertion_passed = False
+      for i in range(len(complete_contours)):
+        try:
+          reference_hu_moments = cv.moments(contour)
+          reference_hu_moments = cv.HuMoments(reference_hu_moments)
+          reference_hu_moments = (
+            (np.log10(np.absolute(reference_hu_moments))).flatten()
+          )
+
+          hu_moments = cv.moments(contour)
+          hu_moments = cv.HuMoments(hu_moments)
+          hu_moments = np.absolute(hu_moments)
+          hu_moments_no_zeros = np.where( # to avoid DivideByZero
+            hu_moments == 0,
+            np.finfo(float).eps,
+            hu_moments
+          )
+          hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+          
+          difference = np.linalg.norm(hu_moments - reference_hu_moments)
+          assert difference < 1e-06
+
+          assertion_passed = True
+        except AssertionError:
+          pass
+      if not assertion_passed:
+        pytest.fail('Missing finger contour in the search output.')
+
+    metacarpal = contours[0]
+    sesamoid = contours[1]
+    check_if_contour_included(metacarpal)
+    check_if_contour_included(sesamoid)
