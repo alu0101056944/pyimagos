@@ -12,7 +12,7 @@ import cv2 as cv
 import numpy as np
 
 from src.expected_contours.expected_contour import (
-  ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
+  ExpectedContour
 )
 from src.main_develop_corner_order import get_top_left_corner
 

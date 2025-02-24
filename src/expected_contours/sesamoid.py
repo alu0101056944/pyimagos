@@ -12,11 +12,11 @@ import cv2 as cv
 import numpy as np
 
 from src.expected_contours.expected_contour import (
-  ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
+  ExpectedContour
 )
 from src.main_develop_corner_order import get_top_left_corner
 
-class ExpectedContourMetacarpalSesamoid(ExpectedContour):
+class ExpectedContourSesamoid(ExpectedContour):
 
   def __init__(self):
     self.contour = None
@@ -28,17 +28,51 @@ class ExpectedContourMetacarpalSesamoid(ExpectedContour):
     self.image_height = None
     self.ends_branchs_sequence = None
     self.min_area_rect = None
+    self.reference_hu_moments = np.array(
+      [
+        -0.67457184,
+        -1.7673018,
+        -3.69992926,
+        -4.51139064,
+        -8.89464362,
+        -5.77826324,
+        -8.68793025,
+      ],
+      dtype=np.float64
+    )
 
   def prepare(self, contour: list, image_width: int, image_height: int) -> None:
     '''This is needed to select the contour that this class will work on'''
     self.image_width = image_width
     self.image_height = image_height
-
+    if len(contour) == 0:
+      self.contour = []
+      return
+    
     self.contour = np.reshape(contour, (-1, 2))
+
+    x_values = self.contour[:, 0]
+    y_values = self.contour[:, 1]
+    min_x = int(np.min(x_values))
+    min_y = int(np.min(y_values))
+    max_x = int(np.max(x_values))
+    max_y = int(np.max(y_values))
+    if image_width < max_x - min_x:
+      raise ValueError('Image width is not enough to cover the whole contour.')
+    if image_height < max_y - min_y:
+      raise ValueError('Image height is not enough to cover the whole contour.')
+
     rect = cv.minAreaRect(contour)
     self.min_area_rect = rect
     bounding_rect_contour = cv.boxPoints(rect)
     bounding_rect_contour = np.int32(bounding_rect_contour) # to int
+
+    height = self.min_area_rect[1][1]
+    width = self.min_area_rect[1][0]
+
+    if height == 0 or width == 0:
+      return float('inf')
+    self._aspect_ratio = max(width, height) / min(width, height)
 
     self.top_left_corner, i = get_top_left_corner(
       bounding_rect_contour,
@@ -61,54 +95,28 @@ class ExpectedContourMetacarpalSesamoid(ExpectedContour):
     return []
 
   def shape_restrictions(self) -> list:
-    area = cv.contourArea(self.contour)
-    if area < 10:  # Minimum area for sesamoid, adjust as needed
+    if len(self.contour) == 0:
       return float('inf')
-
-    # Calculate perimeter of curve on the contour. Iterates all lines in contour
-    # and sums the distances. closed so that it calculates distance from last to
-    # first point. epsilon is distance from original curve and the approximated.
-    # Changing epsilon varies how much the approx polygon is close to the original.
-    epsilon = 0.02 * cv.arcLength(self.contour, closed=True)
-    approximated_contour = cv.approxPolyDP(self.contour, epsilon, True)
-    approximated_contour = np.reshape(approximated_contour, (-1, 2))
-
-    if len(approximated_contour) < 3: # min 3 points to form a shape
+    
+    min_rect_width = self.min_area_rect[1][0]
+    min_rect_height = self.min_area_rect[1][1]
+    hull = cv.convexHull(self.contour)
+    solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+    if solidity > 1.3:
       return float('inf')
+    
+    moments = cv.moments(self.contour)
+    hu_moments = cv.HuMoments(moments)
+    hu_moments = np.absolute(hu_moments)
+    hu_moments_no_zeros = np.where( # to avoid DivideByZero
+      hu_moments == 0,
+      np.finfo(float).eps,
+      hu_moments
+    )
+    hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
-    angles = []
-    for i in range(len(approximated_contour)):
-      p1 = approximated_contour[i - 1]
-      p2 = approximated_contour[i]
-      p3 = approximated_contour[(i + 1) % len(approximated_contour)]
-
-      v1 = p1 - p2
-      v2 = p3 - p2
-      angle = np.degrees(
-        np.arctan2(
-          np.linalg.det([v1, v2]),
-          np.dot(v1, v2)
-        )
-      )
-
-      angles.append(angle)
-
-    angles_abs = [abs(angle) for angle in angles]
-    average_angle = sum(angles_abs) / len(angles_abs)
-
-    score = area / 10
-
-    # Penalize for not being close to a round shape
-    score -= (abs(average_angle - 180) * 0.1)
-
-    # Penalty for too many or too few corners
-    if len(approximated_contour) < 3 or len(approximated_contour) > 6:
-      score -= 5
-
-    if score < 1:
-      return float('inf')
-
-    return [True, score]
+    difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+    return difference
 
   def branch_start_position_restrictions(self) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other

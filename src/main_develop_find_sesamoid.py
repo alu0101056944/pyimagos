@@ -12,8 +12,8 @@ from PIL import Image
 import numpy as np
 import cv2 as cv
 
-from src.expected_contours.metacarpal_sesamoid import (
-  ExpectedContourMetacarpalSesamoid
+from src.expected_contours.sesamoid import (
+  ExpectedContourSesamoid
 )
 
 from src.main_develop_contours_gui import (
@@ -101,7 +101,7 @@ def case_1():
   )
 
   shape_values = []
-  sesamoid_instance = ExpectedContourMetacarpalSesamoid()
+  sesamoid_instance = ExpectedContourSesamoid()
   for contour_within in contours_within_focused_image:
     sesamoid_instance.prepare(
       contour_within,

@@ -31,8 +31,8 @@ from src.expected_contours.expected_contour import (
 from src.expected_contours.expected_contour_of_branch import (
   ExpectedContourOfBranch
 )
-from src.expected_contours.metacarpal_sesamoid import (
-  ExpectedContourMetacarpalSesamoid
+from src.expected_contours.sesamoid import (
+  ExpectedContourSesamoid
 )
 # from src.contour_operations.cut_contour import CutContour
 # from src.contour_operations.extend_contour import ExtendContour
@@ -464,7 +464,7 @@ def find_sesamoid(image: np.array, segmentation: dict, contours: list) -> list:
   )
 
   shape_values = []
-  sesamoid_instance = ExpectedContourMetacarpalSesamoid()
+  sesamoid_instance = ExpectedContourSesamoid()
   for contour_within in contours_within_focused_image:
     sesamoid_instance.prepare(
       contour_within,
@@ -703,6 +703,9 @@ def process_radiograph(filename: str,
       [ulna, expected_contours[19]],
       [radius, expected_contours[20]],
     ]
+
+    # TODO apply a lower threshold filter to the contrasted radiography that
+    # includes the sesamoid
 
     # TODO execute search again with another expected contours to get
     # the sesamoid segmentation

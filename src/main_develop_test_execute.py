@@ -3775,4 +3775,8 @@ def visualize_execute_tests():
     contour_map_mask=contour_map_mask
   )
 
+  # TODO get the sesamoid + metacarpal 5 composition and apply the search
+  # make another unit test that expects both the metacarpal 5 and sesamoid.
+  # TODO test sesamoid (make new main_test_sesamoid and the _test files)
+
   plt.show()

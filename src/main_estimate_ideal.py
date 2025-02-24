@@ -19,8 +19,8 @@ from src.main_develop_contours_gui import (
 from src.expected_contours.metacarpal import ExpectedContourMetacarpal
 from src.expected_contours.radius import ExpectedContourRadius
 from src.expected_contours.ulna import ExpectedContourUlna
-from src.expected_contours.metacarpal_sesamoid import (
-  ExpectedContourMetacarpalSesamoid
+from src.expected_contours.sesamoid import (
+  ExpectedContourSesamoid
 )
 from constants import BONE_AGE_ATLAS
 
@@ -87,7 +87,7 @@ def find_sesamoid(image: np.array, contours: list) -> list:
   )
 
   shape_values = []
-  sesamoid_instance = ExpectedContourMetacarpalSesamoid()
+  sesamoid_instance = ExpectedContourSesamoid()
   for contour_within in contours_within_focused_image:
     sesamoid_instance.prepare(
       contour_within,
