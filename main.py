@@ -42,6 +42,7 @@ from src.main_develop_test_radius import visualize_radius_shape
 from src.main_develop_test_ulna import visualize_ulna_shape
 from src.main_develop_test_sesamoid import visualize_sesamoid_shape
 from src.main_develop_test_execute import visualize_execute_tests
+from src.main_develop_test_search_two import visualize_execute_tests_2
 
 @click.group()
 def cli() -> None:
@@ -206,6 +207,11 @@ def sesamoid():
 def test_execute():
   '''Image visualization of the execute tests'''
   visualize_execute_tests()
+
+@develop.command()
+def test_execute_2():
+  '''Image visualization of the execute tests 2'''
+  visualize_execute_tests_2()
 
 @develop.command()
 @click.argument("filename")

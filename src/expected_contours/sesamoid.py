@@ -128,9 +128,4 @@ class ExpectedContourSesamoid(ExpectedContour):
     return []
 
   def measure(self) -> dict:
-    width = self.min_area_rect[1][0]
-    height = self.min_area_rect[1][1]
-    return {
-      f'metacarpal_sesamoid_{self.encounter_amount}_width': width,
-      f'metacarpal_sesamoid_{self.encounter_amount}_length': height,
-    }
+    return {}

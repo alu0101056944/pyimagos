@@ -128,14 +128,6 @@ def show_contours_position_restrictions(
   fig.canvas.manager.set_window_title(title)
 
 def visualize_execute_tests():
-  # borders_detected = Image.open('docs/composition_two.jpg')
-  # borders_detected = np.array(borders_detected)
-  # borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
-
-  # _, thresh = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
-  # contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL,
-  #                             cv.CHAIN_APPROX_SIMPLE)
-
   contours = [
     np.array([[[ 37,  97]],
       [[ 36,  98]],
@@ -3958,7 +3950,7 @@ def visualize_execute_tests():
     minimize_image=False,
     show_position_restrictions=True
   )
-  # TODO get the sesamoid + metacarpal 5 composition and apply the search
-  # make another unit test that expects both the metacarpal 5 and sesamoid.
+  
+  
 
   plt.show()

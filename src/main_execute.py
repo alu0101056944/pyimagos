@@ -11,6 +11,7 @@ import os.path
 from PIL import Image
 import time
 import copy
+from typing import Union
 
 import torchvision.transforms as transforms
 import numpy as np
@@ -25,6 +26,10 @@ from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalan
 from src.expected_contours.metacarpal import ExpectedContourMetacarpal
 from src.expected_contours.ulna import ExpectedContourUlna
 from src.expected_contours.radius import ExpectedContourRadius
+from src.expected_contours.sesamoid import ExpectedContourSesamoid
+from src.expected_contours.metacarpal_sesamoid import (
+  ExpectedContourSesamoidMetacarpal
+)
 from src.expected_contours.expected_contour import (
   ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
 )
@@ -206,11 +211,14 @@ def get_best_contour_alternative(contours: list, inside_indices: list,
 
   return best_alternative
 
-def search_complete_contours(contours: list,
-                             expected_contours: list,
-                             search_duration_seconds: int,
-                             image_width: int,
-                             image_height: int) -> list:
+def search_complete_contours(
+    contours: list,
+    expected_contours: list,
+    search_duration_seconds: int,
+    image_width: int,
+    image_height: int,
+    injected_start_contour: Union[np.array, None] = None
+) -> list:
   if len(contours) == 0:
     return []
   
@@ -219,31 +227,45 @@ def search_complete_contours(contours: list,
 
   state_stack = []
 
-  min_score = float('inf')
-  best_contour_index = -1
-  for i in range(len(contours)):
-    expected_contour_class = expected_contours[0]
-    current_contour = contours[i]
-    expected_contour_class.prepare(
-      current_contour,
-      image_width,
-      image_height
-    )
-    score = expected_contour_class.shape_restrictions()
-    if score < min_score:
-      min_score = score
-      best_contour_index = i
+  if injected_start_contour is None:
+    min_score = float('inf')
+    best_contour_index = -1
+    for i in range(len(contours)):
+      expected_contour_class = expected_contours[0]
+      current_contour = contours[i]
+      expected_contour_class.prepare(
+        current_contour,
+        image_width,
+        image_height
+      )
+      score = expected_contour_class.shape_restrictions()
+      if score < min_score:
+        min_score = score
+        best_contour_index = i
 
-  if min_score < float('inf'):
-    state_stack.append({
-      'contours_committed': [contours[best_contour_index]],
-      'contours': contours,
-      'chosen_contour_index': best_contour_index,
-      'committed_total_value': min_score
-    })
+    if min_score < float('inf'):
+      state_stack.append({
+        'contours_committed': [contours[best_contour_index]],
+        'contours': contours,
+        'chosen_contour_index': best_contour_index,
+        'committed_total_value': min_score
+      })
+    else:
+      print('No valid contours encountered (all scores are "inf"). Search stop.')
+      return []
   else:
-    print('No valid contours encountered (all scores are "inf"). Search stop.')
-    return []
+    # To be able to start the search from a specific location a start contour
+    # that is meant to not be included in contours is passed as argument
+    # effectively changing the first "next position restrictions" of the search.
+    contours.append(injected_start_contour)
+    expected_contours[0].prepare(injected_start_contour, image_width, image_height)
+    score = expected_contours[0].shape_restrictions()
+    state_stack.append(({
+      'contours_committed': [injected_start_contour],
+      'contours': contours,
+      'chosen_contour_index': len(contours) - 1,
+      'committed_total_value': score
+    }))
 
   start_time = time.time()
   while True:
@@ -270,7 +292,7 @@ def search_complete_contours(contours: list,
         return [(copy.deepcopy(
           {
             'contours_committed': state['contours_committed'],
-            'committed_total_value': state['committed_total_value'] + min_score
+            'committed_total_value': state['committed_total_value']
           }
         ))]
       else:
@@ -321,168 +343,34 @@ def search_complete_contours(contours: list,
     else:
       print('Search finished: explored all alternatives but found nothing valid.')
       return []
-
-def create_minimal_image_from_contours(image: np.array,
-                                       contours: list,
-                                       padding = 0) -> np.array:
+    
+def create_minimal_image_from_contours(contours: list, padding = 0):
   if not contours:
-    raise ValueError('Called main_execute.py:' \
-                     'create_minimal_image_from_contours(<contour>) with an ' \
-                      'empty contours array')
-  
+    raise ValueError('Attempt on minimal image that covers contours done on' \
+                      ' empty contours list.')
+
   all_points = np.concatenate(contours)
   all_points = np.reshape(all_points, (-1, 2))
   x_values = all_points[:, 0]
   y_values = all_points[:, 1]
 
-  min_x = int(max(0, np.min(x_values)))
-  min_y = int(max(0, np.min(y_values)))
-  max_x = int(min(image.shape[1], np.max(x_values)))
-  max_y = int(min(image.shape[0], np.max(y_values)))
+  min_x = int(np.min(x_values))
+  min_y = int(np.min(y_values))
+  max_x = int(np.max(x_values))
+  max_y = int(np.max(y_values))
 
-  roi_from_original = image[
-    max(0, min_y - padding):max_y + padding + 1,
-    max(0, min_x - padding):max_x + padding + 1
-  ]
-  roi_from_original = np.copy(roi_from_original)
+  x1 = max(0, min_x - padding)
+  y1 = max(0, min_y - padding)
+  x2 = max_x + padding + 1  # +1 to include the last pixel on range
+  y2 = max_y + padding + 1
 
-  # missing X padding correction on the left
-  if np.min(x_values) - padding < 0:
-    missing_pixel_amount = np.absolute(np.min(x_values) - padding)
-    roi_from_original = np.concatenate(
-      (
-        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
-                dtype=np.uint8),
-        roi_from_original,
-      ),
-      axis=1,
-      dtype=np.uint8
-    )
-  
-  # missing X padding correction on the right
-  if np.max(x_values) + padding > image.shape[1]:
-    missing_pixel_amount = np.max(x_values) + padding - image.shape[1]
-    roi_from_original = np.concatenate(
-      (
-        roi_from_original,
-        np.full((roi_from_original.shape[0], missing_pixel_amount), 0,
-                dtype=np.uint8)
-      ),
-      axis=1,
-      dtype=np.uint8
-    )
+  return (x1, y1, x2, y2)
 
-  # missing Y padding correction on top
-  if np.min(y_values) - padding < 0:
-    missing_pixel_amount = np.absolute(np.min(y_values) - padding)
-    roi_from_original = np.concatenate(
-      (
-        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
-                dtype=np.uint8),
-        roi_from_original,
-      ),
-      axis=0,
-      dtype=np.uint8
-    )
-  
-  # missing Y padding correction on bottom
-  if np.max(y_values) + padding > image.shape[0]:
-    missing_pixel_amount = np.max(y_values) + padding - image.shape[0]
-    roi_from_original = np.concatenate(
-      (
-        roi_from_original,
-        np.full((missing_pixel_amount, roi_from_original.shape[1]), 0,
-                dtype=np.uint8),
-      ),
-      axis=0,
-      dtype=np.uint8
-    ) 
-
-  corrected_contours = [
-    points - np.array([[[min_x, min_y]]]) + padding for points in contours
-  ]
-
-  return roi_from_original, corrected_contours
-
-def get_bounding_box_xy(contour):
-  x, y, w, h = cv.boundingRect(contour)
-  return x, y
-
-def create_minimal_image_from_contour(image: np.array,
-                                       contour: np.array,
-                                       padding: int) -> np.array:
-  x, y, w, h = cv.boundingRect(contour)
-
-  x1 = max(0, x - padding)
-  y1 = max(0, y - padding)
-  x2 = min(image.shape[1], x + w + padding)
-  y2 = min(image.shape[0], y + h + padding)
-
-  cropped_image = image[y1:y2, x1:x2]
-
-  return cropped_image
-
-def get_contours_in_region(image, contours, region_rect, padding):
-  x, y, w, h = region_rect
-  region_x1 = max(0, x - padding)
-  region_y1 = max(0, y - padding)
-  region_x2 = min(image.shape[1], x + w + padding)
-  region_y2 = min(image.shape[0], y + h + padding)
-
-  contours_in_region = []
-
-  for contour in contours:
-    contour_x, contour_y, contour_w, contour_h = cv.boundingRect(contour)
-    contour_x1 = contour_x
-    contour_y1 = contour_y
-    contour_x2 = contour_x + contour_w
-    contour_y2 = contour_y + contour_h
-
-    if (
-      region_x1 <= contour_x1
-      and region_y1 <= contour_y1
-      and region_x2 >= contour_x2
-      and region_y2 >= contour_y2
-    ):
-      contours_in_region.append(contour)
-
-  return contours_in_region
-
-def find_sesamoid(image: np.array, segmentation: dict, contours: list) -> list:
-  focused_image = create_minimal_image_from_contour(
-    image,
-    segmentation['metacarpal5'],
-    padding=10
-  )
-
-  region_rect = cv.boundingRect(segmentation['metacarpal5'])
-  contours_within_focused_image = get_contours_in_region(
-    focused_image,
-    contours,
-    region_rect, #TODO change rect region to image and not contour
-    padding=10
-  )
-
-  shape_values = []
-  sesamoid_instance = ExpectedContourSesamoid()
-  for contour_within in contours_within_focused_image:
-    sesamoid_instance.prepare(
-      contour_within,
-      focused_image.shape[1],
-      focused_image.shape[0]
-    )
-    shape_value = sesamoid_instance.shape_restrictions()
-    shape_values.append(shape_value)
-
-  if len(shape_values) > 0:
-    sesamoid_contour_index = np.argmax(shape_values)
-    sesamoid_contour = contours[sesamoid_contour_index]
-  else:
-    sesamoid_contour = None
-
-  return sesamoid_contour
-
-def measure(segmentation: list, image: np.array) -> dict:
+def measure(
+    segmentation: list,
+    image: np.array,
+    extra_measurement_specifications: list[dict]
+) -> dict:
   measurements = {}
 
   for segment in segmentation:
@@ -491,6 +379,15 @@ def measure(segmentation: list, image: np.array) -> dict:
     instance.prepare(contour, image.shape[1], image.shape[0])
     local_measurements = instance.measure()
     measurements.update(local_measurements)
+
+  for specification in extra_measurement_specifications:
+    required_segments_indices = specification['required_segments_indices']
+    required_segments = [
+      segmentation[index] for index in required_segments_indices
+    ]
+    function = specification['function']
+    extra_measurements = function(*required_segments)
+    measurements.update(extra_measurements)
 
   measurement_values = measurements.values()
   min_value = min(measurement_values)
@@ -638,57 +535,106 @@ def get_expected_contours_model() -> list:
   ]
   return expected_contours_model
 
-def process_radiograph(filename: str,
-                       write_images: bool = False,
-                       show_images: bool = False,
-                       nofilter: bool = False,
-                       historygui: bool = False
-                      ) -> None:
+def process_radiograph(
+    filename: str,
+    write_images: bool = False,
+    show_images: bool = False,
+    nofilter: bool = False,
+    historygui: bool = False
+) -> None:
   input_image = Image.open(filename)
 
+  HIGHER_THRESOLD = 40
+  LOWER_THRESOLD = 30
   if not nofilter:
     input_image = transforms.ToTensor()(input_image)
     he_enchanced = ContrastEnhancement().process(input_image)
     he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
                                 cv.CV_8U)
 
-    gaussian_blurred = cv.GaussianBlur(he_enchanced, (5, 5), 0)
-    borders_detected = cv.Canny(gaussian_blurred, 40, 135)
-    borders_detected = cv.normalize(borders_detected, None, 0, 255, cv.NORM_MINMAX,
-                                    cv.CV_8U)
+    gaussian_blurred = cv.GaussianBlur(he_enchanced, (3, 3), 0)
+
+    borders_detected = cv.Canny(gaussian_blurred, HIGHER_THRESOLD, 135)
+    borders_detected = cv.normalize(borders_detected, None, 0, 255,
+                                    cv.NORM_MINMAX, cv.CV_8U)
+    
+    borders_detected_2 = cv.Canny(gaussian_blurred, LOWER_THRESOLD, 135)
+    borders_detected_2 = cv.normalize(borders_detected_2, None, 0, 255,
+                                    cv.NORM_MINMAX, cv.CV_8U)
   else:
+    # Using the same thresold even tho the image may not be a canny filter
+    # result.
+
+    # TODO ask for a second image filename if using --nofilter
+
     borders_detected = np.array(input_image)
     borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
-    _, thresh = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+    _, thresh = cv.threshold(borders_detected, HIGHER_THRESOLD, 255,
+                             cv.THRESH_BINARY)
     borders_detected = thresh
 
+    borders_detected_2 = np.array(input_image)
+    borders_detected_2 = cv.cvtColor(borders_detected_2, cv.COLOR_RGB2GRAY)
+    _, thresh = cv.threshold(borders_detected_2, LOWER_THRESOLD, 255,
+                              cv.THRESH_BINARY)
+    borders_detected_2 = thresh
+
   # Segmentation
-  contours, _ = cv.findContours(borders_detected, cv.RETR_EXTERNAL,
+  contours_2, _ = cv.findContours(borders_detected_2, cv.RETR_EXTERNAL,
                                 cv.CHAIN_APPROX_SIMPLE)
-  
-  minimum_image, corrected_contours = create_minimal_image_from_contours(
-    borders_detected,
-    contours
+  contours_2 = list(contours_2)
+
+  (
+    x1,
+    y1,
+    x2,
+    y2
+  ) = create_minimal_image_from_contours(contours_2)
+
+  PADDING = 20
+  minimum_image_1 = borders_detected[y1:y2, x1:x2]
+  minimum_image_1 = cv.copyMakeBorder(
+    minimum_image_1,
+    PADDING,
+    PADDING,
+    PADDING,
+    PADDING,
+    cv.BORDER_CONSTANT,
+    value=(0, 0, 0)
   )
-  contours = corrected_contours
-  image_width = minimum_image.shape[1]
-  image_height = minimum_image.shape[0]
+  minimum_image_2 = borders_detected_2[y1:y2, x1:x2]
+  minimum_image_2 = cv.copyMakeBorder(
+    minimum_image_2,
+    PADDING,
+    PADDING,
+    PADDING,
+    PADDING,
+    cv.BORDER_CONSTANT,
+    value=(0, 0, 0)
+  )
+
+  contours, _ = cv.findContours(minimum_image_1, cv.RETR_EXTERNAL,
+                              cv.CHAIN_APPROX_SIMPLE)
+  contours = list(contours)
+  contours_2, _ = cv.findContours(minimum_image_2, cv.RETR_EXTERNAL,
+                              cv.CHAIN_APPROX_SIMPLE)
+  contours_2 = list(contours_2)
 
   expected_contours = get_expected_contours_model()
   complete_contours = search_complete_contours(
     contours,
     expected_contours,
     SEARCH_EXECUTION_DURATION_SECONDS,
-    image_width,
-    image_height
-  
+    image_width=minimum_image_1.shape[1],
+    image_height=minimum_image_1.shape[0],
   )
-  best_contours = complete_contours[0]['contours_committed']
-  if historygui:
-    # Opens history gui
-    _ = ContourViewer(minimum_image, [best_contours])
 
-  if len(best_contours) > 0:
+  if len(complete_contours) > 0:
+    best_contours = complete_contours[0]['contours_committed']
+    if historygui:
+      # Opens history gui
+      _ = ContourViewer(minimum_image_1, [best_contours])
+
     metacarpal2 = best_contours[7]
     metacarpal3 = best_contours[11]
     metacarpal4 = best_contours[15]
@@ -704,34 +650,96 @@ def process_radiograph(filename: str,
       [radius, expected_contours[20]],
     ]
 
-    # TODO apply a lower threshold filter to the contrasted radiography that
-    # includes the sesamoid
+    # Second search to find the sesamoid
+    expected_contours_2 = [
+      ExpectedContourSesamoidMetacarpal(),
+      ExpectedContourSesamoid(),
+    ]
+    complete_contours_2 = search_complete_contours(
+      contours_2,
+      expected_contours_2,
+      SEARCH_EXECUTION_DURATION_SECONDS,
+      image_width=minimum_image_2.shape[1],
+      image_height=minimum_image_2.shape[0],
+      injected_start_contour=metacarpal5,
+    )
 
-    # TODO execute search again with another expected contours to get
-    # the sesamoid segmentation
-  
-    measurements_normalized = measure(segmentation, minimum_image)
+    if len(complete_contours_2) > 0:
+      best_contours_2 = complete_contours_2[0]['contours_committed']
 
-    estimated_age = estimate_age(measurements_normalized)
+      if historygui:
+        # Opens history gui
+        _ = ContourViewer(minimum_image_2, [best_contours_2])
 
-    if estimated_age < 18:
-      print('System finds patient age <18.')
-      print('Patient is underage.')
+      sesamoid = best_contours_2[1]
+      segmentation = [
+        *segmentation,
+        [sesamoid, expected_contours_2[1]]
+      ]
+      
+      def intersesamoid_distance_measurement(
+          metacarpal_segment,
+          sesamoid_segment
+      ) -> dict:
+        metacarpal_contour = metacarpal_segment[0]
+        sesamoid_contour = sesamoid_segment[0]
+
+        min_distance = float('inf')
+
+        for metacarpal_point in metacarpal_contour:
+          for sesamoid_point in sesamoid_contour:
+            distance = np.sqrt(np.sum((metacarpal_point - sesamoid_point) ** 2))
+            if distance < min_distance:
+              min_distance = distance
+        
+        return { "inter-sesamoid_distance": float(min_distance) }
+
+      extra_measurement_specification = {
+        'required_segments_indices': [3, 6],
+        'function': intersesamoid_distance_measurement
+      }
+
+      # minimum_image_2 will always be bigger than 1 because it has a lower
+      # threshold so at least as many contours as 1 will be detected.
+      measurements_normalized = measure(
+        segmentation,
+        minimum_image_2,
+        [extra_measurement_specification]
+      )
+
+      estimated_age = estimate_age(measurements_normalized)
+
+      if estimated_age < 18:
+        print('System finds patient age < 18.')
+        print('Patient is underage.')
+      else:
+        print('System finds patient age => 18.')
+        print('Patient is adult.')
     else:
-      print('System finds patient age =>18.')
-      print('Patient is adult.')
+      print('Could not estimate age due to unsuccessful second search' \
+            ' for sesamoid segmentation.')
   else:
     print('Could not estimate age due to unsuccessful bone segmentation.')
 
   if write_images:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
-               f'execute_output.jpg',
-               minimum_image)
+               f'execute_output_1.jpg',
+               minimum_image_1)
+    cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
+               f'execute_output_2.jpg',
+               minimum_image_2)
   else:
     if show_images:
       fig = plt.figure()
-      plt.imshow(minimum_image)
+      plt.imshow(minimum_image_1)
       plt.title('Minimum image')
       plt.axis('off')
-      fig.canvas.manager.set_window_title('Minimum image')
+      fig.canvas.manager.set_window_title('Minimum image 1')
+      plt.show()
+
+      fig = plt.figure()
+      plt.imshow(minimum_image_2)
+      plt.title('Minimum image')
+      plt.axis('off')
+      fig.canvas.manager.set_window_title('Minimum image 2')
       plt.show()
