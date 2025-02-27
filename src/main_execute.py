@@ -11,7 +11,7 @@ import os.path
 from PIL import Image
 import time
 import copy
-from typing import Union
+from typing import Union, Tuple
 
 import torchvision.transforms as transforms
 import numpy as np
@@ -271,9 +271,8 @@ def search_complete_contours(
   while True:
     elapsed_time = time.time() - start_time
     if elapsed_time >= search_duration_seconds:
-      # return []
-      # TODO turn this back on
-      pass
+      return []
+
     print(f'Elapsed time: {elapsed_time:.2f} seconds')
 
     if len(state_stack) > 0:
@@ -535,15 +534,11 @@ def get_expected_contours_model() -> list:
   ]
   return expected_contours_model
 
-def process_radiograph(
-    filename: str,
-    write_images: bool = False,
-    show_images: bool = False,
+def estimate_age_from_image(
+    input_image: np.array,
     nofilter: bool = False,
-    historygui: bool = False
-) -> None:
-  input_image = Image.open(filename)
-
+) -> Tuple[float, list]:
+  '''Given an image of a radiography, output the estimated age'''
   HIGHER_THRESOLD = 40
   LOWER_THRESOLD = 30
   if not nofilter:
@@ -565,18 +560,11 @@ def process_radiograph(
     # Using the same thresold even tho the image may not be a canny filter
     # result.
 
-    # TODO ask for a second image filename if using --nofilter
-
     borders_detected = np.array(input_image)
     borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
     _, thresh = cv.threshold(borders_detected, HIGHER_THRESOLD, 255,
                              cv.THRESH_BINARY)
     borders_detected = thresh
-
-    borders_detected_2 = np.array(input_image)
-    borders_detected_2 = cv.cvtColor(borders_detected_2, cv.COLOR_RGB2GRAY)
-    _, thresh = cv.threshold(borders_detected_2, LOWER_THRESOLD, 255,
-                              cv.THRESH_BINARY)
     borders_detected_2 = thresh
 
   # Segmentation
@@ -631,9 +619,6 @@ def process_radiograph(
 
   if len(complete_contours) > 0:
     best_contours = complete_contours[0]['contours_committed']
-    if historygui:
-      # Opens history gui
-      _ = ContourViewer(minimum_image_1, [best_contours])
 
     metacarpal2 = best_contours[7]
     metacarpal3 = best_contours[11]
@@ -666,10 +651,6 @@ def process_radiograph(
 
     if len(complete_contours_2) > 0:
       best_contours_2 = complete_contours_2[0]['contours_committed']
-
-      if historygui:
-        # Opens history gui
-        _ = ContourViewer(minimum_image_2, [best_contours_2])
 
       sesamoid = best_contours_2[1]
       segmentation = [
@@ -709,37 +690,58 @@ def process_radiograph(
 
       estimated_age = estimate_age(measurements_normalized)
 
-      if estimated_age < 18:
-        print('System finds patient age < 18.')
-        print('Patient is underage.')
-      else:
-        print('System finds patient age => 18.')
-        print('Patient is adult.')
+      return estimated_age, minimum_image_1, minimum_image_2
     else:
-      print('Could not estimate age due to unsuccessful second search' \
-            ' for sesamoid segmentation.')
+
+      return -1, minimum_image_1, minimum_image_2
   else:
     print('Could not estimate age due to unsuccessful bone segmentation.')
+    return -2, minimum_image_1, minimum_image_2
+
+def process_radiograph(
+    filename: str,
+    write_images: bool = False,
+    show_images: bool = False,
+    nofilter: bool = False,
+) -> None:
+  input_image = Image.open(filename)
+
+  (
+    estimated_age,
+    image_search_stage_1,
+    image_search_stage_2,
+  ) = estimate_age_from_image(input_image, nofilter)
+
+  if estimated_age == -1:
+    print('Could not estimate age due to unsuccessful second search' \
+      ' for sesamoid segmentation.')
+  elif estimated_age == -2:
+    print('Could not estimate age due to unsuccessful bone segmentation.')
+  elif estimated_age < 18:
+    print('System finds patient age < 18.')
+    print('Patient is underage.')
+  else:
+    print('System finds patient age => 18.')
+    print('Patient is adult.')
 
   if write_images:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
-               f'execute_output_1.jpg',
-               minimum_image_1)
+               f'execute_output_stage_1.jpg',
+               image_search_stage_1)
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \
-               f'execute_output_2.jpg',
-               minimum_image_2)
-  else:
-    if show_images:
-      fig = plt.figure()
-      plt.imshow(minimum_image_1)
-      plt.title('Minimum image')
-      plt.axis('off')
-      fig.canvas.manager.set_window_title('Minimum image 1')
-      plt.show()
+               f'execute_output_stage_2.jpg',
+               image_search_stage_2)
 
-      fig = plt.figure()
-      plt.imshow(minimum_image_2)
-      plt.title('Minimum image')
-      plt.axis('off')
-      fig.canvas.manager.set_window_title('Minimum image 2')
-      plt.show()
+  if show_images:
+    fig = plt.figure()
+    plt.imshow(image_search_stage_1)
+    plt.title('Image output of search stage 1')
+    plt.axis('off')
+    fig.canvas.manager.set_window_title('Minimum image 1')
+
+    fig = plt.figure()
+    plt.imshow(image_search_stage_2)
+    plt.title('Image output of search stage 2')
+    plt.axis('off')
+    fig.canvas.manager.set_window_title('Minimum image 2')
+    plt.show()

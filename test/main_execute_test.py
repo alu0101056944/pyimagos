@@ -38,7 +38,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      5,
+      600,
       50,
       50,
     )
@@ -50,7 +50,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      5,
+      600,
       50,
       50,
     )
@@ -68,7 +68,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      5,
+      600,
       41,
       97,
     )
@@ -86,7 +86,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      5,
+      600,
       41,
       97,
     )
@@ -148,7 +148,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       [ideal_distal_phalanx_contour],
       expected_contours,
-      5,
+      600,
       41,
       97,
     )
@@ -163,7 +163,7 @@ class TestMainExecute:
       search_complete_contours(
         [ideal_distal_phalanx_contour],
         expected_contours,
-        5,
+        600,
         21,
         97,
       )
@@ -176,7 +176,7 @@ class TestMainExecute:
       search_complete_contours(
         [ideal_distal_phalanx_contour],
         expected_contours,
-        5,
+        600,
         22,
         30,
       )
@@ -289,7 +289,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       [ideal_distal_phalanx, ideal_medial_phalanx],
       expected_contours,
-      20,
+      600,
       60,
       140,
     )
@@ -907,7 +907,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      20,
+      600,
       120,
       140,
     )
@@ -1174,7 +1174,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      20,
+      600,
       120,
       140,
     )
@@ -1560,7 +1560,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      20,
+      600,
       120,
       140,
     )
@@ -1971,7 +1971,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      20,
+      600,
       120,
       140,
     )
@@ -4000,7 +4000,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      20,
+      600,
       400,
       400,
     )
@@ -4241,7 +4241,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      20,
+      600,
       400,
       400,
     )
@@ -6384,7 +6384,7 @@ class TestMainExecute:
     complete_contours = search_complete_contours(
       contours,
       expected_contours,
-      20,
+      600,
       400,
       400,
     )

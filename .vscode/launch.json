@@ -25,8 +25,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "develop",
-        "test-shape-match-fourier"
+        "execute",
+        ".\\docs\\composition_all_fingers_with_sesamoid.jpg",
+        "--nofilter"
       ]
     },
   ]
