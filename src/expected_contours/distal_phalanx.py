@@ -238,8 +238,6 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     if solidity > 1.46:
       return float('inf')
     
-    # TODO find out a workaround not being able to work with open contours
-    # to find the convex defects.
     try:
       hull_area = cv.contourArea(hull)
       significant_convexity_defects = 0
@@ -264,7 +262,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
         return float('inf')
     except cv.error as e:
       error_message = str(e).lower()
-      if 'not monotonous' in error_message:
+      if 'not monotonous' in error_message: # TODO make this more robust
         return float('inf')
 
     moments = cv.moments(self.contour)

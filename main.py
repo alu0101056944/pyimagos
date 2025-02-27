@@ -44,6 +44,9 @@ from src.main_develop_test_sesamoid import visualize_sesamoid_shape
 from src.main_develop_test_execute import visualize_execute_tests
 from src.main_develop_test_search_two import visualize_execute_tests_2
 from src.main_develop_measurement_match import visualize_shape_match
+from src.main_develop_test_measurement_match_fourier import (
+  visualize_shape_match_fourier
+)
 
 @click.group()
 def cli() -> None:
@@ -220,6 +223,11 @@ def test_shape_match():
   visualize_shape_match()
 
 @develop.command()
+def test_shape_match_fourier():
+  '''Image visualization of the execute tests 2'''
+  visualize_shape_match_fourier()
+
+@develop.command()
 @click.argument("filename")
 @click.option('--write_file', is_flag=True, default=False,
               help='Output to a file instead of to console.')
@@ -254,7 +262,7 @@ def contour(filename: str, write_file: bool):
 @develop.command()
 @click.argument("filename")
 def hu_moments(filename: str):
-  '''Given a binary image, print its hu moments'''
+  '''Given a binary image, print its hu moments.'''
   input_image = Image.open(filename)
   borders_detected = np.array(input_image)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
@@ -277,6 +285,40 @@ def hu_moments(filename: str):
 
   print('Hu moments:')
   print(hu_moments)
+
+@develop.command()
+@click.argument("filename")
+def fourier(filename: str):
+  '''Given a binary image, print the fourier transforms of each contour in it.
+  10 descriptors.'''
+  input_image = Image.open(filename)
+  borders_detected = np.array(input_image)
+  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+  _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(
+    thresholded,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  )
+
+  descriptors = []
+  for contour in contours:
+    contour = contour.astype(np.float32)
+    contour = contour.reshape((-1, 2))
+    complex_contour = contour[:, 0] + 1j * contour[:, 1]
+    
+    # Calculate Discrete Fourier Transform
+    fourier = np.fft.fft(complex_contour)
+    
+    fourier[0] = 0  # Remove translation information
+    magnitudes = np.abs(fourier)
+    normalized = magnitudes / np.max(magnitudes[1:])  # Scale invariance done
+
+    sliced = normalized[1:10 + 1]
+    descriptors.append(sliced)
+    
+  print('Fourier descriptors (No DC component (traslacion info)):')
+  print(descriptors)
 
 if __name__ == '__main__':
     cli()

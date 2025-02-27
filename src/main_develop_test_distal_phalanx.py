@@ -399,6 +399,10 @@ def get_test_contours(contour, image_width, image_height):
   # at how ExpectedContourDistalPhalanx's next_contour_restrictions is
   # at the moment of coding this.
 
+  # TODO Incorrect since adding orientation line to expected contour;
+  # position restriction lines are not always relative to the minimum
+  # rect points. Fix this.
+
   limit_x_lowest = position_restrictions[1][0][0]
   limit_x_highest = position_restrictions[0][0][0]
   limit_y_lowest = position_restrictions[2][0][1]

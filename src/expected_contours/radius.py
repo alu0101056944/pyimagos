@@ -188,7 +188,7 @@ class ExpectedContourRadius(ExpectedContour):
 
     except cv.error as e:
       error_message = str(e).lower()
-      if 'not monotonous' in error_message:
+      if 'not monotonous' in error_message: # TODO make this more robust
         return float('inf')
 
     moments = cv.moments(self.contour)
