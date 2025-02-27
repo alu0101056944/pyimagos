@@ -43,6 +43,7 @@ from src.main_develop_test_ulna import visualize_ulna_shape
 from src.main_develop_test_sesamoid import visualize_sesamoid_shape
 from src.main_develop_test_execute import visualize_execute_tests
 from src.main_develop_test_search_two import visualize_execute_tests_2
+from src.main_develop_measurement_match import visualize_shape_match
 
 @click.group()
 def cli() -> None:
@@ -212,6 +213,11 @@ def test_execute():
 def test_execute_2():
   '''Image visualization of the execute tests 2'''
   visualize_execute_tests_2()
+
+@develop.command()
+def test_shape_match():
+  '''Image visualization of the execute tests 2'''
+  visualize_shape_match()
 
 @develop.command()
 @click.argument("filename")
