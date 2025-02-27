@@ -125,6 +125,7 @@ def calculate_fourier_descriptors(contour, num_descriptors=10,
   contour = contour.astype(np.int32)
   hull = cv.convexHull(contour, returnPoints=False)
   hull[::-1].sort(axis=0)
+  hull[::-1].sort(axis=0)
   defects = cv.convexityDefects(contour, hull) if len(contour) > 3 else None
   
   defect_score = 0

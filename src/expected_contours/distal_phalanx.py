@@ -242,6 +242,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       hull_area = cv.contourArea(hull)
       significant_convexity_defects = 0
       hull_indices = cv.convexHull(self.contour, returnPoints=False)
+      hull_indices[::-1].sort(axis=0)
       defects = cv.convexityDefects(self.contour, hull_indices)
       if defects is not None:
         for i in range(defects.shape[0]):
