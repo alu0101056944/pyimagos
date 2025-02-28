@@ -15,6 +15,7 @@ from src.expected_contours.expected_contour import (
   ExpectedContour
 )
 from src.main_develop_corner_order import get_top_left_corner
+from constants import CRITERIA_DICT
 
 class ExpectedContourSesamoid(ExpectedContour):
 
@@ -94,7 +95,10 @@ class ExpectedContourSesamoid(ExpectedContour):
   def next_contour_restrictions(self) -> list:
     return []
 
-  def shape_restrictions(self) -> list:
+  def shape_restrictions(self, criteria: dict = None) -> list:
+    if criteria is None:
+      criteria = CRITERIA_DICT
+
     if len(self.contour) == 0:
       return float('inf')
     
@@ -102,7 +106,7 @@ class ExpectedContourSesamoid(ExpectedContour):
     min_rect_height = self.min_area_rect[1][1]
     hull = cv.convexHull(self.contour)
     solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
-    if solidity > 1.3:
+    if solidity > criteria['sesamoid']['solidity']:
       return float('inf')
     
     moments = cv.moments(self.contour)

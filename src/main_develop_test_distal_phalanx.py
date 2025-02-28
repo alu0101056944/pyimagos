@@ -7,6 +7,8 @@ Pyimagos development
 Visualization of the shape testing for distal phalanx
 '''
 
+# TODO Update each shape test to use the constants.py shape criteria
+
 from enum import Enum, auto
 
 from PIL import Image

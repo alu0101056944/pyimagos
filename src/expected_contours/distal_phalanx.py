@@ -18,6 +18,7 @@ from src.expected_contours.expected_contour_of_branch import (
   ExpectedContourOfBranch
 )
 from src.main_develop_corner_order import get_top_left_corner
+from constants import CRITERIA_DICT
 
 class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
@@ -211,20 +212,23 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       ],
     ]
 
-  def shape_restrictions(self) -> list:
+  def shape_restrictions(self, criteria: dict = None) -> list:
+    if criteria is None:
+      criteria = CRITERIA_DICT
+
     if len(self.contour) == 0:
       return float('inf')
 
     area = cv.contourArea(self.contour)
-    if area <= 10:
+    if area <= criteria['distal']['area']:
       return float('inf')
     
-    if self._aspect_ratio < 1.1:
+    if self._aspect_ratio < criteria['distal']['aspect_ratio']:
       return float('inf')
     
     if self.encounter_amount > 1:
       first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
-      TOLERANCE = 0.65
+      TOLERANCE = criteria['distal']['aspect_ratio_tolerance']
       if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
         return float('inf')
 
@@ -235,7 +239,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     min_rect_height = self.min_area_rect[1][1]
     hull = cv.convexHull(self.contour)
     solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
-    if solidity > 1.46:
+    if solidity > criteria['distal']['solidity']:
       return float('inf')
     
     try:
@@ -254,7 +258,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
 
           defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-          if defect_area / hull_area > 0.08:
+          if defect_area / hull_area > criteria['distal']['defect_area_ratio']:
             significant_convexity_defects += 1
 
       if self.encounter_amount == 5 and significant_convexity_defects != 1:
