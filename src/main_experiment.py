@@ -26,60 +26,104 @@ import numpy as np
 from src.main_execute import estimate_age_from_image
 from constants import BONE_AGE_ATLAS
 
-def get_fit_dictionary(images: list, selected_group: Union[str, list]) -> dict:
+def get_fit_dictionary(images: list, selected_group: Union[str, None]) -> dict:
   fit = {}
   ages = {}
 
   if isinstance(selected_group, str):
     reference_measurements = BONE_AGE_ATLAS[selected_group]
-  if isinstance(selected_group, list):
-    reference_measurements = [
-      BONE_AGE_ATLAS[target_age] for target_age in selected_group
-    ]
 
-  for i, image_info in enumerate(images):
-    filename = image_info[0]
-    image = image_info[1]
+    for i, image_info in enumerate(images):
+      filename = image_info[0]
+      image = image_info[1]
 
-    (
-      estimated_age,
-      measurements,
-      image_stage_1,
-      image_stage_2,
-    ) = estimate_age_from_image(image, nofilter=True) # TODO turn this off after testing the experiment
+      (
+        estimated_age,
+        measurements,
+        image_stage_1,
+        image_stage_2,
+      ) = estimate_age_from_image(image, nofilter=True) # TODO turn this off after testing the experiment
 
-    if estimated_age != -1 and estimated_age != -2:
-      for measurement_key in measurements:
-        measurement_value = measurements[measurement_key]
+      if estimated_age != -1 and estimated_age != -2:
+        for measurement_key in measurements:
+          measurement_value = measurements[measurement_key]
 
-        if measurement_key not in fit:
-          fit[measurement_key] = 0
-        else:
-          if isinstance(reference_measurements, dict):
+          if measurement_key in reference_measurements:
             error = (
               (
                 reference_measurements[measurement_key] - measurement_value
               ) ** 2
             )
-          elif isinstance(reference_measurements, list):
+            if measurement_key in fit:
+              fit[measurement_key] = fit[measurement_key] + error
+            else:
+              fit[measurement_key] = error
+          
+          ages[filename] = estimated_age
+      elif estimated_age == -1:
+        raise ValueError(f'index={i} radiography\'s estimation failed.' \
+                          ' Failed sesamoid search.')
+      elif estimated_age == -2:
+        raise ValueError(f'index={i} radiography\'s estimation failed.' \
+                          ' Failed fingers search.')
+  elif selected_group is None:
+    for i, image_info in enumerate(images):
+      filename = image_info[0]
+      image = image_info[1]
+
+      (
+        estimated_age,
+        measurements,
+        image_stage_1,
+        image_stage_2,
+      ) = estimate_age_from_image(image, nofilter=True) # TODO turn this off after testing the experiment
+
+      if estimated_age != -1 and estimated_age != -2:
+        smallest_difference = -1
+        closest_reference_measurements_key = None
+        for reference_measurements_key in BONE_AGE_ATLAS:
+          reference_measurements = BONE_AGE_ATLAS[reference_measurements_key]
+
+          difference = 0
+          for measurement_key in measurements:
+            if measurement_key in reference_measurements:
+              difference = difference + abs((
+                measurements[measurement_key] - (
+                  reference_measurements[measurement_key]
+                )
+              ))
+
+          if smallest_difference == -1 or difference < smallest_difference:
+            closest_reference_measurements_key = reference_measurements_key
+            smallest_difference = difference
+
+        reference_measurements = (
+          BONE_AGE_ATLAS[closest_reference_measurements_key]
+        )
+        for measurement_key in measurements:
+          measurement_value = measurements[measurement_key]
+
+          if measurement_key in reference_measurements:
             error = (
               (
-                reference_measurements[i][measurement_key] - measurement_value
+                reference_measurements[measurement_key] - measurement_value
               ) ** 2
             )
-            
-          fit[measurement_key] = fit[measurement_key] + error
-        
-        ages[filename] = estimated_age
-    elif estimated_age == -1:
-      raise ValueError(f'index={i} radiography\'s estimation failed.' \
-                        ' Failed sesamoid search.')
-    elif estimated_age == -2:
-      raise ValueError(f'index={i} radiography\'s estimation failed.' \
-                        ' Failed fingers search.')
+            if measurement_key in fit:
+              fit[measurement_key] = fit[measurement_key] + error
+            else:
+              fit[measurement_key] = error
+          
+          ages[filename] = estimated_age
+      elif estimated_age == -1:
+        raise ValueError(f'index={i} radiography\'s estimation failed.' \
+                          ' Failed sesamoid search.')
+      elif estimated_age == -2:
+        raise ValueError(f'index={i} radiography\'s estimation failed.' \
+                            ' Failed fingers search.')
 
   for measurement_key in fit:
-    fit[measurement_key] = fit[measurement_key] / len(fit[measurement_key])
+    fit[measurement_key] = fit[measurement_key] / len(images)
 
   return fit, ages
 
@@ -90,21 +134,18 @@ def experiment(
 ):
   if isinstance(images, list):
     if selected_group == 'control':
-      filenames = images[:, 0]
-      ages = [control_dict[filename] for filename in filenames]
-      selected_group = ages
-      fit, ages = get_fit_dictionary(images, selected_group)
+      fit, ages = get_fit_dictionary(images, None)
     else:
       fit, ages = get_fit_dictionary(images, selected_group)
 
+    print('\n')
     print(f'Fit results for group {selected_group}:')
     for measurement_key in fit:
-      fit[measurement_key] = fit[measurement_key] / len(fit[measurement_key])
       print(f'{measurement_key}={fit[measurement_key]}')
     print('\n')
 
-    print('Ages:')
     if selected_group == 'control':
+      print(f'Ages for control group:')
       for filename in control_dict:
         expected_age = control_dict[filename]
         estimated_age = ages[filename]
@@ -112,6 +153,7 @@ def experiment(
               f'estimated age={estimated_age}')
       print('\n')
     else:
+      print(f'Ages for group {selected_group}:')
       for filename in ages:
         estimated_age = ages[filename]
         print(f'{filename} expected age={selected_group}, ' \
@@ -126,20 +168,17 @@ def experiment(
       elif images_key == 'group_19_5':
         selected_group = '19.5'
       elif images_key == 'group_control':
-        images_content = images[images_key]
-        filenames = images_content[:, 0]
-        ages = [control_dict[filename] for filename in filenames]
-        selected_group = ages
+        selected_group = None
 
       fit, ages = get_fit_dictionary(images[images_key], selected_group)
 
       print(f'Fit results for group {selected_group}:')
       for measurement_key in fit:
-        fit[measurement_key] = fit[measurement_key] / len(fit[measurement_key])
         print(f'{measurement_key}={fit[measurement_key]}')
       print('\n')
 
-      if selected_group == 'control':
+      if selected_group == None:
+        print(f'Ages for control group:')
         for filename in control_dict:
           expected_age = control_dict[filename]
           estimated_age = ages[filename]
@@ -208,46 +247,53 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            images.append([image_path.name, image])
+            numpy_image = np.array(image)
+            images.append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
-    
+
     control_dict = None
     if selected_group == 'control':
-      # Read JSON file with filename-age information
-      try:
-        with open(groupcontrol, 'r') as file:
-          image_age_dict = json.load(file)
+      control_image_names = [image_content[0] for image_content in images]
+      for file_path in non_none_path.glob('*'):
+        if (file_path.is_file() and file_path.suffix.lower() == '.json'):
+          # Read JSON file with filename-age information
+          try:
+            with open(file_path, 'r') as file:
+              image_age_dict = json.load(file)
 
-          if not isinstance(image_age_dict, dict):
-            raise ValueError(f"Error: JSON file does not contain a dictionary ' \
-                             'at the top level.")
-          for filename, age in image_age_dict.items():
-            if not isinstance(filename, str):
-              raise ValueError(f"Error: JSON dictionary keys should be' \
-                               ' filenames (strings). Found key: {filename} ' \
-                                'which is not a string.")
-            if not isinstance(age, str):
-              raise ValueError(f"Error: JSON dictionary values should be age ' \
-                                '(string). Value for '{filename}' is not a ' \
-                                'string: {age}")
-            
-            control_dict = image_age_dict
-      except FileNotFoundError:
-        print(f"Error: JSON file not found at path: {groupcontrol}")
-        return None
-      except json.JSONDecodeError as e:
-        print(f"Error: Could not parse JSON from file: {groupcontrol}. Invalid ' \
-              'JSON format.\nDetails: {e}")
-        return None
-      except Exception as e:
-        print(f"An unexpected error occurred while reading the JSON file: {e}")
-        return None
-      
-      if len(control_dict) != len(images):
-        raise ValueError(f"Error: control group's json file is missing " \
-                         f"entries. Expected {len(images)} but got" \
-                           f" {len(control_dict)}")
+              if not isinstance(image_age_dict, dict):
+                raise ValueError(f"Error: JSON file does not contain a dictionary ' \
+                                'at the top level.")
+              for filename, age in image_age_dict.items():
+                if not isinstance(filename, str):
+                  raise ValueError(f"Error: JSON dictionary keys should be' \
+                                  ' filenames (strings). Found key: {filename} ' \
+                                    'which is not a string.")
+                if not isinstance(age, (int, float)):
+                  raise ValueError(f"Error: JSON dictionary values should be age ' \
+                                    '(int, float). Value for '{filename}' is not a ' \
+                                    '(int, float): {age}")
+                if not filename in control_image_names:
+                  raise ValueError(f"Error: Filename key {filename} in the JSON " \
+                                   "is not an actual file")
+                
+                control_dict = image_age_dict
+          except FileNotFoundError:
+            print(f"Error: JSON file not found at path: {groupcontrol}")
+            return None
+          except json.JSONDecodeError as e:
+            print(f"Error: Could not parse JSON from file: {groupcontrol}. Invalid ' \
+                  'JSON format.\nDetails: {e}")
+            return None
+          except Exception as e:
+            print(f"An unexpected error occurred while reading the JSON file: {e}")
+            return None
+          
+          if len(control_dict) != len(images):
+            raise ValueError(f"Error: control group's json file is missing " \
+                            f"entries. Expected {len(images)} but got" \
+                              f" {len(control_dict)}")
 
     experiment(images, selected_group, control_dict)
   else:
@@ -269,12 +315,12 @@ def main_experiment(
       print(f'Error: {group17_5} is not a valid directory.')
       return
 
-    image_dir_path_18_5 = Path(group17_5)
+    image_dir_path_18_5 = Path(group18_5)
     if not image_dir_path_18_5.is_dir():
       print(f'Error: {group18_5} is not a valid directory.')
       return
 
-    image_dir_path_19_5 = Path(group17_5)
+    image_dir_path_19_5 = Path(group19_5)
     if not image_dir_path_19_5.is_dir():
       print(f'Error: {group19_5} is not a valid directory.')
       return
@@ -298,7 +344,8 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            images['group_17_5'].append([image_path.name, image])
+            numpy_image = np.array(image)
+            images['group_17_5'].append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
@@ -307,7 +354,8 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            images['group_18_5'].append([image_path.name, image])
+            numpy_image = np.array(image)
+            images['group_18_5'].append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
@@ -316,7 +364,8 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            images['group_19_5'].append([image_path.name, image])
+            numpy_image = np.array(image)
+            images['group_19_5'].append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
@@ -325,44 +374,57 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            images['group_control'].append([image_path.name, image])
+            numpy_image = np.array(image)
+            images['group_control'].append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
     # Read JSON file with filename-age information for control group
     control_dict = None
-    try:
-      with open(groupcontrol, 'r') as file:
-        image_age_dict = json.load(file)
+    control_image_names = [
+      image_content[0] for image_content in images['group_control']
+    ]
+    for file_path in image_dir_path_control.glob('*'):
+      if (file_path.is_file() and file_path.suffix.lower() == '.json'):
+        # Read JSON file with filename-age information
+        try:
+          with open(file_path, 'r') as file:
+            image_age_dict = json.load(file)
 
-        if not isinstance(image_age_dict, dict):
-          raise ValueError(f"Error: JSON file does not contain a dictionary ' \
-                            'at the top level.")
-        for filename, age in image_age_dict.items():
-          if not isinstance(filename, str):
-            raise ValueError(f"Error: JSON dictionary keys should be' \
-                              ' filenames (strings). Found key: {filename} ' \
-                              'which is not a string.")
-          if not isinstance(age, str):
-            raise ValueError(f"Error: JSON dictionary values should be age ' \
-                              '(string). Value for '{filename}' is not a ' \
-                              'string: {age}")
-          
-          control_dict = image_age_dict
-    except FileNotFoundError:
-      print(f"Error: JSON file not found at path: {groupcontrol}")
-      raise
-    except json.JSONDecodeError as e:
-      print(f"Error: Could not parse JSON from file: {groupcontrol}. Invalid ' \
-            'JSON format.\nDetails: {e}")
-      raise
-    except Exception as e:
-      print(f"An unexpected error occurred while reading the JSON file: {e}")
-      raise
-    
-    if len(control_dict) != len(images['group_control']):
-      raise ValueError(f"Error: control group's json file is missing entries. " \
-                       f" Expected {len(images['group_control'])} but got " \
-                        f" {len(control_dict)}")
+            if not isinstance(image_age_dict, dict):
+              raise ValueError(f"Error: JSON file does not contain a dictionary ' \
+                                'at the top level.")
+            for filename, age in image_age_dict.items():
+              if not isinstance(filename, str):
+                raise ValueError(f"Error: JSON dictionary keys should be' \
+                                  ' filenames (strings). Found key: {filename} ' \
+                                  'which is not a string.")
+              if not isinstance(age, (int, float)):
+                raise ValueError(f"Error: JSON dictionary values should be age ' \
+                                  '(int, float). Value for '{filename}' is not a ' \
+                                  '(int, float): {age}")
+            
+              if not filename in control_image_names:
+                      raise ValueError(f"Error: Filename key {filename} in the JSON " \
+                                      "is not an actual file")
+              
+              control_dict = image_age_dict
+        except FileNotFoundError:
+          print(f"Error: JSON file not found at path: {groupcontrol}")
+          raise
+        except json.JSONDecodeError as e:
+          print(f"Error: Could not parse JSON from file: {groupcontrol}. Invalid ' \
+                'JSON format.\nDetails: {e}")
+          raise
+        except Exception as e:
+          print(f"An unexpected error occurred while reading the JSON file: {e}")
+          raise
+        
+        if len(control_dict) != len(images['group_control']):
+          raise ValueError(f"Error: control group's json file is missing entries. " \
+                          f" Expected {len(images['group_control'])} but got " \
+                            f" {len(control_dict)}")
+        
+    print('\n')
 
     experiment(images, None, control_dict)

@@ -216,7 +216,8 @@ def search_complete_contours(
     search_duration_seconds: int,
     image_width: int,
     image_height: int,
-    injected_start_contour: Union[np.array, None] = None
+    injected_start_contour: Union[np.array, None] = None,
+    silent: bool = True,
 ) -> list:
   if len(contours) == 0:
     return []
@@ -272,7 +273,8 @@ def search_complete_contours(
     if elapsed_time >= search_duration_seconds:
       return []
 
-    print(f'Elapsed time: {elapsed_time:.2f} seconds')
+    if not silent:
+      print(f'Elapsed time: {elapsed_time:.2f} seconds')
 
     if len(state_stack) > 0:
       state = state_stack[0]
@@ -534,7 +536,7 @@ def get_expected_contours_model() -> list:
   return expected_contours_model
 
 def estimate_age_from_image(
-    input_image: np.array,
+    input_image: Union[np.array, Image.Image],
     nofilter: bool = False,
 ) -> Tuple[float, list]:
   '''Given an image of a radiography, output the estimated age'''
@@ -698,14 +700,14 @@ def estimate_age_from_image(
     else:
       return (
         -1,
-        measurements_normalized,
+        None,
         minimum_image_1,
         minimum_image_2,
       )
   else:
     return (
       -2,
-      measurements_normalized,
+      None,
       minimum_image_1,
       minimum_image_2,
     )
@@ -717,7 +719,13 @@ def process_radiograph(
     nofilter: bool = False,
     all: bool = False
 ) -> None:
-  input_image = Image.open(filename)
+  input_image = None
+  try:
+    with Image.open(filename) as image:
+      input_image = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
 
   (
     estimated_age,

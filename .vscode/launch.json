@@ -27,7 +27,7 @@
       "args": [
         "experiment",
         "--single",
-        "--group17_5=foo"
+        "--groupcontrol=foo"
       ]
     },
   ]

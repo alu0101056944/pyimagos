@@ -1,3 +1,8 @@
+foo/
+bar/
+baz/
+control/
+
 model/*
 !model/README.md
 docs/local_images
