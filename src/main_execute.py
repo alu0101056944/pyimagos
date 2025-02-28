@@ -219,7 +219,8 @@ def search_complete_contours(
     image_height: int,
     injected_start_contour: Union[np.array, None] = None,
     silent: bool = True,
-    criteria_dict: dict = None
+    criteria_dict: dict = None,
+    full_silent: bool = False,
 ) -> list:
   if len(contours) == 0:
     return []
@@ -253,14 +254,17 @@ def search_complete_contours(
         'committed_total_value': min_score
       })
     else:
-      print('No valid contours encountered (all scores are "inf"). Search stop.')
+      if not full_silent:
+        print('No valid contours encountered (all scores are "inf"). ' \
+              'Search stop.')
       return []
   else:
     # To be able to start the search from a specific location a start contour
     # that is meant to not be included in contours is passed as argument
     # effectively changing the first "next position restrictions" of the search.
     contours.append(injected_start_contour)
-    expected_contours[0].prepare(injected_start_contour, image_width, image_height)
+    expected_contours[0].prepare(injected_start_contour, image_width,
+                                 image_height)
     score = expected_contours[0].shape_restrictions(criteria_dict)
     state_stack.append(({
       'contours_committed': [injected_start_contour],
@@ -276,7 +280,8 @@ def search_complete_contours(
       return []
 
     if not silent:
-      print(f'Elapsed time: {elapsed_time:.2f} seconds')
+      if not full_silent:
+        print(f'Elapsed time: {elapsed_time:.2f} seconds')
 
     if len(state_stack) > 0:
       state = state_stack[0]
@@ -289,7 +294,8 @@ def search_complete_contours(
       expected_contour_class.prepare(chosen_contour, image_width, image_height)
 
       if len(state['contours_committed']) == len(expected_contours):
-        print('Sucessful search. Search stop.')
+        if not full_silent:
+          print('Sucessful search. Search stop.')
 
         return [(copy.deepcopy(
           {
@@ -331,21 +337,24 @@ def search_complete_contours(
             state_stack.pop(0)
             state_stack.insert(0, best_alternative)
           else:
-            print('No valid contour inside required area was found for ' \
-                  'expected contour ' \
-                  f'index={len(state['contours_committed']) - 1}.' \
-                    ' Search stop.')
+            if not full_silent:
+              print('No valid contour inside required area was found for ' \
+                    'expected contour ' \
+                    f'index={len(state['contours_committed']) - 1}.' \
+                      ' Search stop.')
             state_stack.pop(0)
         else:
-          print('No contours inside required area were found for ' \
-                 'expected contour ' \
-                  f'index={len(state['contours_committed']) - 1}.' \
-                    ' Search stop.')
+          if not full_silent:
+            print('No contours inside required area were found for ' \
+                  'expected contour ' \
+                    f'index={len(state['contours_committed']) - 1}.' \
+                      ' Search stop.')
           state_stack.pop(0)
       
     else:
-      print('Search finished: explored all alternatives but found nothing valid.')
-      return []
+      if not full_silent:
+        print('Search finished: explored all alternatives but found nothing valid.')
+        return []
     
 def create_minimal_image_from_contours(contours: list, padding = 0):
   if not contours:
@@ -542,6 +551,7 @@ def estimate_age_from_image(
     input_image: Union[np.array, Image.Image],
     nofilter: bool = False,
     criteria_dict: dict = None,
+    full_silent: bool = False
 ) -> Tuple[float, list]:
   '''Given an image of a radiography, output the estimated age'''
   HIGHER_THRESOLD = 40
@@ -620,7 +630,8 @@ def estimate_age_from_image(
     SEARCH_EXECUTION_DURATION_SECONDS,
     image_width=minimum_image_1.shape[1],
     image_height=minimum_image_1.shape[0],
-    criteria_dict=criteria_dict
+    criteria_dict=criteria_dict,
+    full_silent=full_silent
   )
 
   if len(complete_contours) > 0:
@@ -654,6 +665,7 @@ def estimate_age_from_image(
       image_height=minimum_image_2.shape[0],
       injected_start_contour=metacarpal5,
       criteria_dict=criteria_dict,
+      full_silent=full_silent,
     )
 
     if len(complete_contours_2) > 0:

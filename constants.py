@@ -89,3 +89,49 @@ CRITERIA_DICT = {
     'solidity': 1.3
   }
 }
+
+CRITERIA_DICT_VARIATION_MAGNITUDES = {
+  'distal': {
+    'area': 10,
+    'aspect_ratio': 0.1,
+    'aspect_ratio_tolerance': 0.05,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.01,
+  },
+  'medial': {
+    'area': 10,
+    'aspect_ratio': 0.1,
+    'aspect_ratio_tolerance': 0.1,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.01,
+  },
+  'proximal': {
+    'area': 10,
+    'aspect_ratio': 0.1,
+    'aspect_ratio_tolerance': 0.1,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.01,
+  },
+  'metacarpal': {
+    'area': 10,
+    'aspect_ratio': 0.1,
+    'aspect_ratio_tolerance': 0.1,
+    'solidity': 0.05,
+    'defect_area_ratio': 0.01,
+  },
+  'radius': {
+    'area': 100,
+    'aspect_ratio': 0.1,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.001,
+  },
+  'ulna': {
+    'area': 100,
+    'aspect_ratio': 0.1,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.001,
+  },
+  'sesamoid': {
+    'solidity': 0.1
+  }
+}
