@@ -23,7 +23,10 @@ from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalan
 from src.expected_contours.metacarpal import ExpectedContourMetacarpal
 from src.expected_contours.ulna import ExpectedContourUlna
 from src.expected_contours.radius import ExpectedContourRadius
-from src.expected_contours.expected_contour import ExpectedContour
+from src.expected_contours.sesamoid import ExpectedContourSesamoid
+from src.expected_contours.metacarpal_sesamoid import (
+  ExpectedContourSesamoidMetacarpal
+)
 
 def show_contours_position_restrictions(
     expected_contours: list, 
@@ -64,7 +67,8 @@ def show_contours_position_restrictions(
   if show_position_restrictions:
     for i, expected_contour in enumerate(expected_contours):
       contour_index = contour_map[i]
-      if contour_map_mask is not None and contour_index in contour_map_mask:
+      if (contour_map_mask is None or
+          (contour_map_mask is not None and contour_index in contour_map_mask)):
         expected_contour.prepare(
           contours[contour_index],
           minimal_image.shape[1],
@@ -124,14 +128,6 @@ def show_contours_position_restrictions(
   fig.canvas.manager.set_window_title(title)
 
 def visualize_execute_tests():
-  # borders_detected = Image.open('docs/composition_two.jpg')
-  # borders_detected = np.array(borders_detected)
-  # borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
-
-  # _, thresh = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
-  # contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL,
-  #                             cv.CHAIN_APPROX_SIMPLE)
-
   contours = [
     np.array([[[ 37,  97]],
       [[ 36,  98]],
@@ -3774,5 +3770,187 @@ def visualize_execute_tests():
     minimize_image=False,
     contour_map_mask=contour_map_mask
   )
+
+  contours = [
+    np.array(
+      [[[317, 252]],
+      [[316, 253]],
+      [[314, 253]],
+      [[313, 254]],
+      [[309, 254]],
+      [[309, 255]],
+      [[306, 258]],
+      [[305, 258]],
+      [[303, 260]],
+      [[303, 261]],
+      [[301, 263]],
+      [[299, 263]],
+      [[298, 264]],
+      [[298, 265]],
+      [[292, 271]],
+      [[291, 271]],
+      [[287, 275]],
+      [[286, 275]],
+      [[284, 277]],
+      [[283, 277]],
+      [[280, 280]],
+      [[279, 280]],
+      [[277, 282]],
+      [[276, 282]],
+      [[275, 283]],
+      [[274, 283]],
+      [[273, 284]],
+      [[272, 284]],
+      [[271, 285]],
+      [[270, 285]],
+      [[268, 287]],
+      [[266, 287]],
+      [[265, 288]],
+      [[264, 288]],
+      [[263, 289]],
+      [[261, 289]],
+      [[260, 290]],
+      [[257, 290]],
+      [[256, 291]],
+      [[253, 291]],
+      [[252, 292]],
+      [[247, 292]],
+      [[246, 293]],
+      [[243, 293]],
+      [[242, 294]],
+      [[240, 294]],
+      [[239, 295]],
+      [[236, 295]],
+      [[235, 296]],
+      [[233, 296]],
+      [[230, 299]],
+      [[230, 303]],
+      [[232, 305]],
+      [[232, 306]],
+      [[235, 309]],
+      [[236, 309]],
+      [[237, 310]],
+      [[237, 311]],
+      [[238, 312]],
+      [[238, 315]],
+      [[239, 316]],
+      [[240, 316]],
+      [[242, 318]],
+      [[243, 318]],
+      [[244, 319]],
+      [[250, 319]],
+      [[251, 320]],
+      [[253, 320]],
+      [[254, 319]],
+      [[256, 319]],
+      [[257, 318]],
+      [[258, 318]],
+      [[259, 317]],
+      [[260, 317]],
+      [[261, 316]],
+      [[263, 316]],
+      [[265, 314]],
+      [[266, 314]],
+      [[267, 313]],
+      [[268, 313]],
+      [[271, 310]],
+      [[272, 310]],
+      [[277, 305]],
+      [[278, 305]],
+      [[280, 303]],
+      [[281, 303]],
+      [[283, 301]],
+      [[284, 301]],
+      [[286, 299]],
+      [[287, 299]],
+      [[289, 297]],
+      [[290, 297]],
+      [[292, 295]],
+      [[293, 295]],
+      [[294, 294]],
+      [[295, 294]],
+      [[296, 293]],
+      [[297, 293]],
+      [[299, 291]],
+      [[300, 291]],
+      [[301, 290]],
+      [[302, 290]],
+      [[304, 288]],
+      [[305, 288]],
+      [[306, 287]],
+      [[307, 287]],
+      [[308, 286]],
+      [[309, 286]],
+      [[311, 284]],
+      [[312, 284]],
+      [[314, 282]],
+      [[315, 282]],
+      [[316, 281]],
+      [[317, 281]],
+      [[318, 280]],
+      [[319, 280]],
+      [[321, 278]],
+      [[323, 278]],
+      [[324, 277]],
+      [[325, 277]],
+      [[326, 276]],
+      [[327, 276]],
+      [[328, 275]],
+      [[329, 275]],
+      [[331, 273]],
+      [[332, 273]],
+      [[332, 272]],
+      [[334, 270]],
+      [[334, 269]],
+      [[335, 268]],
+      [[335, 264]],
+      [[334, 263]],
+      [[334, 262]],
+      [[332, 260]],
+      [[331, 260]],
+      [[328, 257]],
+      [[327, 257]],
+      [[326, 256]],
+      [[325, 256]],
+      [[324, 255]],
+      [[323, 255]],
+      [[321, 253]],
+      [[320, 253]],
+      [[319, 252]]],
+      dtype=np.int32
+    ),
+    np.array(
+      [[[294, 250]],
+      [[293, 251]],
+      [[293, 255]],
+      [[294, 256]],
+      [[299, 256]],
+      [[300, 255]],
+      [[301, 255]],
+      [[302, 256]],
+      [[304, 256]],
+      [[305, 255]],
+      [[305, 252]],
+      [[304, 251]],
+      [[303, 251]],
+      [[302, 250]]],
+      dtype=np.int32
+    )
+  ]
+  expected_contours = [
+    ExpectedContourSesamoidMetacarpal(),
+    ExpectedContourSesamoid()
+  ]
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map=[0, 1],
+    contours=contours,
+    padding=5,
+    title='Fifth metacarpal and sesamoid.',
+    minimize_image=False,
+    show_position_restrictions=True
+  )
+  
+  
 
   plt.show()

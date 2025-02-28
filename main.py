@@ -40,7 +40,14 @@ from src.main_develop_test_proximal_phalanx import visualize_proximal_phalanx_sh
 from src.main_develop_test_metacarpal import visualize_metacarpal_shape
 from src.main_develop_test_radius import visualize_radius_shape
 from src.main_develop_test_ulna import visualize_ulna_shape
+from src.main_develop_test_sesamoid import visualize_sesamoid_shape
 from src.main_develop_test_execute import visualize_execute_tests
+from src.main_develop_test_search_two import visualize_execute_tests_2
+from src.main_develop_measurement_match import visualize_shape_match
+from src.main_develop_test_measurement_match_fourier import (
+  visualize_shape_match_fourier
+)
+from src.main_experiment import main_experiment
 
 @click.group()
 def cli() -> None:
@@ -54,21 +61,56 @@ def cli() -> None:
               help='Show last image result. Opens a window.')
 @click.option('--nofilter', is_flag=True, default=False,
               help='Skip image processing into borders detected.')
-@click.option('--nosearch', is_flag=True, default=False,
-              help='Skip image contours search.')
-@click.option('--historygui', is_flag=True, default=False,
-              help='Open history gui to show best contours.')
+@click.option('--all', is_flag=True, default=False,
+              help='Print the exact estimated age and the measurement ' \
+                'dictionary.')
 def execute(filename: str, write_files: bool, show: bool,
-            nofilter: bool, nosearch: bool, historygui: bool) -> None:
+            nofilter: bool, all: bool) -> None:
   '''Left hand radiography segmentation.'''
-  process_radiograph(filename, write_images=write_files,
-                      show_images=show, nofilter=nofilter,
-                      nosearch=nosearch, historygui=historygui)
+  process_radiograph(
+    filename,
+    write_images=write_files,
+    show_images=show,
+    nofilter=nofilter,
+    all=all
+  )
 
 @cli.command()
 def estimate() -> None:
   '''Age estimation test from ideal image.'''
   estimate_age_from_ideal_contour()
+
+@cli.command()
+@click.option('--single', is_flag=True, default=False,
+              help='Print experiment result for only one group.')
+@click.option('--group17_5',
+              type=click.Path(
+                exists=True, file_okay=False, dir_okay=True, writable=True
+              ),
+              help='Folder path with radiographies for group of age 17.5.')
+@click.option('--group18_5',
+              type=click.Path(
+                exists=True, file_okay=False, dir_okay=True, writable=True
+              ),
+              help='Folder path with radiographies for group of age 18.5.')
+@click.option('--group19_5',
+              type=click.Path(
+                exists=True, file_okay=False, dir_okay=True, writable=True
+              ),
+              help='Folder path with radiographies for group of age 19.5.')
+@click.option('--groupcontrol',
+              type=click.Path(
+                exists=True, file_okay=False, dir_okay=True, writable=True
+              ),
+              help='Folder path with radiographies for control group.')
+def experiment(single: bool, group17_5: str, group18_5: str,
+               group19_5: str, groupcontrol: str) -> None:
+  '''Estimate age and show measurement fit for three different groups and
+      a control group. If --single option was not used then four options
+      group17_5, group18_5 and group19_5, groupcontrol with the folder
+      paths are required. Otherwise just a single group is required (will
+       fail if passed more than one)'''
+  main_experiment(single, group17_5, group18_5, group19_5, groupcontrol)
 
 @cli.group()
 def develop() -> None:
@@ -194,10 +236,30 @@ def ulna():
   '''Image visualization of the ulna shape'''
   visualize_ulna_shape()
 
+@shape.command()
+def sesamoid():
+  '''Image visualization of the sesamoid shape'''
+  visualize_sesamoid_shape()
+
 @develop.command()
 def test_execute():
   '''Image visualization of the execute tests'''
   visualize_execute_tests()
+
+@develop.command()
+def test_execute_2():
+  '''Image visualization of the execute tests 2'''
+  visualize_execute_tests_2()
+
+@develop.command()
+def test_shape_match():
+  '''Image visualization of the execute tests 2'''
+  visualize_shape_match()
+
+@develop.command()
+def test_shape_match_fourier():
+  '''Image visualization of the execute tests 2'''
+  visualize_shape_match_fourier()
 
 @develop.command()
 @click.argument("filename")
@@ -234,7 +296,7 @@ def contour(filename: str, write_file: bool):
 @develop.command()
 @click.argument("filename")
 def hu_moments(filename: str):
-  '''Given a binary image, print its hu moments'''
+  '''Given a binary image, print its hu moments.'''
   input_image = Image.open(filename)
   borders_detected = np.array(input_image)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
@@ -257,6 +319,40 @@ def hu_moments(filename: str):
 
   print('Hu moments:')
   print(hu_moments)
+
+@develop.command()
+@click.argument("filename")
+def fourier(filename: str):
+  '''Given a binary image, print the fourier transforms of each contour in it.
+  10 descriptors.'''
+  input_image = Image.open(filename)
+  borders_detected = np.array(input_image)
+  borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
+  _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(
+    thresholded,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  )
+
+  descriptors = []
+  for contour in contours:
+    contour = contour.astype(np.float32)
+    contour = contour.reshape((-1, 2))
+    complex_contour = contour[:, 0] + 1j * contour[:, 1]
+    
+    # Calculate Discrete Fourier Transform
+    fourier = np.fft.fft(complex_contour)
+    
+    fourier[0] = 0  # Remove translation information
+    magnitudes = np.abs(fourier)
+    normalized = magnitudes / np.max(magnitudes[1:])  # Scale invariance done
+
+    sliced = normalized[1:10 + 1]
+    descriptors.append(sliced)
+    
+  print('Fourier descriptors (No DC component (traslacion info)):')
+  print(descriptors)
 
 if __name__ == '__main__':
     cli()

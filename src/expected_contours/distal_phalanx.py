@@ -34,7 +34,6 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
     self.image_height = None
     self.ends_branchs_sequence = None
     self.min_area_rect = None
-    self.min_area_rect = None
     self.encounter_amount = encounter_amount
     self.first_encounter = first_encounter
     self.first_in_branch = first_in_branch
@@ -243,6 +242,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
       hull_area = cv.contourArea(hull)
       significant_convexity_defects = 0
       hull_indices = cv.convexHull(self.contour, returnPoints=False)
+      hull_indices[::-1].sort(axis=0)
       defects = cv.convexityDefects(self.contour, hull_indices)
       if defects is not None:
         for i in range(defects.shape[0]):
@@ -263,7 +263,7 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
         return float('inf')
     except cv.error as e:
       error_message = str(e).lower()
-      if 'not monotonous' in error_message:
+      if 'not monotonous' in error_message: # TODO make this more robust
         return float('inf')
 
     moments = cv.moments(self.contour)

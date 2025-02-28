@@ -37,6 +37,7 @@ def calculate_attributes(contour, show_convex_defects: bool = True) -> list:
     significant_convexity_defects = 0
     hull_area = cv.contourArea(cv.convexHull(contour))
     hull = cv.convexHull(contour, returnPoints=False)
+    hull[::-1].sort(axis=0)
     defects = cv.convexityDefects(contour, hull)
     if defects is not None:
       for i in range(defects.shape[0]):
@@ -132,6 +133,7 @@ def prepare_image_showing_shape(contours, approximated_contour, image_width,
     hull_defects_image = np.zeros((image_height, image_width, 3), dtype=np.uint8)
     cv.drawContours(hull_defects_image, [hull], 0, (0, 255, 0), 2)
     hull_indices = cv.convexHull(contour, returnPoints=False)
+    hull_indices[::-1].sort(axis=0)
     defects = cv.convexityDefects(contour, hull_indices)
     if defects is not None:
       for i in range(defects.shape[0]):

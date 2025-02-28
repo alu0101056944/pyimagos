@@ -412,10 +412,9 @@ class TestDistalPhalanxExpectedContour:
       [16,  4],
       [ 8,  4]]
     )
-    defects = cv.convexityDefects(
-      contour_with_edge_overlap,
-      cv.convexHull(contour_with_edge_overlap, returnPoints=False),
-    )
+    hull = cv.convexHull(contour_with_edge_overlap, returnPoints=False)
+    hull[::-1].sort(axis=0)
+    defects = cv.convexityDefects(contour_with_edge_overlap, hull)
     assert defects is not None
 
   def test_self_interception_contour_is_discarded(self):

@@ -25,9 +25,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "develop",
-        "shape",
-        "radius",
+        "experiment",
+        "--single",
+        "--groupcontrol=foo"
       ]
     },
   ]

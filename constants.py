@@ -5,8 +5,8 @@
 Configuration constants
 '''
 
-MODEL_PATH = './model/dino_deitsmall8_pretrain.pth'
-EXECUTION_DURATION_SECONDS = 5
+CONTRAST_MODEL_PATH = './model/dino_deitsmall8_pretrain.pth'
+SEARCH_EXECUTION_DURATION_SECONDS = 5
 
 BONE_AGE_ATLAS = {
   '17.5': {
@@ -31,7 +31,7 @@ BONE_AGE_ATLAS = {
     'metacarpal_3_width': 0.364,
     'metacarpal_4_width': 0.000
   },
-  '19': {
+  '19.5': {
     'radius_length': 0.445,
     'radius_width': 1.000,
     'ulna_length': 0.287,

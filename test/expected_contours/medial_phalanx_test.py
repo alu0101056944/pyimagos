@@ -371,7 +371,7 @@ class TestMedialPhalanxExpectedContour:
     shape_value = phalanx.shape_restrictions()
     assert shape_value == float('inf')
 
-  def test_self_interception_contour_is_discarded(self):
+  def test_originally_out_of_order_hull_is_not_discarded(self):
     self_intercepting_contour = np.array(
       [[25, 66],
       [24, 67],
@@ -398,4 +398,4 @@ class TestMedialPhalanxExpectedContour:
     phalanx = ExpectedContourMedialPhalanx(1)
     phalanx.prepare(self_intercepting_contour, 32, 97)
     score = phalanx.shape_restrictions()
-    assert score == float('inf')
+    assert score != float('inf')
