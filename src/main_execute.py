@@ -18,7 +18,6 @@ import numpy as np
 import cv2 as cv
 import matplotlib.pyplot as plt
 
-from src.main_develop_contours_gui import ContourViewer
 from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
@@ -690,39 +689,80 @@ def estimate_age_from_image(
 
       estimated_age = estimate_age(measurements_normalized)
 
-      return estimated_age, minimum_image_1, minimum_image_2
+      return (
+        estimated_age,
+        measurements_normalized,
+        minimum_image_1,
+        minimum_image_2,
+      )
     else:
-
-      return -1, minimum_image_1, minimum_image_2
+      return (
+        -1,
+        measurements_normalized,
+        minimum_image_1,
+        minimum_image_2,
+      )
   else:
-    print('Could not estimate age due to unsuccessful bone segmentation.')
-    return -2, minimum_image_1, minimum_image_2
+    return (
+      -2,
+      measurements_normalized,
+      minimum_image_1,
+      minimum_image_2,
+    )
 
 def process_radiograph(
     filename: str,
     write_images: bool = False,
     show_images: bool = False,
     nofilter: bool = False,
+    all: bool = False
 ) -> None:
   input_image = Image.open(filename)
 
   (
     estimated_age,
+    measurements,
     image_search_stage_1,
     image_search_stage_2,
   ) = estimate_age_from_image(input_image, nofilter)
 
-  if estimated_age == -1:
-    print('Could not estimate age due to unsuccessful second search' \
-      ' for sesamoid segmentation.')
-  elif estimated_age == -2:
-    print('Could not estimate age due to unsuccessful bone segmentation.')
-  elif estimated_age < 18:
-    print('System finds patient age < 18.')
-    print('Patient is underage.')
+
+  if not all:
+    if estimated_age == -1:
+      print('Could not estimate age due to unsuccessful second search' \
+        ' for sesamoid segmentation.')
+    elif estimated_age == -2:
+      print('Could not estimate age due to unsuccessful bone segmentation.')
+    elif estimated_age < 18:
+      print('System finds patient age < 18.')
+      print('Patient is underage.')
+    else:
+      print('System finds patient age => 18.')
+      print('Patient is adult.')
   else:
-    print('System finds patient age => 18.')
-    print('Patient is adult.')
+    if estimated_age == -1:
+      print('Could not estimate age due to unsuccessful second search' \
+        ' for sesamoid segmentation.')
+    elif estimated_age == -2:
+      print('Could not estimate age due to unsuccessful bone segmentation.')
+    elif estimated_age < 18:
+      print('System finds patient age < 18.')
+      print('Patient is underage.\n')
+      print(f'Estimated age is {estimated_age}.\n')
+      print('Measurements:')
+      for measurement_key in measurements:
+        measurement_value = measurements[measurement_key]
+        print(f'{measurement_key}={measurement_value}')
+      print('\n')
+    else:
+      print('System finds patient age => 18.')
+      print('Patient is adult.\n')
+      print(f'Estimated age is {estimated_age}.\n')
+      print('Measurements:')
+      for measurement_key in measurements:
+        measurement_value = measurements[measurement_key]
+        print(f'{measurement_key}={measurement_value}')
+      print('\n')
 
   if write_images:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}' \

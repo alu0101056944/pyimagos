@@ -8,7 +8,6 @@ Configuration constants
 CONTRAST_MODEL_PATH = './model/dino_deitsmall8_pretrain.pth'
 SEARCH_EXECUTION_DURATION_SECONDS = 5
 
-
 BONE_AGE_ATLAS = {
   '17.5': {
     'radius_length': 0.436,

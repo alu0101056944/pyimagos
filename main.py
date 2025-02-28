@@ -47,6 +47,7 @@ from src.main_develop_measurement_match import visualize_shape_match
 from src.main_develop_test_measurement_match_fourier import (
   visualize_shape_match_fourier
 )
+from src.main_experiment import main_experiment
 
 @click.group()
 def cli() -> None:
@@ -60,20 +61,56 @@ def cli() -> None:
               help='Show last image result. Opens a window.')
 @click.option('--nofilter', is_flag=True, default=False,
               help='Skip image processing into borders detected.')
+@click.option('--all', is_flag=True, default=False,
+              help='Print the exact estimated age and the measurement ' \
+                'dictionary.')
 def execute(filename: str, write_files: bool, show: bool,
-            nofilter: bool) -> None:
+            nofilter: bool, all: bool) -> None:
   '''Left hand radiography segmentation.'''
   process_radiograph(
     filename,
     write_images=write_files,
     show_images=show,
-    nofilter=nofilter
+    nofilter=nofilter,
+    all=all
   )
 
 @cli.command()
 def estimate() -> None:
   '''Age estimation test from ideal image.'''
   estimate_age_from_ideal_contour()
+
+@cli.command()
+@click.option('--single', is_flag=True, default=False,
+              help='Print experiment result for only one group.')
+@click.option('--group17_5',
+              type=click.Path(
+                exists=True, file_okay=False, dir_okay=True, writable=True
+              ),
+              help='Folder path with radiographies for group of age 17.5.')
+@click.option('--group18_5',
+              type=click.Path(
+                exists=True, file_okay=False, dir_okay=True, writable=True
+              ),
+              help='Folder path with radiographies for group of age 18.5.')
+@click.option('--group19_5',
+              type=click.Path(
+                exists=True, file_okay=False, dir_okay=True, writable=True
+              ),
+              help='Folder path with radiographies for group of age 19.5.')
+@click.option('--groupcontrol',
+              type=click.Path(
+                exists=True, file_okay=False, dir_okay=True, writable=True
+              ),
+              help='Folder path with radiographies for control group.')
+def experiment(single: bool, group17_5: str, group18_5: str,
+               group19_5: str, groupcontrol: str) -> None:
+  '''Estimate age and show measurement fit for three different groups and
+      a control group. If --single option was not used then four options
+      group17_5, group18_5 and group19_5, groupcontrol with the folder
+      paths are required. Otherwise just a single group is required (will
+       fail if passed more than one)'''
+  main_experiment(single, group17_5, group18_5, group19_5, groupcontrol)
 
 @cli.group()
 def develop() -> None:
