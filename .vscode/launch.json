@@ -25,9 +25,10 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "experiment",
-        "--single",
-        "--groupcontrol=foo"
+        "criteria-study",
+        ".\\bar\\a_name.jpg",
+        "report",
+        "--nofilter",
       ]
     },
   ]

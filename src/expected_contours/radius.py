@@ -15,6 +15,8 @@ from src.expected_contours.expected_contour import (
   ExpectedContour
 )
 from src.main_develop_corner_order import get_top_left_corner
+from constants import CRITERIA_DICT
+
 
 class ExpectedContourRadius(ExpectedContour):
 
@@ -144,15 +146,18 @@ class ExpectedContourRadius(ExpectedContour):
   def next_contour_restrictions(self) -> list:
     return []
 
-  def shape_restrictions(self) -> list:
+  def shape_restrictions(self, criteria: dict = None) -> list:
+    if criteria is None:
+      criteria = CRITERIA_DICT
+
     if len(self.contour) == 0:
       return float('inf')
 
     area = cv.contourArea(self.contour)
-    if area < 250:
+    if area < criteria['radius']['area']:
       return float('inf')
 
-    if self._aspect_ratio < 1.2:
+    if self._aspect_ratio < criteria['radius']['aspect_ratio']:
       return float('inf')
     
     if len(self.contour) < 3:
@@ -162,7 +167,7 @@ class ExpectedContourRadius(ExpectedContour):
     min_rect_height = self.min_area_rect[1][1]
     hull = cv.convexHull(self.contour)
     solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
-    if solidity > 1.6:
+    if solidity > criteria['radius']['solidity']:
       return float('inf')
     
     try:
@@ -181,7 +186,7 @@ class ExpectedContourRadius(ExpectedContour):
 
           defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-          if defect_area / hull_area > 0.005:
+          if defect_area / hull_area > criteria['radius']['defect_area_ratio']:
             significant_convexity_defects += 1
 
       if significant_convexity_defects != 5:

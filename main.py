@@ -48,6 +48,7 @@ from src.main_develop_test_measurement_match_fourier import (
   visualize_shape_match_fourier
 )
 from src.main_experiment import main_experiment
+from src.main_develop_criteria_study import test_criteria_parameters
 
 @click.group()
 def cli() -> None:
@@ -83,6 +84,8 @@ def estimate() -> None:
 @cli.command()
 @click.option('--single', is_flag=True, default=False,
               help='Print experiment result for only one group.')
+@click.option('--nofilter', is_flag=True, default=False,
+              help='Skip image processing and use the input image directly.')
 @click.option('--group17_5',
               type=click.Path(
                 exists=True, file_okay=False, dir_okay=True, writable=True
@@ -103,14 +106,24 @@ def estimate() -> None:
                 exists=True, file_okay=False, dir_okay=True, writable=True
               ),
               help='Folder path with radiographies for control group.')
-def experiment(single: bool, group17_5: str, group18_5: str,
+def experiment(nofilter: bool, single: bool, group17_5: str, group18_5: str,
                group19_5: str, groupcontrol: str) -> None:
   '''Estimate age and show measurement fit for three different groups and
       a control group. If --single option was not used then four options
       group17_5, group18_5 and group19_5, groupcontrol with the folder
       paths are required. Otherwise just a single group is required (will
        fail if passed more than one)'''
-  main_experiment(single, group17_5, group18_5, group19_5, groupcontrol)
+  main_experiment(single, group17_5, group18_5, group19_5, groupcontrol, nofilter)
+
+@cli.command()
+@click.argument('filename')
+@click.argument('outputfilename')
+@click.option('--nofilter', is_flag=True, default=False,
+              help='Skip image processing and use the input image directly.')
+def criteria_study(nofilter: bool, filename: str, outputfilename: str):
+  '''Estimate age of a given radiography image file with different criteria
+  parameter variations.'''
+  test_criteria_parameters(filename, outputfilename, nofilter)
 
 @cli.group()
 def develop() -> None:

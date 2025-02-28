@@ -43,3 +43,95 @@ BONE_AGE_ATLAS = {
     'metacarpal_4_width': 0.316
   }
 }
+
+CRITERIA_DICT = {
+  'distal': {
+    'area': 10,
+    'aspect_ratio': 1.1,
+    'aspect_ratio_tolerance': 0.65,
+    'solidity': 1.46,
+    'defect_area_ratio': 0.08,
+  },
+  'medial': {
+    'area': 10,
+    'aspect_ratio': 1.2,
+    'aspect_ratio_tolerance': 0.3,
+    'solidity': 1.3,
+    'defect_area_ratio': 0.06,
+  },
+  'proximal': {
+    'area': 10,
+    'aspect_ratio': 1.5,
+    'aspect_ratio_tolerance': 0.5,
+    'solidity': 1.3,
+    'defect_area_ratio': 0.07,
+  },
+  'metacarpal': {
+    'area': 10,
+    'aspect_ratio': 2.5,
+    'aspect_ratio_tolerance': 0.6,
+    'solidity': 1.35,
+    'defect_area_ratio': 0.06,
+  },
+  'radius': {
+    'area': 250,
+    'aspect_ratio': 1.2,
+    'solidity': 1.6,
+    'defect_area_ratio': 0.005,
+  },
+  'ulna': {
+    'area': 250,
+    'aspect_ratio': 2,
+    'solidity': 1.6,
+    'defect_area_ratio': 0.005,
+  },
+  'sesamoid': {
+    'solidity': 1.3
+  }
+}
+
+CRITERIA_DICT_VARIATION_MAGNITUDES = {
+  'distal': {
+    'area': 10,
+    'aspect_ratio': 0.1,
+    'aspect_ratio_tolerance': 0.05,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.01,
+  },
+  'medial': {
+    'area': 10,
+    'aspect_ratio': 0.1,
+    'aspect_ratio_tolerance': 0.1,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.01,
+  },
+  'proximal': {
+    'area': 10,
+    'aspect_ratio': 0.1,
+    'aspect_ratio_tolerance': 0.1,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.01,
+  },
+  'metacarpal': {
+    'area': 10,
+    'aspect_ratio': 0.1,
+    'aspect_ratio_tolerance': 0.1,
+    'solidity': 0.05,
+    'defect_area_ratio': 0.01,
+  },
+  'radius': {
+    'area': 100,
+    'aspect_ratio': 0.1,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.001,
+  },
+  'ulna': {
+    'area': 100,
+    'aspect_ratio': 0.1,
+    'solidity': 0.1,
+    'defect_area_ratio': 0.001,
+  },
+  'sesamoid': {
+    'solidity': 0.1
+  }
+}

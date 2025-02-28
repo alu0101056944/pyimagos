@@ -97,8 +97,8 @@ class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
       ],
     ]
 
-  def shape_restrictions(self) -> list:
-    return super().shape_restrictions()
+  def shape_restrictions(self, criteria: dict = None) -> list:
+    return super().shape_restrictions(criteria)
 
   def branch_start_position_restrictions(self) -> list:
     return super().branch_start_position_restrictions()

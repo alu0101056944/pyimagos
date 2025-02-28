@@ -26,7 +26,8 @@ import numpy as np
 from src.main_execute import estimate_age_from_image
 from constants import BONE_AGE_ATLAS
 
-def get_fit_dictionary(images: list, selected_group: Union[str, None]) -> dict:
+def get_fit_dictionary(images: list, selected_group: Union[str, None],
+                       nofilter: bool = False) -> dict:
   fit = {}
   ages = {}
 
@@ -42,7 +43,7 @@ def get_fit_dictionary(images: list, selected_group: Union[str, None]) -> dict:
         measurements,
         image_stage_1,
         image_stage_2,
-      ) = estimate_age_from_image(image, nofilter=True) # TODO turn this off after testing the experiment
+      ) = estimate_age_from_image(image, nofilter=nofilter)
 
       if estimated_age != -1 and estimated_age != -2:
         for measurement_key in measurements:
@@ -76,7 +77,7 @@ def get_fit_dictionary(images: list, selected_group: Union[str, None]) -> dict:
         measurements,
         image_stage_1,
         image_stage_2,
-      ) = estimate_age_from_image(image, nofilter=True) # TODO turn this off after testing the experiment
+      ) = estimate_age_from_image(image, nofilter=nofilter) # TODO turn this off after testing the experiment
 
       if estimated_age != -1 and estimated_age != -2:
         smallest_difference = -1
@@ -130,13 +131,14 @@ def get_fit_dictionary(images: list, selected_group: Union[str, None]) -> dict:
 def experiment(
     images: Union[dict, list],
     selected_group: str = None,
-    control_dict: dict = None
+    control_dict: dict = None,
+    nofilter: bool = False,
 ):
   if isinstance(images, list):
     if selected_group == 'control':
-      fit, ages = get_fit_dictionary(images, None)
+      fit, ages = get_fit_dictionary(images, None, nofilter)
     else:
-      fit, ages = get_fit_dictionary(images, selected_group)
+      fit, ages = get_fit_dictionary(images, selected_group, nofilter)
 
     print('\n')
     print(f'Fit results for group {selected_group}:')
@@ -170,7 +172,8 @@ def experiment(
       elif images_key == 'group_control':
         selected_group = None
 
-      fit, ages = get_fit_dictionary(images[images_key], selected_group)
+      fit, ages = get_fit_dictionary(images[images_key], selected_group,
+                                     nofilter)
 
       print(f'Fit results for group {selected_group}:')
       for measurement_key in fit:
@@ -200,7 +203,8 @@ def main_experiment(
     group17_5: str,
     group18_5: str,
     group19_5: str,
-    groupcontrol: str
+    groupcontrol: str,
+    nofilter: bool = False,
 ):
   if single:
     amount_of_passed_options = (
@@ -295,7 +299,7 @@ def main_experiment(
                             f"entries. Expected {len(images)} but got" \
                               f" {len(control_dict)}")
 
-    experiment(images, selected_group, control_dict)
+    experiment(images, selected_group, control_dict, nofilter)
   else:
     if group17_5 is None:
       print(f'Error: missing group17_5 option.')
@@ -427,4 +431,4 @@ def main_experiment(
         
     print('\n')
 
-    experiment(images, None, control_dict)
+    experiment(images, None, control_dict, nofilter)
