@@ -26,13 +26,14 @@ import numpy as np
 from src.main_execute import estimate_age_from_image
 from constants import BONE_AGE_ATLAS
 
-def get_fit_dictionary(images: list, selected_group: Union[str, None],
+def get_fit_dictionary(images: list, selected_group: Union[float, None],
                        nofilter: bool = False) -> dict:
   fit = {}
   ages = {}
+  filename_to_measurements = {}
 
-  if isinstance(selected_group, str):
-    reference_measurements = BONE_AGE_ATLAS[selected_group]
+  if isinstance(selected_group, float):
+    reference_measurements = BONE_AGE_ATLAS[str(selected_group)]
 
     for i, image_info in enumerate(images):
       filename = image_info[0]
@@ -44,6 +45,9 @@ def get_fit_dictionary(images: list, selected_group: Union[str, None],
         image_stage_1,
         image_stage_2,
       ) = estimate_age_from_image(image, nofilter=nofilter)
+
+      if filename not in filename_to_measurements:
+        filename_to_measurements[filename] = {}
 
       if estimated_age != -1 and estimated_age != -2:
         for measurement_key in measurements:
@@ -59,8 +63,16 @@ def get_fit_dictionary(images: list, selected_group: Union[str, None],
               fit[measurement_key] = fit[measurement_key] + error
             else:
               fit[measurement_key] = error
+            
+            filename_to_measurements[filename][measurement_key] = (
+              measurement_value
+            )
           
-          ages[filename] = estimated_age
+          ages[filename] = {
+            'estimated': estimated_age,
+            'real': selected_group
+          }
+
       elif estimated_age == -1:
         raise ValueError(f'index={i} radiography\'s estimation failed.' \
                           ' Failed sesamoid search.')
@@ -77,7 +89,7 @@ def get_fit_dictionary(images: list, selected_group: Union[str, None],
         measurements,
         image_stage_1,
         image_stage_2,
-      ) = estimate_age_from_image(image, nofilter=nofilter) # TODO turn this off after testing the experiment
+      ) = estimate_age_from_image(image, nofilter=nofilter)
 
       if estimated_age != -1 and estimated_age != -2:
         smallest_difference = -1
@@ -115,7 +127,10 @@ def get_fit_dictionary(images: list, selected_group: Union[str, None],
             else:
               fit[measurement_key] = error
           
-          ages[filename] = estimated_age
+          ages[filename] = {
+            'estimated': estimated_age,
+            'real': selected_group
+          }
       elif estimated_age == -1:
         raise ValueError(f'index={i} radiography\'s estimation failed.' \
                           ' Failed sesamoid search.')
@@ -126,7 +141,7 @@ def get_fit_dictionary(images: list, selected_group: Union[str, None],
   for measurement_key in fit:
     fit[measurement_key] = fit[measurement_key] / len(images)
 
-  return fit, ages
+  return fit, ages, filename_to_measurements
 
 def experiment(
     images: Union[dict, list],
@@ -136,9 +151,17 @@ def experiment(
 ):
   if isinstance(images, list):
     if selected_group == 'control':
-      fit, ages = get_fit_dictionary(images, None, nofilter)
+      (
+        fit,
+        ages,
+        filename_to_measurements,
+      ) = get_fit_dictionary(images, None, nofilter)
     else:
-      fit, ages = get_fit_dictionary(images, selected_group, nofilter)
+      (
+        fit,
+        ages,
+        filename_to_measurements,
+      ) = get_fit_dictionary(images, float(selected_group), nofilter)
 
     print('\n')
     print(f'Fit results for group {selected_group}:')
@@ -150,25 +173,34 @@ def experiment(
       print(f'Ages for control group:')
       for filename in control_dict:
         expected_age = control_dict[filename]
-        estimated_age = ages[filename]
+        estimated_age = ages[filename]['estimated']
         print(f'{filename} expected age={expected_age}, ' \
               f'estimated age={estimated_age}')
       print('\n')
     else:
       print(f'Ages for group {selected_group}:')
       for filename in ages:
-        estimated_age = ages[filename]
-        print(f'{filename} expected age={selected_group}, ' \
+        estimated_age = ages[filename]['estimated']
+        print(f'{filename} | expected age={selected_group} | ' \
               f'estimated age={estimated_age}')
+
       print('\n')
+
+      print(f'Measurements for group {selected_group}')
+      for filename in filename_to_measurements:
+        measurements = filename_to_measurements[filename]
+        print(f'{filename} | {measurements}')
+
+      print('\n')
+
   elif isinstance(images, dict):
     for images_key in images:
       if images_key == 'group_17_5':
-        selected_group = '17.5'
+        selected_group = 17.5
       elif images_key == 'group_18_5':
-        selected_group = '18.5'
+        selected_group = 18.5
       elif images_key == 'group_19_5':
-        selected_group = '19.5'
+        selected_group = 19.5
       elif images_key == 'group_control':
         selected_group = None
 
@@ -184,14 +216,14 @@ def experiment(
         print(f'Ages for control group:')
         for filename in control_dict:
           expected_age = control_dict[filename]
-          estimated_age = ages[filename]
+          estimated_age = ages[filename]['estimated']
           print(f'{filename} expected age={expected_age}, ' \
                 f'estimated age={estimated_age}')
         print('\n')
       else:
         print(f'Ages for group {selected_group}:')
         for filename in ages:
-          estimated_age = ages[filename]
+          estimated_age = ages[filename]['estimated']
           print(f'{filename} expected age={selected_group}, ' \
                 f'estimated age={estimated_age}')
         print('\n')
