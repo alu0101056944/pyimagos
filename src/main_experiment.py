@@ -204,7 +204,7 @@ def experiment(
       elif images_key == 'group_control':
         selected_group = None
 
-      fit, ages = get_fit_dictionary(images[images_key], selected_group,
+      fit, ages, _ = get_fit_dictionary(images[images_key], selected_group,
                                      nofilter)
 
       print(f'Fit results for group {selected_group}:')
