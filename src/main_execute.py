@@ -551,24 +551,26 @@ def estimate_age_from_image(
     input_image: Union[np.array, Image.Image],
     nofilter: bool = False,
     criteria_dict: dict = None,
-    full_silent: bool = False
+    full_silent: bool = False,
+    use_cpu: bool = True,
+    noresize: bool = False,
 ) -> Tuple[float, list]:
   '''Given an image of a radiography, output the estimated age'''
-  HIGHER_THRESOLD = 40
-  LOWER_THRESOLD = 30
+  HIGHER_THRESHOLD = 40
+  LOWER_THRESHOLD = 30
   if not nofilter:
     input_image = transforms.ToTensor()(input_image)
-    he_enchanced = ContrastEnhancement().process(input_image)
+    he_enchanced = ContrastEnhancement(use_cpu, noresize).process(input_image)
     he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
                                 cv.CV_8U)
 
     gaussian_blurred = cv.GaussianBlur(he_enchanced, (3, 3), 0)
 
-    borders_detected = cv.Canny(gaussian_blurred, HIGHER_THRESOLD, 135)
+    borders_detected = cv.Canny(gaussian_blurred, HIGHER_THRESHOLD, 135)
     borders_detected = cv.normalize(borders_detected, None, 0, 255,
                                     cv.NORM_MINMAX, cv.CV_8U)
     
-    borders_detected_2 = cv.Canny(gaussian_blurred, LOWER_THRESOLD, 135)
+    borders_detected_2 = cv.Canny(gaussian_blurred, LOWER_THRESHOLD, 135)
     borders_detected_2 = cv.normalize(borders_detected_2, None, 0, 255,
                                     cv.NORM_MINMAX, cv.CV_8U)
   else:
@@ -577,7 +579,7 @@ def estimate_age_from_image(
 
     borders_detected = np.array(input_image)
     borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
-    _, thresh = cv.threshold(borders_detected, HIGHER_THRESOLD, 255,
+    _, thresh = cv.threshold(borders_detected, HIGHER_THRESHOLD, 255,
                              cv.THRESH_BINARY)
     borders_detected = thresh
     borders_detected_2 = thresh
@@ -735,7 +737,9 @@ def process_radiograph(
     write_images: bool = False,
     show_images: bool = False,
     nofilter: bool = False,
-    all: bool = False
+    all: bool = False,
+    use_cpu: bool = True,
+    noresize: bool = False,
 ) -> None:
   input_image = None
   try:
@@ -750,8 +754,7 @@ def process_radiograph(
     measurements,
     image_search_stage_1,
     image_search_stage_2,
-  ) = estimate_age_from_image(input_image, nofilter)
-
+  ) = estimate_age_from_image(input_image, nofilter, use_cpu, noresize)
 
   if not all:
     if estimated_age == -1:

@@ -86,7 +86,8 @@ def flatten_with_x(params, x_dict, parent_key='', sep='.'):
   return items
 
 def test_criteria_parameters(filename: str, outputfilename: str,
-                             nofilter: bool = False):
+                             nofilter: bool = False, use_cpu: bool = True,
+                             noresize: bool = False):
   input_image = None
   try:
     with Image.open(filename) as image:
@@ -109,7 +110,8 @@ def test_criteria_parameters(filename: str, outputfilename: str,
       measurements,
       image_stage_1,
       image_stage_2,
-    ) = estimate_age_from_image(image, nofilter=nofilter, full_silent=True)
+    ) = estimate_age_from_image(image, nofilter=nofilter, full_silent=True,
+                                use_cpu=use_cpu, noresize=noresize)
     string = f'{estimated_age}, {variation_dict}'
     output_string += string + "\n"
 

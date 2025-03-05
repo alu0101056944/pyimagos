@@ -59,6 +59,7 @@ def borderFilterAlternativesAnalysis(filename: str,
   input_image = transforms.ToTensor()(input_image)
 
   output_image = ContrastEnhancement().process(input_image)
+  output_image = output_image[:, :, 0]
   output_image = cv.normalize(output_image, None, 0, 255, cv.NORM_MINMAX, cv.CV_8U)
 
   kernel_sizes = [3, 5, 7, 9]

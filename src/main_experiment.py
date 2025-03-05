@@ -27,7 +27,8 @@ from src.main_execute import estimate_age_from_image
 from constants import BONE_AGE_ATLAS
 
 def get_fit_dictionary(images: list, selected_group: Union[float, None],
-                       nofilter: bool = False) -> dict:
+                       nofilter: bool = False, use_cpu: bool = True,
+                       noresize: bool = False) -> dict:
   fit = {}
   ages = {}
   filename_to_measurements = {}
@@ -44,7 +45,8 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
         measurements,
         image_stage_1,
         image_stage_2,
-      ) = estimate_age_from_image(image, nofilter=nofilter)
+      ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                  noresize=noresize)
 
       if filename not in filename_to_measurements:
         filename_to_measurements[filename] = {}
@@ -89,7 +91,8 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
         measurements,
         image_stage_1,
         image_stage_2,
-      ) = estimate_age_from_image(image, nofilter=nofilter)
+      ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                  noresize=noresize)
 
       if estimated_age != -1 and estimated_age != -2:
         smallest_difference = -1
@@ -148,6 +151,8 @@ def experiment(
     selected_group: str = None,
     control_dict: dict = None,
     nofilter: bool = False,
+    use_cpu: bool = True,
+    noresize: bool = False,
 ):
   if isinstance(images, list):
     if selected_group == 'control':
@@ -155,13 +160,14 @@ def experiment(
         fit,
         ages,
         filename_to_measurements,
-      ) = get_fit_dictionary(images, None, nofilter)
+      ) = get_fit_dictionary(images, None, nofilter, use_cpu, noresize)
     else:
       (
         fit,
         ages,
         filename_to_measurements,
-      ) = get_fit_dictionary(images, float(selected_group), nofilter)
+      ) = get_fit_dictionary(images, float(selected_group), nofilter, use_cpu,
+                             noresize)
 
     print('\n')
     print(f'Fit results for group {selected_group}:')
@@ -205,7 +211,7 @@ def experiment(
         selected_group = None
 
       fit, ages, _ = get_fit_dictionary(images[images_key], selected_group,
-                                     nofilter)
+                                     nofilter, use_cpu, noresize)
 
       print(f'Fit results for group {selected_group}:')
       for measurement_key in fit:
@@ -237,6 +243,8 @@ def main_experiment(
     group19_5: str,
     groupcontrol: str,
     nofilter: bool = False,
+    use_cpu: bool = True,
+    noresize: bool = False,
 ):
   if single:
     amount_of_passed_options = (
@@ -331,7 +339,8 @@ def main_experiment(
                             f"entries. Expected {len(images)} but got" \
                               f" {len(control_dict)}")
 
-    experiment(images, selected_group, control_dict, nofilter)
+    experiment(images, selected_group, control_dict, nofilter, use_cpu,
+               noresize)
   else:
     if group17_5 is None:
       print(f'Error: missing group17_5 option.')
@@ -463,4 +472,4 @@ def main_experiment(
         
     print('\n')
 
-    experiment(images, None, control_dict, nofilter)
+    experiment(images, None, control_dict, nofilter, use_cpu, noresize)

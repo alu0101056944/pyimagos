@@ -3,6 +3,7 @@ foo/
 bar/
 baz/
 control/
+canny_output.jpg
 
 model/*
 !model/README.md

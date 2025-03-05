@@ -205,7 +205,7 @@ class ImageFilterApp:
         self.update_image_display()
 
     def load_image_from_path(self):
-        self.original_image = cv.imread(self.filename, cv.IMREAD_GRAYSCALE)
+        self.original_image = cv.imread(self.filename)
         if self.original_image is None:
             tk.messagebox.showerror("Error", "Failed to load image.")
             self.original_image = None
@@ -255,7 +255,10 @@ class ImageFilterApp:
         amount_of_applied_filters = max(len(self.pipeline.get_steps_names()) - 1, 0)
         index_spinbox = tk.Spinbox(add_dialog, from_=0, to=len(self.pipeline.steps),
                                    width=5,
-                                   textvariable=tk.StringVar(value=amount_of_applied_filters))
+                                   textvariable=tk.StringVar(
+                                        value=amount_of_applied_filters + 1
+                                      )
+                                   )
         index_spinbox.pack()
 
 

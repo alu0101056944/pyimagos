@@ -19,6 +19,8 @@ import cv2 as cv
 from PIL import Image
 import click
 import numpy as np
+import torchvision.transforms as transforms
+import matplotlib.pyplot as plt
 
 from src.main_execute import process_radiograph
 from src.main_estimate_ideal import estimate_age_from_ideal_contour
@@ -49,6 +51,8 @@ from src.main_develop_test_measurement_match_fourier import (
 )
 from src.main_experiment import main_experiment
 from src.main_develop_criteria_study import test_criteria_parameters
+from src.image_filters.contrast_enhancement import ContrastEnhancement
+from src.main_study_cpu_scale_factor import execute_resize_study
 
 @click.group()
 def cli() -> None:
@@ -65,15 +69,24 @@ def cli() -> None:
 @click.option('--all', is_flag=True, default=False,
               help='Print the exact estimated age and the measurement ' \
                 'dictionary.')
+@click.option('--gpu', is_flag=True, default=False,
+              help='Use gpu for the contrast enchancement step, which uses a' \
+                'vision transformer')
+@click.option('--noresize', is_flag=True, default=False,
+              help='Do not resize the image before applying contrast ' \
+                'enhancement.')
 def execute(filename: str, write_files: bool, show: bool,
-            nofilter: bool, all: bool) -> None:
+            nofilter: bool, all: bool, gpu: bool, noresize: bool) -> None:
   '''Left hand radiography segmentation.'''
+  
   process_radiograph(
     filename,
     write_images=write_files,
     show_images=show,
     nofilter=nofilter,
-    all=all
+    all=all,
+    use_cpu=not gpu,
+    noresize=noresize,
   )
 
 @cli.command()
@@ -106,29 +119,47 @@ def estimate() -> None:
                 exists=True, file_okay=False, dir_okay=True, writable=True
               ),
               help='Folder path with radiographies for control group.')
+@click.option('--gpu', is_flag=True, default=False,
+              help='Use gpu for the contrast enchancement step, which uses a' \
+                'vision transformer')
+@click.option('--noresize', is_flag=True, default=False,
+              help='Do not resize the image before applying contrast ' \
+                'enhancement.')
 def experiment(nofilter: bool, single: bool, group17_5: str, group18_5: str,
-               group19_5: str, groupcontrol: str) -> None:
+               group19_5: str, groupcontrol: str, gpu: bool,
+               noresize: bool) -> None:
   '''Estimate age and show measurement fit for three different groups and
       a control group. If --single option was not used then four options
       group17_5, group18_5 and group19_5, groupcontrol with the folder
       paths are required. Otherwise just a single group is required (will
        fail if passed more than one)'''
-  main_experiment(single, group17_5, group18_5, group19_5, groupcontrol, nofilter)
+  main_experiment(single, group17_5, group18_5, group19_5, groupcontrol,
+                  nofilter, use_cpu=not gpu, noresize=noresize)
 
 @cli.command()
 @click.argument('filename')
 @click.argument('outputfilename')
 @click.option('--nofilter', is_flag=True, default=False,
               help='Skip image processing and use the input image directly.')
-def criteria_study(nofilter: bool, filename: str, outputfilename: str):
+@click.option('--gpu', is_flag=True, default=False,
+              help='Use gpu for the contrast enchancement step, which uses a' \
+                'vision transformer')
+@click.option('--noresize', is_flag=True, default=False,
+              help='Do not resize the image before applying contrast ' \
+                'enhancement.')
+def criteria_study(nofilter: bool, filename: str, outputfilename: str,
+                   gpu: bool, noresize: bool):
   '''Estimate age of a given radiography image file with different criteria
   parameter variations.'''
-  test_criteria_parameters(filename, outputfilename, nofilter)
+  test_criteria_parameters(filename, outputfilename, nofilter, use_cpu=not gpu,
+                           noresize=noresize)
 
 @cli.group()
 def develop() -> None:
    '''Developer-focused commands'''
    pass
+
+# TODO add gpu flag to remaining commands, like attmap, filters_gui
 
 @develop.command()
 @click.argument('filename')
@@ -136,10 +167,21 @@ def develop() -> None:
               help='Enable writing processed images to disk.')
 @click.option('--noshow', is_flag=True, default=False,
               help='Skip image showing through new windows.')
-def attmap(filename: str, write_files: bool, noshow: bool) -> None:
+@click.option('--noresize', is_flag=True, default=False,
+help='Do not resize the image before applying contrast ' \
+  'enhancement.')
+def attmap(filename: str, write_files: bool, noshow: bool,
+            noresize: bool) -> None:
   '''Show the attention map of the given image.'''
-  input_image = Image.open(filename)
-  attention_map = AttentionMap().process(input_image)
+  input_image = None
+  try:
+    with Image.open(filename) as image:
+      input_image = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+  input_image = transforms.ToTensor()(input_image)
+  attention_map = AttentionMap(noresize=noresize).process(input_image)
   if write_files:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}_attention_map.jpg',
                attention_map)
@@ -366,6 +408,58 @@ def fourier(filename: str):
     
   print('Fourier descriptors (No DC component (traslacion info)):')
   print(descriptors)
+
+@develop.command()
+@click.argument("filename")
+@click.option('--lower_thresh',
+              help='Lower threshold for the canny binarization')
+@click.option('--higher_thresh',
+              help='Higher threshold for the canny binarization')
+@click.option('--gpu', is_flag=True, default=False,
+              help='Use gpu for the contrast enchancement step, which uses a' \
+                'vision transformer')
+@click.option('--noresize', is_flag=True, default=False,
+              help='Do not resize the image before applying contrast ' \
+                'enhancement.')
+def canny(filename: str, lower_thresh: str, higher_thresh: str, gpu: bool,
+          noresize: bool):
+  '''Process the radiography image file to border detect it.'''
+
+  if lower_thresh is None or higher_thresh is None:
+    raise ValueError('Missing either lower_threshold or higher_threshold option')
+
+  input_image = None
+  try:
+    with Image.open(filename) as image:
+      input_image = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
+  # input_image = transforms.ToTensor()(input_image)
+  # he_enchanced = ContrastEnhancement(
+  #   use_cpu=not gpu,
+  #   noresize=noresize
+  # ).process(input_image)
+  # he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
+  #                             cv.CV_8U)
+
+  # gaussian_blurred = cv.GaussianBlur(input_image, (3, 3), 0)
+
+  borders_detected = cv.Canny(input_image, float(lower_thresh),
+                              float(higher_thresh))
+  
+  borders_detected = cv.normalize(borders_detected, None, 0, 255,
+                                    cv.NORM_MINMAX, cv.CV_8U)
+
+  cv.imwrite('canny_output.jpg', borders_detected)
+  print('Sucesfully written image canny_output.jpg')
+
+@develop.command()
+def study_resize():
+  '''Show contrast enhancement execution times for image sizes 360p,
+  480p and 720p.'''
+  execute_resize_study()
 
 if __name__ == '__main__':
     cli()

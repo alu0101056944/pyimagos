@@ -135,3 +135,8 @@ CRITERIA_DICT_VARIATION_MAGNITUDES = {
     'solidity': 0.1
   }
 }
+
+CPU_CONTRAST_RESIZE_TARGET = {
+  'width': 640,
+  'height': 480,
+}

@@ -25,9 +25,9 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "execute",
-        "docs\\composition_all_fingers_with_sesamoid.jpg",
-        "--nofilter",
+        "develop",
+        "attmap",
+        "bar\\004.jpg",
       ]
     },
   ]
