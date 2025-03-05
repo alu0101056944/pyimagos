@@ -53,6 +53,7 @@ from src.main_experiment import main_experiment
 from src.main_develop_criteria_study import test_criteria_parameters
 from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.main_study_cpu_scale_factor import execute_resize_study
+from src.main_canny_study import make_composition
 
 @click.group()
 def cli() -> None:
@@ -460,6 +461,13 @@ def study_resize():
   '''Show contrast enhancement execution times for image sizes 360p,
   480p and 720p.'''
   execute_resize_study()
+
+@develop.command()
+@click.argument('filename')
+def study_canny(filename: str):
+  '''Write images to be able to be able to study the best combination of
+  filters such that all the fingers are fully present.'''
+  make_composition(filename)
 
 if __name__ == '__main__':
     cli()
