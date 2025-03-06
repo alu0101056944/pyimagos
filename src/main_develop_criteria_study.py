@@ -36,16 +36,8 @@ def generate_nested_variations(original_params, x_dict):
   for j, signs in enumerate(sign_combinations):
     variation = copy.deepcopy(original_params)
 
-    # TODO: remove this limit after testing
-    if j > 10:
-      break
-
     for i, (path, original_val, x_val) in enumerate(flattened):
       print(f'Variation generated ({j}, {i})')
-
-      # TODO: remove this limit after testing
-      if i > 50:
-        break
 
       sign = signs[i]
       keys = path.split('.')

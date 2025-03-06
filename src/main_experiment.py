@@ -53,7 +53,11 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
         image_stage_2 = None
         try:
           with Image.open(image_stage_2_str) as image2:
-            image_stage_2 = np.array(image2)
+            if image2.mode == 'L':
+              image2 = image2.convert('RGB')
+              image_stage_2 = np.array(image2)
+            elif image2.mode == 'RGB':
+              image_stage_2 = np.array(image2)
         except Exception as e:
           print(f"Error opening image {image_stage_2}: {e}")
           raise
@@ -118,7 +122,11 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
         image_stage_2 = None
         try:
           with Image.open(image_stage_2_str) as image2:
-            image_stage_2 = np.array(image2)
+            if image2.mode == 'L':
+              image2 = image2.convert('RGB')
+              image_stage_2 = np.array(image2)
+            elif image2.mode == 'RGB':
+              image_stage_2 = np.array(image2)
         except Exception as e:
           print(f"Error opening image {image_stage_2}: {e}")
           raise
@@ -331,13 +339,18 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            numpy_image = np.array(image)
+            if image.mode == 'L':
+              image = image.convert('RGB')
+              numpy_image = np.array(image)
+            elif image.mode == 'RGB':
+              numpy_image = np.array(image)
             if useinput2:
               images.append(
                 [
                   image_path.name,
                   numpy_image,
-                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                  f'{image_path.absolute().parent / image_path.stem}' \
+                    f'_stage_2{image_path.suffix}'
                 ]
               )
             else:
@@ -372,7 +385,7 @@ def main_experiment(
                   raise ValueError(f"Error: Filename key {filename} in the JSON " \
                                    "is not an actual file")
                 
-                control_dict = image_age_dict
+              control_dict = image_age_dict
           except FileNotFoundError:
             print(f"Error: JSON file not found at path: {groupcontrol}")
             return None
@@ -440,13 +453,18 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            numpy_image = np.array(image)
+            if image.mode == 'L':
+              image = image.convert('RGB')
+              numpy_image = np.array(image)
+            elif image.mode == 'RGB':
+              numpy_image = np.array(image)
             if useinput2:
               images['group_17_5'].append(
                 [
                   image_path.name,
                   numpy_image,
-                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                  f'{image_path.absolute().parent / image_path.stem}' \
+                    f'_stage_2{image_path.suffix}'
                 ]
               )
             else:
@@ -459,13 +477,18 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            numpy_image = np.array(image)
+            if image.mode == 'L':
+              image = image.convert('RGB')
+              numpy_image = np.array(image)
+            elif image.mode == 'RGB':
+              numpy_image = np.array(image)
             if useinput2:
               images['group_18_5'].append(
                 [
                   image_path.name,
                   numpy_image,
-                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                  f'{image_path.absolute().parent / image_path.stem}' \
+                    f'_stage_2{image_path.suffix}'
                 ]
               )
             else:
@@ -478,13 +501,18 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            numpy_image = np.array(image)
+            if image.mode == 'L':
+              image = image.convert('RGB')
+              numpy_image = np.array(image)
+            elif image.mode == 'RGB':
+              numpy_image = np.array(image)
             if useinput2:
               images['group_19_5'].append(
                 [
                   image_path.name,
                   numpy_image,
-                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                  f'{image_path.absolute().parent / image_path.stem}' \
+                    f'_stage_2{image_path.suffix}'
                 ]
               )
             else:
@@ -497,13 +525,18 @@ def main_experiment(
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
-            numpy_image = np.array(image)
+            if image.mode == 'L':
+              image = image.convert('RGB')
+              numpy_image = np.array(image)
+            elif image.mode == 'RGB':
+              numpy_image = np.array(image)
             if useinput2:
               images['group_control'].append(
                 [
                   image_path.name,
                   numpy_image,
-                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                  f'{image_path.absolute().parent / image_path.stem}' \
+                    f'_stage_2{image_path.suffix}'
                 ]
               )
             else:
@@ -540,7 +573,7 @@ def main_experiment(
                       raise ValueError(f"Error: Filename key {filename} in the JSON " \
                                       "is not an actual file")
               
-              control_dict = image_age_dict
+            control_dict = image_age_dict
         except FileNotFoundError:
           print(f"Error: JSON file not found at path: {groupcontrol}")
           raise
