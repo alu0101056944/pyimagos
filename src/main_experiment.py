@@ -28,7 +28,7 @@ from constants import BONE_AGE_ATLAS
 
 def get_fit_dictionary(images: list, selected_group: Union[float, None],
                        nofilter: bool = False, use_cpu: bool = True,
-                       noresize: bool = False) -> dict:
+                       noresize: bool = False, useinput2: bool = False) -> dict:
   fit = {}
   ages = {}
   filename_to_measurements = {}
@@ -40,13 +40,32 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
       filename = image_info[0]
       image = image_info[1]
 
-      (
-        estimated_age,
-        measurements,
-        image_stage_1,
-        image_stage_2,
-      ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
-                                  noresize=noresize)
+      if not useinput2:
+        (
+          estimated_age,
+          measurements,
+          image_stage_1,
+          image_stage_2,
+        ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                    noresize=noresize)
+      else:
+        image_stage_2_str = image_info[2]
+        image_stage_2 = None
+        try:
+          with Image.open(image_stage_2_str) as image2:
+            image_stage_2 = np.array(image2)
+        except Exception as e:
+          print(f"Error opening image {image_stage_2}: {e}")
+          raise
+
+        (
+          estimated_age,
+          measurements,
+          image_stage_1,
+          image_stage_2,
+        ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                    noresize=noresize,
+                                    input_image_2=image_stage_2)
 
       if filename not in filename_to_measurements:
         filename_to_measurements[filename] = {}
@@ -86,13 +105,32 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
       filename = image_info[0]
       image = image_info[1]
 
-      (
-        estimated_age,
-        measurements,
-        image_stage_1,
-        image_stage_2,
-      ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
-                                  noresize=noresize)
+      if not useinput2:
+        (
+          estimated_age,
+          measurements,
+          image_stage_1,
+          image_stage_2,
+        ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                    noresize=noresize)
+      else:
+        image_stage_2_str = image_info[2]
+        image_stage_2 = None
+        try:
+          with Image.open(image_stage_2_str) as image2:
+            image_stage_2 = np.array(image2)
+        except Exception as e:
+          print(f"Error opening image {image_stage_2}: {e}")
+          raise
+
+        (
+          estimated_age,
+          measurements,
+          image_stage_1,
+          image_stage_2,
+        ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                    noresize=noresize,
+                                    input_image_2=image_stage_2)
 
       if estimated_age != -1 and estimated_age != -2:
         smallest_difference = -1
@@ -153,6 +191,7 @@ def experiment(
     nofilter: bool = False,
     use_cpu: bool = True,
     noresize: bool = False,
+    useinput2: bool = False,
 ):
   if isinstance(images, list):
     if selected_group == 'control':
@@ -160,14 +199,14 @@ def experiment(
         fit,
         ages,
         filename_to_measurements,
-      ) = get_fit_dictionary(images, None, nofilter, use_cpu, noresize)
+      ) = get_fit_dictionary(images, None, nofilter, use_cpu, noresize, useinput2)
     else:
       (
         fit,
         ages,
         filename_to_measurements,
       ) = get_fit_dictionary(images, float(selected_group), nofilter, use_cpu,
-                             noresize)
+                             noresize, useinput2)
 
     print('\n')
     print(f'Fit results for group {selected_group}:')
@@ -211,7 +250,7 @@ def experiment(
         selected_group = None
 
       fit, ages, _ = get_fit_dictionary(images[images_key], selected_group,
-                                     nofilter, use_cpu, noresize)
+                                     nofilter, use_cpu, noresize, useinput2)
 
       print(f'Fit results for group {selected_group}:')
       for measurement_key in fit:
@@ -245,6 +284,7 @@ def main_experiment(
     nofilter: bool = False,
     use_cpu: bool = True,
     noresize: bool = False,
+    useinput2: bool = False
 ):
   if single:
     amount_of_passed_options = (
@@ -292,7 +332,17 @@ def main_experiment(
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
             numpy_image = np.array(image)
-            images.append([image_path.name, numpy_image])
+            if useinput2:
+              images.append(
+                [
+                  image_path.name,
+                  numpy_image,
+                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                ]
+              )
+            else:
+              images.append([image_path.name, numpy_image])
+
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
@@ -338,9 +388,10 @@ def main_experiment(
             raise ValueError(f"Error: control group's json file is missing " \
                             f"entries. Expected {len(images)} but got" \
                               f" {len(control_dict)}")
+          
 
     experiment(images, selected_group, control_dict, nofilter, use_cpu,
-               noresize)
+               noresize, useinput2)
   else:
     if group17_5 is None:
       print(f'Error: missing group17_5 option.')
@@ -390,7 +441,16 @@ def main_experiment(
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
             numpy_image = np.array(image)
-            images['group_17_5'].append([image_path.name, numpy_image])
+            if useinput2:
+              images['group_17_5'].append(
+                [
+                  image_path.name,
+                  numpy_image,
+                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                ]
+              )
+            else:
+              images['group_17_5'].append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
@@ -400,7 +460,16 @@ def main_experiment(
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
             numpy_image = np.array(image)
-            images['group_18_5'].append([image_path.name, numpy_image])
+            if useinput2:
+              images['group_18_5'].append(
+                [
+                  image_path.name,
+                  numpy_image,
+                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                ]
+              )
+            else:
+              images['group_18_5'].append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
@@ -410,7 +479,16 @@ def main_experiment(
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
             numpy_image = np.array(image)
-            images['group_19_5'].append([image_path.name, numpy_image])
+            if useinput2:
+              images['group_19_5'].append(
+                [
+                  image_path.name,
+                  numpy_image,
+                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                ]
+              )
+            else:
+              images['group_19_5'].append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
@@ -420,7 +498,16 @@ def main_experiment(
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
             numpy_image = np.array(image)
-            images['group_control'].append([image_path.name, numpy_image])
+            if useinput2:
+              images['group_control'].append(
+                [
+                  image_path.name,
+                  numpy_image,
+                  f'{image_path.stem}_stage_2{image_path.suffix}'
+                ]
+              )
+            else:
+              images['group_control'].append([image_path.name, numpy_image])
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
@@ -472,4 +559,5 @@ def main_experiment(
         
     print('\n')
 
-    experiment(images, None, control_dict, nofilter, use_cpu, noresize)
+    experiment(images, None, control_dict, nofilter, use_cpu, noresize,
+               useinput2)

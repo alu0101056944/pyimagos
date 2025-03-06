@@ -554,6 +554,7 @@ def estimate_age_from_image(
     full_silent: bool = False,
     use_cpu: bool = True,
     noresize: bool = False,
+    input_image_2: Union[np.ndarray, Image.Image] = None,
 ) -> Tuple[float, list]:
   '''Given an image of a radiography, output the estimated age'''
   HIGHER_THRESHOLD = 40
@@ -582,7 +583,15 @@ def estimate_age_from_image(
     _, thresh = cv.threshold(borders_detected, HIGHER_THRESHOLD, 255,
                              cv.THRESH_BINARY)
     borders_detected = thresh
-    borders_detected_2 = thresh
+
+    if input_image_2 is None:
+      borders_detected_2 = thresh
+    else:
+      borders_detected_2 = np.array(input_image_2)
+      borders_detected_2 = cv.cvtColor(borders_detected_2, cv.COLOR_RGB2GRAY)
+      _, thresh = cv.threshold(borders_detected_2, LOWER_THRESHOLD, 255,
+                              cv.THRESH_BINARY)
+
 
   # Segmentation
   contours_2, _ = cv.findContours(borders_detected_2, cv.RETR_EXTERNAL,
@@ -740,6 +749,7 @@ def process_radiograph(
     all: bool = False,
     use_cpu: bool = True,
     noresize: bool = False,
+    input_image_2: str = None
 ) -> None:
   input_image = None
   try:
@@ -749,12 +759,26 @@ def process_radiograph(
     print(f"Error opening image {filename}: {e}")
     raise
 
+  if input_image_2 is not None:
+    try:
+      with Image.open(input_image_2) as image2:
+        input_image_2 = np.array(image2)
+    except Exception as e:
+      print(f"Error opening image {input_image_2}: {e}")
+      raise
+
   (
     estimated_age,
     measurements,
     image_search_stage_1,
     image_search_stage_2,
-  ) = estimate_age_from_image(input_image, nofilter, use_cpu, noresize)
+  ) = estimate_age_from_image(
+    input_image,
+    nofilter=nofilter,
+    use_cpu=use_cpu,
+    noresize=noresize,
+    input_image_2=input_image_2
+  )
 
   if not all:
     if estimated_age == -1:

@@ -76,8 +76,15 @@ def cli() -> None:
 @click.option('--noresize', is_flag=True, default=False,
               help='Do not resize the image before applying contrast ' \
                 'enhancement.')
+@click.option('--input2',
+              type=click.Path(
+                exists=True, file_okay=True, dir_okay=False, writable=True
+              ),
+              help='Input image to use on second stage when nofilter is set.' \
+                'Fallsback to using input image 1.')
 def execute(filename: str, write_files: bool, show: bool,
-            nofilter: bool, all: bool, gpu: bool, noresize: bool) -> None:
+            nofilter: bool, all: bool, gpu: bool, noresize: bool,
+            input2: str) -> None:
   '''Left hand radiography segmentation.'''
   
   process_radiograph(
@@ -88,6 +95,7 @@ def execute(filename: str, write_files: bool, show: bool,
     all=all,
     use_cpu=not gpu,
     noresize=noresize,
+    input_image_2=input2
   )
 
 @cli.command()
@@ -126,16 +134,20 @@ def estimate() -> None:
 @click.option('--noresize', is_flag=True, default=False,
               help='Do not resize the image before applying contrast ' \
                 'enhancement.')
+@click.option('--useinput2', is_flag=True, default=False,
+              help='To search for a x_stage_2.jpg image per image to use for' \
+                ' the second stage search')
 def experiment(nofilter: bool, single: bool, group17_5: str, group18_5: str,
                group19_5: str, groupcontrol: str, gpu: bool,
-               noresize: bool) -> None:
+               noresize: bool, useinput2: bool) -> None:
   '''Estimate age and show measurement fit for three different groups and
       a control group. If --single option was not used then four options
       group17_5, group18_5 and group19_5, groupcontrol with the folder
       paths are required. Otherwise just a single group is required (will
        fail if passed more than one)'''
   main_experiment(single, group17_5, group18_5, group19_5, groupcontrol,
-                  nofilter, use_cpu=not gpu, noresize=noresize)
+                  nofilter, use_cpu=not gpu, noresize=noresize,
+                  useinput2=useinput2)
 
 @cli.command()
 @click.argument('filename')
@@ -437,17 +449,25 @@ def canny(filename: str, lower_thresh: str, higher_thresh: str, gpu: bool,
     print(f"Error opening image {filename}: {e}")
     raise
 
-  # input_image = transforms.ToTensor()(input_image)
-  # he_enchanced = ContrastEnhancement(
-  #   use_cpu=not gpu,
-  #   noresize=noresize
-  # ).process(input_image)
-  # he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
-  #                             cv.CV_8U)
+  input_image = transforms.ToTensor()(input_image)
+  he_enchanced = ContrastEnhancement(
+    use_cpu=not gpu,
+    noresize=noresize
+  ).process(input_image)
+  he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
+                              cv.CV_8U)
 
-  # gaussian_blurred = cv.GaussianBlur(input_image, (3, 3), 0)
+  # gaussian_blurred = cv.GaussianBlur(he_enchanced, (3, 3), 0)
 
-  borders_detected = cv.Canny(input_image, float(lower_thresh),
+  scaled_image = cv.resize(
+    he_enchanced,
+    (0, 0),
+    fx=0.3,
+    fy=0.3,
+    interpolation=cv.INTER_AREA
+  )
+
+  borders_detected = cv.Canny(scaled_image, float(lower_thresh),
                               float(higher_thresh))
   
   borders_detected = cv.normalize(borders_detected, None, 0, 255,
@@ -468,6 +488,43 @@ def study_canny(filename: str):
   '''Write images to be able to be able to study the best combination of
   filters such that all the fingers are fully present.'''
   make_composition(filename)
+
+@develop.command()
+@click.argument('filename')
+def validate_contours(filename: str):
+  '''Count contour amount'''
+  image = None
+  try:
+    with Image.open(filename) as imagefile:
+      image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
+  _, thresholded = cv.threshold(image, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(
+    thresholded,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  )
+
+  # TODO remove these two commented parts meant for debug
+
+  # image = np.zeros((thresholded.shape[0], thresholded.shape[1], 3), dtype=np.uint8)
+  # for i, contour in enumerate(contours):
+  #   color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
+  #   if len(contour) > 0:
+  #     cv.drawContours(image, contours, i, color, 1)
+
+  # fig = plt.figure()
+  # plt.imshow(image)
+  # plt.title('title')
+  # plt.axis('off')
+  # fig.canvas.manager.set_window_title('title')
+  # plt.show()
+
+  print('Contour amount:')
+  print(len(contours))
 
 if __name__ == '__main__':
     cli()

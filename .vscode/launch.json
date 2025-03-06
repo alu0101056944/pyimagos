@@ -26,8 +26,8 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "develop",
-        "study-canny",
-        "bar\\004.jpg",
+        "validate-contours",
+        "baz\\010_borders_clean.jpg",
       ]
     },
   ]
