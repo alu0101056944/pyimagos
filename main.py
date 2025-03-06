@@ -84,8 +84,8 @@ def cli() -> None:
                 'Fallsback to using input image 1.')
 def execute(filename: str, write_files: bool, show: bool,
             nofilter: bool, all: bool, gpu: bool, noresize: bool,
-            input2: str) -> None:
-  '''Left hand radiography segmentation.'''
+            input2: click.Path) -> None:
+  '''Left hand radiography age estimation.'''
   
   process_radiograph(
     filename,
@@ -189,6 +189,11 @@ def attmap(filename: str, write_files: bool, noshow: bool,
   input_image = None
   try:
     with Image.open(filename) as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        input_image = np.array(image)
+      elif image.mode == 'RGB':
+        input_image = np.array(image)
       input_image = np.array(image)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
@@ -444,7 +449,11 @@ def canny(filename: str, lower_thresh: str, higher_thresh: str, gpu: bool,
   input_image = None
   try:
     with Image.open(filename) as image:
-      input_image = np.array(image)
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        input_image = np.array(image)
+      elif image.mode == 'RGB':
+        input_image = np.array(image)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
     raise

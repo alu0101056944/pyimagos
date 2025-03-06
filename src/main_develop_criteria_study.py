@@ -91,7 +91,11 @@ def test_criteria_parameters(filename: str, outputfilename: str,
   input_image = None
   try:
     with Image.open(filename) as image:
-      input_image = np.array(image)
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        input_image = np.array(image)
+      elif image.mode == 'RGB':
+        input_image = np.array(image)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
     raise
@@ -110,8 +114,9 @@ def test_criteria_parameters(filename: str, outputfilename: str,
       measurements,
       image_stage_1,
       image_stage_2,
-    ) = estimate_age_from_image(image, nofilter=nofilter, full_silent=True,
-                                use_cpu=use_cpu, noresize=noresize)
+    ) = estimate_age_from_image(input_image, nofilter=nofilter,
+                                full_silent=True, use_cpu=use_cpu,
+                                noresize=noresize)
     string = f'{estimated_age}, {variation_dict}'
     output_string += string + "\n"
 

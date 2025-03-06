@@ -25,9 +25,10 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "develop",
-        "validate-contours",
-        "baz\\010_borders_clean.jpg",
+        "execute",
+        "docs\\composition_all_fingers_with_sesamoid.jpg",
+        "--nofilter",
+        "--input2=.\\docs\\composition_all_fingers_with_sesamoid.jpg"
       ]
     },
   ]

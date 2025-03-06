@@ -8,6 +8,7 @@ Processing steps of the radiograph
 '''
 
 import os.path
+from pathlib import Path
 from PIL import Image
 import time
 import copy
@@ -589,8 +590,9 @@ def estimate_age_from_image(
     else:
       borders_detected_2 = np.array(input_image_2)
       borders_detected_2 = cv.cvtColor(borders_detected_2, cv.COLOR_RGB2GRAY)
-      _, thresh = cv.threshold(borders_detected_2, LOWER_THRESHOLD, 255,
+      _, thresh_2 = cv.threshold(borders_detected_2, HIGHER_THRESHOLD, 255,
                               cv.THRESH_BINARY)
+      borders_detected_2 = thresh_2
 
 
   # Segmentation
@@ -749,12 +751,16 @@ def process_radiograph(
     all: bool = False,
     use_cpu: bool = True,
     noresize: bool = False,
-    input_image_2: str = None
+    input_image_2: Path = None
 ) -> None:
   input_image = None
   try:
     with Image.open(filename) as image:
-      input_image = np.array(image)
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        input_image = np.array(image)
+      elif image.mode == 'RGB':
+        input_image = np.array(image)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
     raise

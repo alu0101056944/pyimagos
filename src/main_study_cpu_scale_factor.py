@@ -46,7 +46,11 @@ def execute_resize_study():
     filename = 'docs/radiography.jpg'
     try:
       with Image.open(filename) as image:
-        input_image = np.array(image)
+        if image.mode == 'L':
+          image = image.convert('RGB')
+          input_image = np.array(image)
+        elif image.mode == 'RGB':
+          input_image = np.array(image)
     except Exception as e:
       print(f"Error opening image {filename}: {e}")
       raise
