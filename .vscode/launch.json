@@ -25,10 +25,10 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "criteria-study",
-        "docs\\composition_all_fingers_with_sesamoid.jpg",
-        "criteria_variation_report_2.txt",
-        "--nofilter"
+        "execute",
+        "bar\\004_borders_clean.jpg",
+        "--nofilter",
+        "--input2=bar\\004_borders_clean_stage_2.jpg"
       ]
     },
   ]

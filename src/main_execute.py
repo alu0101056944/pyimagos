@@ -768,7 +768,11 @@ def process_radiograph(
   if input_image_2 is not None:
     try:
       with Image.open(input_image_2) as image2:
-        input_image_2 = np.array(image2)
+        if image2.mode == 'L':
+          image2 = image.convert('RGB')
+          input_image_2 = np.array(image2)
+        elif image2.mode == 'RGB':
+          input_image_2 = np.array(image2)
     except Exception as e:
       print(f"Error opening image {input_image_2}: {e}")
       raise

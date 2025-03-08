@@ -21,7 +21,11 @@ def make_composition(filename):
   image = None
   try:
     with Image.open(filename) as imagefile:
-      image = np.array(imagefile)
+      if image.mode == 'L':
+        imagefile = image.convert('RGB')
+        image = np.array(imagefile)
+      elif image.mode == 'RGB':
+        image = np.array(imagefile)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
     raise

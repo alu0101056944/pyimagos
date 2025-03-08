@@ -194,7 +194,6 @@ def attmap(filename: str, write_files: bool, noshow: bool,
         input_image = np.array(image)
       elif image.mode == 'RGB':
         input_image = np.array(image)
-      input_image = np.array(image)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
     raise
@@ -505,7 +504,11 @@ def validate_contours(filename: str):
   image = None
   try:
     with Image.open(filename) as imagefile:
-      image = np.array(imagefile)
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        image = np.array(imagefile)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
     raise
