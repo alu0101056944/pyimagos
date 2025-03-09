@@ -266,5 +266,46 @@ POSITION_FACTORS = {
         },
       ]
     }
+  },
+  'medial': {
+    'next': {
+      'default': [
+        {
+          'additive': 17,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -29,
+          'multiplier': {
+            'width': -0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 4,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
   }
 }
