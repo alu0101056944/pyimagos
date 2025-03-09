@@ -140,3 +140,131 @@ CPU_CONTRAST_RESIZE_TARGET = {
   'width': 640,
   'height': 480,
 }
+
+# Line position = start pos. + (
+#   [
+#     direction_bottom * multiplier(height)
+#     | (or)
+#     direction_right * width * multiplier
+#   ] +
+#   [
+#     direction_bottom * constant
+#     |
+#     direction_right * constant
+#   ] + additive
+#   
+# )
+# Positive sign means towards the right or towards the bottom of the image.
+# Negative sign means towards left or towards top of the image.
+# Not all are used, it depends on whether it is used in the corresponding
+# expected contour class.
+POSITION_FACTORS = {
+  'distal': {
+    'next': {
+      'default': [
+        {
+          'additive': 25,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -16,
+          'multiplier': {
+            'width': -0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': -14,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 4,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': [
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': -2.5,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 1,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 12,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 3,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+      ],
+      'encounter_4': [
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': 1,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 9,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -3,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 6,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+      ]
+    }
+  }
+}

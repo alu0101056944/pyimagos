@@ -5664,7 +5664,7 @@ def radiography_004_case():
   )
 
 def visualize_execute_tests():
-  # canonical_hand_case()
-  radiography_004_case()
+  canonical_hand_case()
+  # radiography_004_case()
   
   plt.show()

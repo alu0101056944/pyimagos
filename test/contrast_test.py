@@ -46,11 +46,7 @@ class TestAttentionMap:
     ])
     try:
       with Image.open('docs/radiography.jpg') as imagefile:
-        if imagefile.mode == 'L':
-          imagefile = imagefile.convert('RGB')
-          tensor_image = transform(imagefile)
-        elif imagefile.mode == 'RGB':
-          tensor_image = transform(imagefile)
+        tensor_image = transform(imagefile)
     except Exception as e:
       print(f"Error opening image {'docs/radiography.jpg'}: {e}")
       raise
