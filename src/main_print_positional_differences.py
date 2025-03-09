@@ -7,7 +7,9 @@ Pyimagos development
 Entrypoint. Handles the CLI.
 '''
 
+import os.path
 import numpy as np
+import cv2 as cv
 
 from src.expected_contours.distal_phalanx import (
   AllowedLineSideBasedOnYorXOnVertical
@@ -20,15 +22,17 @@ from src.expected_contours.ulna import ExpectedContourUlna
 from src.expected_contours.radius import ExpectedContourRadius
 
 def count_invasion_factor(contour: np.array,
-                          position_restrictions: list) -> float:
-  '''The invasion factor is bigger the more of the contour is in the wrong area.'''
+                          position_restrictions: list) -> list[float]:
+  '''The invasion factor is bigger the more of the contour is in the wrong
+  area.'''
 
-  invasion_factor = 0
+  invasion_factors = []
   for position_restriction in position_restrictions:
     p1, p2, allowed_side_array = position_restriction
     x1, y1 = p1[0], p1[1]
     x2, y2 = p2[0], p2[1]
 
+    local_invasion_factor = 0
     if x2 == x1:
       allowed_side = allowed_side_array[3]
       x_line = x1
@@ -37,16 +41,16 @@ def count_invasion_factor(contour: np.array,
         x = point[0][0]
         if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
           if x <= x_line:
-            invasion_factor += (x_line - x)
+            local_invasion_factor += (x_line - x)
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
           if x >= x_line:
-            invasion_factor += (x - x_line)
+            local_invasion_factor += (x - x_line)
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
           if x < x_line:
-            invasion_factor += (x_line - x)
+            local_invasion_factor += (x_line - x)
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
           if x > x_line:
-            invasion_factor += (x - x_line)
+            local_invasion_factor += (x - x_line)
         else:
           m = (y2 - y1) / (x2 - x1)
           b = y1 - m * x1
@@ -63,24 +67,26 @@ def count_invasion_factor(contour: np.array,
             line_y = m * x + b
             if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
               if y_point <= line_y:
-                invasion_factor += (line_y - y_point)
+                local_invasion_factor += (line_y - y_point)
             elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
               if y_point >= line_y:
-                invasion_factor += (y_point - line_y)
+                local_invasion_factor += (y_point - line_y)
             elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
               if y_point < line_y:
-                invasion_factor += (line_y - y_point)
+                local_invasion_factor += (line_y - y_point)
             elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
               if y_point > line_y:
-                invasion_factor += (y_point - line_y)
+                local_invasion_factor += (y_point - line_y)
+    
+    invasion_factors.append(local_invasion_factor)
 
-  return invasion_factor
+  return invasion_factors
 
-def print_differences(contours: list, contour_map: list,
-                      expected_contours: list, title: str):
+def get_string_differences(contours: list, contour_map: list,
+                      expected_contours: list, title: str) -> list[str]:
   '''contour_map is the ordered version of contours which corresponds to the
   expected_contours sequence, which is a list of ExpectedContour classes.'''
-  print(f'Printing invasion factors for {title}')
+  output_string = f'Printing invasion factors for {title}\n'
   total_invasion_factor = 0
   for i in range(len(contour_map)):
     contour = contours[contour_map[i]]
@@ -88,8 +94,8 @@ def print_differences(contours: list, contour_map: list,
     
     points = np.reshape(contour, (-1, 2))
     if len(points) == 0:
-        print(f'Contour {i} is empty. Skipping.')
-        continue
+        output_string = output_string + (
+          f'Contour {i} is empty. Skipping.\n')
     
     all_x = points[:, 0]
     all_y = points[:, 1]
@@ -103,19 +109,28 @@ def print_differences(contours: list, contour_map: list,
     expected_contour.prepare(contour, image_width, image_height)
     
     if i == 0:
-        print(f'Contour 0 (Type: {type(expected_contour).__name__}): No ' \
-              'previous restrictions.')
+        output_string = output_string + (
+          f'Contour 0 (Type: {type(expected_contour).__name__}): No ' \
+          'previous restrictions.\n')
         continue
     
     previous_expected = expected_contours[i-1]
     position_restrictions = previous_expected.next_contour_restrictions()
-    invasion_factor = count_invasion_factor(contour, position_restrictions)
+    invasion_factors = count_invasion_factor(contour, position_restrictions)
+    local_total_invasion_factors = sum(invasion_factors)
 
-    print(f'Contour {i} (type={type(expected_contour).__name__}): ' \
-          f'invasion factor={invasion_factor}')
+    for j, invasion_factor in enumerate(invasion_factors):
+      output_string = output_string + (
+        f'Contour {i}, factor {j} (type={type(expected_contour).__name__}' \
+        f'): invasion factor={invasion_factor}\n')
+    output_string = output_string + (
+      f'Contour {i} (type={type(expected_contour).__name__}): ' \
+      f'local total invasion factor={local_total_invasion_factors}\n')
 
-    total_invasion_factor += invasion_factor
-  print(f'Total invasion factor for {title}: {total_invasion_factor}')
+    total_invasion_factor += local_total_invasion_factors
+  output_string = output_string + (
+    f'Total invasion factor for {title}: {total_invasion_factor}\n')
+  return output_string
 
 def case_004():
   contours = [
@@ -1691,7 +1706,12 @@ def case_004():
 
   expected_contours = get_canonical_expected_contours()
 
-  print_differences(contours, contour_map, expected_contours, '004 radiography')
+  return get_string_differences(
+    contours,
+    contour_map,
+    expected_contours,
+    '004 radiography'
+  )
 
 def get_canonical_expected_contours():
   '''Does not include sesamoid'''
@@ -1776,4 +1796,10 @@ def get_canonical_expected_contours():
   return expected_contours
 
 def positional_differences_main():
-  case_004()
+  output_string = ''
+  output_string = output_string + case_004()
+
+  with open('positional_differences.txt', 'w') as f:
+    f.write(output_string)
+    print('Writing positional_differences.txt')
+    print('Success.')
