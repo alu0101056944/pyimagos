@@ -3758,8 +3758,8 @@ def canonical_hand_case():
     6,
     2,
     0,
-    # 19,
-    # 20
+    19,
+    20
   ]
   show_contours_position_restrictions(
     expected_contours,
