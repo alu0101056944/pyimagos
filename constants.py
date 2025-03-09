@@ -307,5 +307,46 @@ POSITION_FACTORS = {
     'jump': {
       'default': []
     }
+  },
+  'proximal': {
+    'next': {
+      'default': [
+        {
+          'additive': 20,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -24,
+          'multiplier': {
+            'width': -0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': -20,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 3,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
   }
 }

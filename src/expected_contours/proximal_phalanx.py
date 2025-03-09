@@ -18,7 +18,7 @@ from src.expected_contours.expected_contour_of_branch import (
   ExpectedContourOfBranch
 )
 from src.main_develop_corner_order import get_top_left_corner
-from constants import CRITERIA_DICT
+from constants import CRITERIA_DICT, POSITION_FACTORS
 
 class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
 
@@ -160,11 +160,19 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
     ERROR_PADDING = 4
     return [
       [
-        self.orientation_line[0] + (
-          self.direction_right * (width // 2 + ERROR_PADDING + 16)
+        self._add_factors_from_start_point(
+          self.orientation_line[0],
+          restriction_index=0,
+          direction_right=True,
+          width=width,
+          height=height,
         ),
-        self.orientation_line[1] + (
-          self.direction_right * (width // 2 + ERROR_PADDING + 16)
+        self._add_factors_from_start_point(
+          self.orientation_line[1],
+          restriction_index=0,
+          direction_right=True,
+          width=width,
+          height=height,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
@@ -174,11 +182,19 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
         ]
       ],
       [
-        self.orientation_line[0] + (
-          self.direction_left * (width // 2 + ERROR_PADDING+ 20)
+        self._add_factors_from_start_point(
+          self.orientation_line[0],
+          restriction_index=1,
+          direction_right=True,
+          width=width,
+          height=height,
         ),
-        self.orientation_line[1] + (
-          self.direction_left * (width // 2 + ERROR_PADDING + 20)
+        self._add_factors_from_start_point(
+          self.orientation_line[1],
+          restriction_index=1,
+          direction_right=True,
+          width=width,
+          height=height,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
@@ -188,8 +204,20 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
         ]
       ],
       [
-        np.array(self.bottom_left_corner) + self.direction_top * 20,
-        np.array(self.bottom_right_corner) + self.direction_top * 20,
+        self._add_factors_from_start_point(
+          np.array(self.bottom_left_corner),
+          restriction_index=2,
+          direction_right=False,
+          width=width,
+          height=height,
+        ),
+        self._add_factors_from_start_point(
+          np.array(self.bottom_right_corner),
+          restriction_index=2,
+          direction_right=False,
+          width=width,
+          height=height,
+        ),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
@@ -198,8 +226,20 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
         ]
       ],
       [
-        self.bottom_left_corner + self.direction_bottom * bottom_bound,
-        self.bottom_right_corner + self.direction_bottom * bottom_bound,
+        self._add_factors_from_start_point(
+          self.bottom_left_corner,
+          restriction_index=3,
+          direction_right=False,
+          width=width,
+          height=height,
+        ),
+        self._add_factors_from_start_point(
+          self.bottom_right_corner,
+          restriction_index=3,
+          direction_right=False,
+          width=width,
+          height=height,
+        ),
         [
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
@@ -288,6 +328,41 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
       be. For example when jumping from metacarpal to next finger's distal phalanx
       in a top-left to bottom-right fashion (cv coords wise)'''
     return []
-  
+
+  def _add_factors_from_start_point(self, start_point: list,
+                                    restriction_index: int,
+                                    direction_right: bool,
+                                    width: int,
+                                    height: int,
+                                    next_or_jump: str = 'next',
+                                    encounter_n_or_default = 'default'):
+    '''Applies the formula for using the POSITION_RESTRICTIONS_PADDING at
+    constant.py. The goal is to define the actual values from that file.'''
+    position_factors_array = (
+      POSITION_FACTORS['proximal'][next_or_jump][encounter_n_or_default]
+    )
+    multiplier_factors = position_factors_array[restriction_index]['multiplier']
+    additive_factor = position_factors_array[restriction_index]['additive']
+    if direction_right:
+      return start_point + (
+          self.direction_right * width * multiplier_factors['width']
+        ) + (
+          self.direction_right * height * multiplier_factors['height']
+        ) + (
+          self.direction_right * multiplier_factors['constant']
+        ) + (
+          self.direction_right * additive_factor
+        )
+    else: # direction bottom
+      return start_point + (
+          self.direction_bottom * width * multiplier_factors['width']
+        ) + (
+          self.direction_bottom * height * multiplier_factors['height']
+        ) + (
+          self.direction_bottom * multiplier_factors['constant']
+        ) + (
+          self.direction_bottom * additive_factor
+        )
+
   def measure(self) -> dict:
     return {}

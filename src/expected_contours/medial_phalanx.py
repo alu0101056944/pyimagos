@@ -155,9 +155,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
 
   def next_contour_restrictions(self) -> list:
     height = self.min_area_rect[1][1] 
-    bottom_bound = int(height * 4)
     width = int(self.min_area_rect[1][0])
-    ERROR_PADDING = 4
     return [
       [
         self._add_factors_from_start_point(
