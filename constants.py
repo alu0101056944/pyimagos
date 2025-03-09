@@ -348,5 +348,38 @@ POSITION_FACTORS = {
     'jump': {
       'default': []
     }
+  },
+  'metacarpal': {
+    'next': {
+      'default': [
+        { # Exception, does nothing.
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        { # Exception, only width works and only on x coord.
+          'additive': 0,
+          'multiplier': {
+            'width': -7,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        { # Exception, only width works and only on x coord.
+          'additive': 0,
+          'multiplier': {
+            'width': 1,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
   }
 }
