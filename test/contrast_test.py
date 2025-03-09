@@ -44,10 +44,18 @@ class TestAttentionMap:
       transforms.ToTensor(),
       transforms.Lambda(lambda x : x.repeat(3, 1, 1)) # Model needs 3 channels.
     ])
-    image = Image.open('docs/radiography.jpg')
-    tensorImage = transform(image)
-    tensorImage = tensorImage.unsqueeze(0) # Makes it [1, C, H, W]
-    yield tensorImage
+    try:
+      with Image.open('docs/radiography.jpg') as imagefile:
+        if imagefile.mode == 'L':
+          imagefile = imagefile.convert('RGB')
+          tensor_image = transform(imagefile)
+        elif imagefile.mode == 'RGB':
+          tensor_image = transform(imagefile)
+    except Exception as e:
+      print(f"Error opening image {'docs/radiography.jpg'}: {e}")
+      raise
+    tensor_image = tensor_image.unsqueeze(0) # Makes it [1, C, H, W]
+    yield tensor_image
 
   @pytest.fixture(scope='class')
   def selfAttentionMap(self, model, input_image):

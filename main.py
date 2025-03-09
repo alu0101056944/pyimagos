@@ -54,6 +54,7 @@ from src.main_develop_criteria_study import test_criteria_parameters
 from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.main_study_cpu_scale_factor import execute_resize_study
 from src.main_canny_study import make_composition
+from src.main_print_positional_differences import positional_differences_main
 
 @click.group()
 def cli() -> None:
@@ -339,7 +340,17 @@ def test_shape_match_fourier():
               help='Output to a file instead of to console.')
 def contour(filename: str, write_file: bool):
   '''Given a binary image, print its contour.'''
-  input_image = Image.open(filename)
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        input_image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        input_image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
   borders_detected = np.array(input_image)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
   _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
@@ -369,7 +380,17 @@ def contour(filename: str, write_file: bool):
 @click.argument("filename")
 def hu_moments(filename: str):
   '''Given a binary image, print its hu moments.'''
-  input_image = Image.open(filename)
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        input_image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        input_image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
   borders_detected = np.array(input_image)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
   _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
@@ -397,7 +418,17 @@ def hu_moments(filename: str):
 def fourier(filename: str):
   '''Given a binary image, print the fourier transforms of each contour in it.
   10 descriptors.'''
-  input_image = Image.open(filename)
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        input_image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        input_image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
   borders_detected = np.array(input_image)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
   _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
@@ -537,6 +568,12 @@ def validate_contours(filename: str):
 
   print('Contour amount:')
   print(len(contours))
+
+@develop.command()
+def positional_differences():
+  '''Calculates the positional differences for a bunch of radiography countour
+  cases based on real radiographies.'''
+  positional_differences_main()
 
 if __name__ == '__main__':
     cli()

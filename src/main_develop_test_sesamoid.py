@@ -163,7 +163,16 @@ def show_contour(contour, test_contour=None, padding=0,
                               test_contour=test_contour)
 
 def visualize_sesamoid_shape():
-  borders_detected = Image.open('docs/composition_only_sesamoid.jpg')
+  try:
+    with Image.open('docs/composition_only_sesamoid.jpg') as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        borders_detected = np.array(image)
+      elif image.mode == 'RGB':
+        borders_detected = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {'docs/composition_only_sesamoid.jpg'}: {e}")
+    raise
   borders_detected = np.array(borders_detected)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
 

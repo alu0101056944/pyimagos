@@ -55,7 +55,16 @@ def calculateWatershed(border_image: np.array, markers: np.array) -> np.array:
 def borderFilterAlternativesAnalysis(filename: str,
                                         write_images: bool = False,
                                         show_images: bool = True) -> None:
-  input_image = Image.open(filename)
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        input_image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        input_image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
   input_image = transforms.ToTensor()(input_image)
 
   output_image = ContrastEnhancement().process(input_image)

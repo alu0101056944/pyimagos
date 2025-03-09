@@ -481,7 +481,16 @@ def get_test_contours(contour, image_width, image_height):
   return test_contours
 
 def visualize_distal_phalanx_shape():
-  borders_detected = Image.open('docs/distal_phalanx.jpg')
+  try:
+    with Image.open('docs/distal_phalanx.jpg') as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        borders_detected = np.array(image)
+      elif image.mode == 'RGB':
+        borders_detected = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {'docs/distal_phalanx.jpg'}: {e}")
+    raise
   borders_detected = np.array(borders_detected)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
 

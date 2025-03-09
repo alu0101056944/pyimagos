@@ -227,7 +227,17 @@ class ContourViewer:
     self.canvas.config(scrollregion=self.canvas.bbox('all'))
 
 def visualize_contours(filename: str) -> None:
-  input_image = Image.open(filename)
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        input_image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        input_image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
   input_image = np.asarray(input_image)
   gaussian_blurred = cv.GaussianBlur(input_image, (3, 3), 0)
 

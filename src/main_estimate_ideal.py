@@ -132,7 +132,16 @@ def _find_closest_pair(contour_a: list, contour_b: list):
     return None
 
 def case_1():
-  borders_detected = Image.open('docs/radiography_ideal_a_with_sesamoid_minimal.jpg')
+  try:
+    with Image.open('docs/radiography_ideal_a_with_sesamoid_minimal.jpg') as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        borders_detected = np.array(image)
+      elif image.mode == 'RGB':
+        borders_detected = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {'docs/radiography_ideal_a_with_sesamoid_minimal.jpg'}: {e}")
+    raise
   borders_detected = np.array(borders_detected)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_BGR2GRAY)
 
