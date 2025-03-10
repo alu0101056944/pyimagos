@@ -4,7 +4,8 @@ Máster en Ingeniería Informática
 Trabajo de Final de Máster
 Pyimagos development
 
-Test criteria parameter variations age estiamtion results.
+Test criteria parameter variations age estimation results. Unused, 29 parameters
+is unworkable.
 '''
 
 import os.path

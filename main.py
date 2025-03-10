@@ -545,6 +545,7 @@ def validate_contours(filename: str):
     print(f"Error opening image {filename}: {e}")
     raise
 
+  image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
   _, thresholded = cv.threshold(image, 40, 255, cv.THRESH_BINARY)
   contours, _ = cv.findContours(
     thresholded,
