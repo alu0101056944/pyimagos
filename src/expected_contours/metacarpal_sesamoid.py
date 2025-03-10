@@ -20,6 +20,7 @@ from src.expected_contours.expected_contour import (
 from src.expected_contours.metacarpal import (
   ExpectedContourMetacarpal
 )
+from constants import POSITION_FACTORS
 
 class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
 
@@ -48,8 +49,20 @@ class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
     height = self.min_area_rect[1][1]
     return [
       [
-        self.top_left_corner + self.direction_right * 4,
-        self.bottom_left_corner + self.direction_right * 4,
+        self._add_factors_from_start_point(
+          self.top_left_corner,
+          restriction_index=0,
+          direction_right=True,
+          width=width,
+          height=height,
+        ),
+        self._add_factors_from_start_point(
+          self.bottom_left_corner,
+          restriction_index=0,
+          direction_right=True,
+          width=width,
+          height=height,
+        ),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
@@ -58,8 +71,20 @@ class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
         ]
       ],
       [
-        self.top_left_corner + self.direction_left * width,
-        self.bottom_left_corner + self.direction_left * width,
+        self._add_factors_from_start_point(
+          self.top_left_corner,
+          restriction_index=1,
+          direction_right=True,
+          width=width,
+          height=height,
+        ),
+        self._add_factors_from_start_point(
+          self.bottom_left_corner,
+          restriction_index=1,
+          direction_right=True,
+          width=width,
+          height=height,
+        ),
         [
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = -1
@@ -68,11 +93,19 @@ class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
         ]
       ],
       [
-        self.bottom_left_corner + (
-          self.direction_top * height * 2/3
+        self._add_factors_from_start_point(
+          self.bottom_left_corner,
+          restriction_index=2,
+          direction_right=False,
+          width=width,
+          height=height,
         ),
-        self.bottom_right_corner + (
-          self.direction_top * height * 2/3
+        self._add_factors_from_start_point(
+          self.bottom_right_corner,
+          restriction_index=2,
+          direction_right=False,
+          width=width,
+          height=height,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
@@ -82,11 +115,19 @@ class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
         ]
       ],
       [
-        self.top_left_corner + (
-          self.direction_bottom * height * 1/8
+        self._add_factors_from_start_point(
+          self.top_left_corner,
+          restriction_index=3,
+          direction_right=False,
+          width=width,
+          height=height,
         ),
-        self.top_right_corner + (
-          self.direction_bottom * height * 1/8
+        self._add_factors_from_start_point(
+          self.top_right_corner,
+          restriction_index=3,
+          direction_right=False,
+          width=width,
+          height=height,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
@@ -102,6 +143,42 @@ class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
 
   def branch_start_position_restrictions(self) -> list:
     return super().branch_start_position_restrictions()
+
+
+  def _add_factors_from_start_point(self, start_point: list,
+                                    restriction_index: int,
+                                    direction_right: bool,
+                                    width: int,
+                                    height: int,
+                                    next_or_jump: str = 'next',
+                                    encounter_n_or_default = 'default'):
+    '''Applies the formula for using the POSITION_RESTRICTIONS_PADDING at
+    constant.py. The goal is to define the actual values from that file.'''
+    position_factors_array = (
+      POSITION_FACTORS['metacarpal_sesamoid'][next_or_jump][encounter_n_or_default]
+    )
+    multiplier_factors = position_factors_array[restriction_index]['multiplier']
+    additive_factor = position_factors_array[restriction_index]['additive']
+    if direction_right:
+      return start_point + (
+          self.direction_right * width * multiplier_factors['width']
+        ) + (
+          self.direction_right * height * multiplier_factors['height']
+        ) + (
+          self.direction_right * multiplier_factors['constant']
+        ) + (
+          self.direction_right * additive_factor
+        )
+    else: # direction bottom
+      return start_point + (
+          self.direction_bottom * width * multiplier_factors['width']
+        ) + (
+          self.direction_bottom * height * multiplier_factors['height']
+        ) + (
+          self.direction_bottom * multiplier_factors['constant']
+        ) + (
+          self.direction_bottom * additive_factor
+        )
 
   def measure(self) -> dict:
     return super().measure()

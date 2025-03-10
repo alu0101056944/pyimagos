@@ -406,5 +406,46 @@ POSITION_FACTORS = {
     'jump': {
       'default': []
     }
+  },
+  'metacarpal_sesamoid': {
+    'next': {
+      'default': [
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': 4,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': -1,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': -2/3,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 1/8,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
   }
 }
