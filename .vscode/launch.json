@@ -26,8 +26,7 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "develop",
-        "segment-radiography",
-        "bar\\004_borders_clean.jpg"
+        "shape-differences",
       ]
     },
   ]

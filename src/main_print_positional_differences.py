@@ -31,7 +31,6 @@ from src.radiographies.rad_032 import case_032
 from src.radiographies.rad_217 import case_217
 from src.radiographies.rad_1622 import case_1622
 from src.radiographies.rad_1886 import case_1886
-from src.radiographies.rad_010 import case_010
 from src.radiographies.rad_013 import case_013
 from src.radiographies.rad_016 import case_016
 from src.radiographies.rad_019 import case_019
@@ -803,22 +802,22 @@ def case_084_local():
   distal_1 = 15
   medial_1 = 12
   proximal_1 = 9
-  metacarpal_1 = 5
+  metacarpal_1 = 4 
   distal_2 = 19
   medial_2 = 16
   proximal_2 = 11
-  metacarpal_2 = 8
+  metacarpal_2 = 6
   distal_3 = 20
   medial_3 = 18
   proximal_3 = 13
-  metacarpal_3 = 2
+  metacarpal_3 = 8
   distal_4 = 7
   medial_4 = 14
   proximal_4 = 10
   metacarpal_4 = 7
-  distal_5 = 6
-  proximal_5 = 4 
-  metacarpal_5 = 3
+  distal_5 = 5
+  proximal_5 = 3
+  metacarpal_5 = 2
   ulna = 1
   radio = 0
 
