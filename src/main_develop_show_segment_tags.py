@@ -17,8 +17,7 @@ from src.main_develop_test_distal_phalanx import (
   create_minimal_image_from_contours,
 )
 
-def show_segment_tags(segments: dict, title: str):
-  contours = [contour for contour in segments.values()]
+def show_segment_tags(contours, title: str):
   all_points = np.concatenate(contours)
   all_points = np.reshape(all_points, (-1, 2))
   x_values = all_points[:, 0]
@@ -36,9 +35,7 @@ def show_segment_tags(segments: dict, title: str):
   minimal_image = cv.cvtColor(minimal_image, cv.COLOR_GRAY2RGB)
   contours = adjusted_contours
 
-  segments_keys = list(segments.keys())
   for i, contour in enumerate(contours):
-    label = segments_keys[i]
     color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
     if len(contour) > 0:
       cv.drawContours(minimal_image, contours, i, color, 1)
@@ -54,7 +51,7 @@ def show_segment_tags(segments: dict, title: str):
 
     cv.putText(
       minimal_image,
-      label,
+      f'{i}',
       text_position,
       cv.FONT_HERSHEY_SIMPLEX,
       fontScale=0.5,
@@ -1609,51 +1606,7 @@ def case_004():
       dtype=np.int32
     ),
   ]
-  distal_1 = contours[14]
-  medial_1 = contours[11]
-  proximal_1 = contours[9]
-  metacarpal_1 = contours[4]
-  distal_2 = contours[19]
-  medial_2 = contours[15]
-  proximal_2 = contours[10]
-  metacarpal_2 = contours[5]
-  distal_3 = contours[20]
-  medial_3 = contours[17]
-  proximal_3 = contours[13]
-  metacarpal_3 = contours[7]
-  distal_4 = contours[18]
-  medial_4 = contours[16]
-  proximal_4 = contours[12]
-  metacarpal_4 = contours[6]
-  distal_5 = contours[8]
-  proximal_5 = contours[3]
-  metacarpal_5 = contours[2]
-  ulna = contours[0]
-  radio = contours[1]
-
-  return {
-    'distal_1': distal_1,
-    'medial_1': medial_1,
-    'proximal_1': proximal_1,
-    'metacarpal_1': metacarpal_1,
-    'distal_2': distal_2,
-    'medial_2': medial_2,
-    'proximal_2': proximal_2,
-    'metacarpal_2': metacarpal_2,
-    'distal_3': distal_3,
-    'medial_3': medial_3,
-    'proximal_3': proximal_3,
-    'metacarpal_3': metacarpal_3,
-    'distal_4': distal_4,
-    'medial_4': medial_4,
-    'proximal_4': proximal_4,
-    'metacarpal_4': metacarpal_4,
-    'distal_5': distal_5,
-    'proximal_5': proximal_5,
-    'metacarpal_5': metacarpal_5,
-    'ulna': ulna,
-    'radio': radio,
-  }
+  return contours
 
 def case_022():
   contours = [np.array([[ 90, 376],
@@ -3156,29 +3109,7 @@ def case_022():
        [103,  32],
        [103,  25],
        [ 99,  21]], dtype=np.int32)]
-  return {
-    'ulna': contours[0],
-    'radius': contours[1],
-    'distal_1': contours[13],
-    'medial_1': contours[10],
-    'proximal_1': contours[8],
-    'metacarpal_1': contours[3],
-    'distal_2': contours[20],
-    'medial_2': contours[18],
-    'proximal_2': contours[15],
-    'metacarpal_2': contours[11],
-    'distal_3': contours[17],
-    'medial_3': contours[14],
-    'proximal_3': contours[7],
-    'metacarpal_3': contours[4],
-    'distal_4': contours[19],
-    'medial_4': contours[16],
-    'proximal_4': contours[12],
-    'metacarpal_4': contours[6],
-    'distal_5': contours[9],
-    'proximal_5': contours[5],
-    'metacarpal_5': contours[2],
-  }
+  return contours
 
 def visualize_tags_main():
   segments = case_004()
