@@ -15,7 +15,7 @@ from src.expected_contours.expected_contour import (
   ExpectedContour, AllowedLineSideBasedOnYorXOnVertical
 )
 from src.main_develop_corner_order import get_top_left_corner
-from constants import CRITERIA_DICT
+from constants import CRITERIA_DICT, POSITION_FACTORS
 
 class ExpectedContourUlna(ExpectedContour):
 
@@ -60,13 +60,13 @@ class ExpectedContourUlna(ExpectedContour):
 
     x_values = self.contour[:, 0]
     y_values = self.contour[:, 1]
-    min_x = int(np.min(x_values))
-    min_y = int(np.min(y_values))
-    max_x = int(np.max(x_values))
-    max_y = int(np.max(y_values))
-    if image_width < max_x - min_x:
+    self.min_x = int(np.min(x_values))
+    self.min_y = int(np.min(y_values))
+    self.max_x = int(np.max(x_values))
+    self.max_y = int(np.max(y_values))
+    if image_width < self.max_x - self.min_x:
       raise ValueError('Image width is not enough to cover the whole contour.')
-    if image_height < max_y - min_y:
+    if image_height < self.max_y - self.min_y:
       raise ValueError('Image height is not enough to cover the whole contour.')
 
     rect = cv.minAreaRect(contour)
@@ -143,11 +143,23 @@ class ExpectedContourUlna(ExpectedContour):
 
   def next_contour_restrictions(self) -> list:
     width = self.min_area_rect[1][0]
-    ERROR_PADDING = 3
+    height = self.min_area_rect[1][1]
     return [
       [
-        np.array(self.top_right_corner) - 140,
-        np.array(self.top_left_corner) - 140,
+        self._add_factors_from_start_point(
+          self.top_right_corner,
+          restriction_index=0,
+          direction_right=True,
+          width=width,
+          height=height
+        ),
+        self._add_factors_from_start_point(
+          self.bottom_right_corner,
+          restriction_index=0,
+          direction_right=True,
+          width=width,
+          height=height
+        ),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL,
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL,
@@ -156,11 +168,19 @@ class ExpectedContourUlna(ExpectedContour):
         ]
       ],
       [
-        self.orientation_line[0] + (
-          self.direction_right * (width // 2 - ERROR_PADDING)
+        self._add_factors_from_start_point(
+          np.array([0, self.min_y]),
+          restriction_index=1,
+          direction_right=False,
+          width=width,
+          height=height
         ),
-        self.orientation_line[1] + (
-          self.direction_right * (width // 2 - ERROR_PADDING)
+        self._add_factors_from_start_point(
+          np.array([self.image_width, self.min_y]),
+          restriction_index=1,
+          direction_right=False,
+          width=width,
+          height=height
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
@@ -244,6 +264,42 @@ class ExpectedContourUlna(ExpectedContour):
       be. For example when jumping from metacarpal to next finger's distal phalanx
       in a top-left to bottom-right fashion (cv coords wise)'''
     return []
+
+
+  def _add_factors_from_start_point(self, start_point: list,
+                                    restriction_index: int,
+                                    direction_right: bool,
+                                    width: int,
+                                    height: int,
+                                    next_or_jump: str = 'next',
+                                    encounter_n_or_default = 'default'):
+    '''Applies the formula for using the POSITION_RESTRICTIONS_PADDING at
+    constant.py. The goal is to define the actual values from that file.'''
+    position_factors_array = (
+      POSITION_FACTORS['ulna'][next_or_jump][encounter_n_or_default]
+    )
+    multiplier_factors = position_factors_array[restriction_index]['multiplier']
+    additive_factor = position_factors_array[restriction_index]['additive']
+    if direction_right:
+      return start_point + (
+          self.direction_right * width * multiplier_factors['width']
+        ) + (
+          self.direction_right * height * multiplier_factors['height']
+        ) + (
+          self.direction_right * multiplier_factors['constant']
+        ) + (
+          self.direction_right * additive_factor
+        )
+    else: # direction bottom
+      return start_point + (
+          self.direction_bottom * width * multiplier_factors['width']
+        ) + (
+          self.direction_bottom * height * multiplier_factors['height']
+        ) + (
+          self.direction_bottom * multiplier_factors['constant']
+        ) + (
+          self.direction_bottom * additive_factor
+        )
 
   def measure(self) -> dict:
     width = self.min_area_rect[1][0]

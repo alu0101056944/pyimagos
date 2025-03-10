@@ -381,5 +381,30 @@ POSITION_FACTORS = {
     'jump': {
       'default': []
     }
+  },
+  'ulna': {
+    'next': {
+      'default': [
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': -0.3,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -3,
+          'multiplier': {
+            'width': -0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
   }
 }
