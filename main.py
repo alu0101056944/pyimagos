@@ -56,6 +56,7 @@ from src.main_canny_study import make_composition
 from src.main_print_positional_differences import positional_differences_main
 from src.main_print_shape_differences import shape_differences_main
 from src.main_develop_show_segment_tags import visualize_tags_main
+from src.main_experiment_positions import write_position_experiment
 
 @click.group()
 def cli() -> None:
@@ -587,6 +588,13 @@ def shape_differences():
 def visualize_tags():
   '''Visualize the segment tags of a bunch of radiographies.'''
   visualize_tags_main()
+
+@develop.command()
+def experiment_positions():
+  '''Given a set of clean contour radiographies, calculate per position
+  restriction the furthest distance into the wrong side globally (all
+  radiographies).'''
+  write_position_experiment()
 
 if __name__ == '__main__':
     cli()

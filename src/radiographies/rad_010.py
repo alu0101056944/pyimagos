@@ -1518,3 +1518,5 @@ def case_010():
     ),
 
   ]
+
+# No segmentation done due to missing distal phalanx 4

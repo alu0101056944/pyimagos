@@ -141,7 +141,10 @@ class ExpectedContourUlna(ExpectedContour):
     )
     self.direction_bottom = self.direction_bottom / np.linalg.norm(self.direction_bottom)
 
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
+    if position_factors is None:
+      position_factors = POSITION_FACTORS
+
     width = self.min_area_rect[1][0]
     height = self.min_area_rect[1][1]
     return [
@@ -151,14 +154,16 @@ class ExpectedContourUlna(ExpectedContour):
           restriction_index=0,
           direction_right=True,
           width=width,
-          height=height
+          height=height,
+          position_factors=position_factors,
         ),
         self._add_factors_from_start_point(
           self.bottom_right_corner,
           restriction_index=0,
           direction_right=True,
           width=width,
-          height=height
+          height=height,
+          position_factors=position_factors,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL,
@@ -173,14 +178,16 @@ class ExpectedContourUlna(ExpectedContour):
           restriction_index=1,
           direction_right=False,
           width=width,
-          height=height
+          height=height,
+          position_factors=position_factors,
         ),
         self._add_factors_from_start_point(
           np.array([self.image_width, self.min_y]),
           restriction_index=1,
           direction_right=False,
           width=width,
-          height=height
+          height=height,
+          position_factors=position_factors,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
@@ -389,7 +396,8 @@ class ExpectedContourUlna(ExpectedContour):
 
       return difference, shape_fail_statuses
 
-  def branch_start_position_restrictions(self) -> list:
+  def branch_start_position_restrictions(self,
+                                         position_factors: dict = None) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
       location is needed to reach the next jump. This is meant to be implemented
       by expected contours at the start of a branch, so that the bones at the end
@@ -404,12 +412,13 @@ class ExpectedContourUlna(ExpectedContour):
                                     direction_right: bool,
                                     width: int,
                                     height: int,
+                                    position_factors: dict,
                                     next_or_jump: str = 'next',
                                     encounter_n_or_default = 'default'):
     '''Applies the formula for using the POSITION_RESTRICTIONS_PADDING at
     constant.py. The goal is to define the actual values from that file.'''
     position_factors_array = (
-      POSITION_FACTORS['ulna'][next_or_jump][encounter_n_or_default]
+      position_factors['ulna'][next_or_jump][encounter_n_or_default]
     )
     multiplier_factors = position_factors_array[restriction_index]['multiplier']
     additive_factor = position_factors_array[restriction_index]['additive']

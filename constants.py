@@ -390,6 +390,298 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': -0.3,
             'height': 0,
+            'constant': -23,
+          },
+        },
+        {
+          'additive': -3,
+          'multiplier': {
+            'width': -0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
+  },
+  'metacarpal_sesamoid': {
+    'next': {
+      'default': [
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': 4,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': -1,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': -2/3,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 1/8,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
+  }
+}
+
+PRE_EXPERIMENT_POSITION_FACTORS = {
+  'distal': {
+    'next': {
+      'default': [
+        {
+          'additive': 25,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -16,
+          'multiplier': {
+            'width': -0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': -14,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 4,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': [
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': -2.5,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 1,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 12,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 3,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+      ],
+      'encounter_4': [
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': 1,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 9,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -3,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 6,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+      ]
+    }
+  },
+  'medial': {
+    'next': {
+      'default': [
+        {
+          'additive': 17,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -29,
+          'multiplier': {
+            'width': -0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 4,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
+  },
+  'proximal': {
+    'next': {
+      'default': [
+        {
+          'additive': 20,
+          'multiplier': {
+            'width': 0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': -24,
+          'multiplier': {
+            'width': -0.5,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': -20,
+          },
+        },
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 3,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
+  },
+  'metacarpal': {
+    'next': {
+      'default': [
+        { # Exception, does nothing.
+          'additive': 0,
+          'multiplier': {
+            'width': 0,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        { # Exception, only width works and only on x coord.
+          'additive': 0,
+          'multiplier': {
+            'width': -7,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+        { # Exception, only width works and only on x coord.
+          'additive': 0,
+          'multiplier': {
+            'width': 1,
+            'height': 0,
+            'constant': 0,
+          },
+        },
+      ]
+    },
+    'jump': {
+      'default': []
+    }
+  },
+  'ulna': {
+    'next': {
+      'default': [
+        {
+          'additive': 0,
+          'multiplier': {
+            'width': -0.3,
+            'height': 0,
             'constant': 0,
           },
         },

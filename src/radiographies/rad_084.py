@@ -1386,3 +1386,29 @@ def case_084():
     ),
 
   ]
+
+def case_084_segmentation() -> dict:
+  return {
+    'distal_1': 15,
+    'medial_1': 12,
+    'proximal_1': 9,
+    'metacarpal_1': 4 ,
+    'distal_2': 19,
+    'medial_2': 16,
+    'proximal_2': 11,
+    'metacarpal_2': 6,
+    'distal_3': 20,
+    'medial_3': 18,
+    'proximal_3': 13,
+    'metacarpal_3': 8,
+    'distal_4': 7,
+    'medial_4': 14,
+    'proximal_4': 10,
+    'metacarpal_4': 7,
+    'distal_5': 5,
+    'proximal_5': 3,
+    'metacarpal_5': 2,
+    'ulna': 1,
+    'radio': 0,
+  }
+

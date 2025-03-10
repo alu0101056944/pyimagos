@@ -1,7 +1,7 @@
 
 import numpy as np
 
-def case_031():
+def case_031_with_sesamoid():
   return [
     np.array(
     [[[191, 369]],
@@ -1860,3 +1860,29 @@ def case_031():
       [[275, 293]]],
       dtype=np.int32)
   ]
+
+def case_031_segmentation() -> dict:
+  return {
+    'distal_1': 14,
+    'medial_1': 10,
+    'proximal_1': 9,
+    'metacarpal_1': 5,
+    'distal_2': 19,
+    'medial_2': 16,
+    'proximal_2': 11,
+    'metacarpal_2': 6,
+    'distal_3': 20,
+    'medial_3': 17,
+    'proximal_3': 13,
+    'metacarpal_3': 8,
+    'distal_4': 18,
+    'medial_4': 15,
+    'proximal_4': 12,
+    'metacarpal_4': 7,
+    'distal_5': 4,
+    'proximal_5': 3,
+    'metacarpal_5': 2,
+    'ulna': 1,
+    'radio': 0,
+    'sesamoid': 21,
+  }

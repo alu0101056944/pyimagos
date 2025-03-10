@@ -23,6 +23,7 @@ class ExpectedContourOfBranch(ExpectedContour):
     pass
 
   @abstractmethod
-  def branch_start_position_restrictions(self) -> list:
+  def branch_start_position_restrictions(self,
+                                         position_factors: dict = None) -> list:
     '''Method called by last in branch to get the expected '''
     pass

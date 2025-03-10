@@ -3,7 +3,7 @@ import numpy as np
 
 # sesamoid = last index
 
-def case_010():
+def case_010_with_sesamoid():
   return [
     np.array(
     [[[107, 383]],
@@ -1547,3 +1547,5 @@ def case_010():
     )
 
   ]
+
+# No segmentation done due to missing distal phalanx 4

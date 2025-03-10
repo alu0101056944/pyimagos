@@ -153,7 +153,10 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
     self.direction_bottom = self.direction_bottom / np.linalg.norm(self.direction_bottom)
 
 
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
+    if position_factors is None:
+      position_factors = POSITION_FACTORS
+
     height = self.min_area_rect[1][1] 
     width = int(self.min_area_rect[1][0])
     return [
@@ -164,6 +167,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
           direction_right=True,
           width=width,
           height=height,
+          position_factors=position_factors,
         ),
         self._add_factors_from_start_point(
           self.orientation_line[1],
@@ -171,6 +175,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
           direction_right=True,
           width=width,
           height=height,
+          position_factors=position_factors,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
@@ -186,6 +191,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
           direction_right=True,
           width=width,
           height=height,
+          position_factors=position_factors,
         ),
         self._add_factors_from_start_point(
           self.orientation_line[1],
@@ -193,6 +199,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
           direction_right=True,
           width=width,
           height=height,
+          position_factors=position_factors,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
@@ -208,6 +215,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
           direction_right=False, # doesn't matter as all is at 0
           width=width,
           height=height,
+          position_factors=position_factors,
         ),
         self._add_factors_from_start_point(
           np.array(self.bottom_right_corner),
@@ -215,6 +223,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
           direction_right=False,
           width=width,
           height=height,
+          position_factors=position_factors,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
@@ -230,6 +239,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
           direction_right=False,
           width=width,
           height=height,
+          position_factors=position_factors,
         ),
         self._add_factors_from_start_point(
           np.array(self.bottom_right_corner),
@@ -237,6 +247,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
           direction_right=False,
           width=width,
           height=height,
+          position_factors=position_factors,
         ),
         [
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = +1
@@ -470,7 +481,8 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
 
       return difference, shape_fail_statuses
 
-  def branch_start_position_restrictions(self) -> list:
+  def branch_start_position_restrictions(self,
+                                         position_factors: dict = None) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
       location is needed to reach the next jump. This is meant to be implemented
       by expected contours at the start of a branch, so that the bones at the end
@@ -484,12 +496,13 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
                                     direction_right: bool,
                                     width: int,
                                     height: int,
+                                    position_factors: dict,
                                     next_or_jump: str = 'next',
                                     encounter_n_or_default = 'default'):
     '''Applies the formula for using the POSITION_RESTRICTIONS_PADDING at
     constant.py. The goal is to define the actual values from that file.'''
     position_factors_array = (
-      POSITION_FACTORS['medial'][next_or_jump][encounter_n_or_default]
+      position_factors['medial'][next_or_jump][encounter_n_or_default]
     )
     multiplier_factors = position_factors_array[restriction_index]['multiplier']
     additive_factor = position_factors_array[restriction_index]['additive']

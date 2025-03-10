@@ -1603,3 +1603,27 @@ def case_022():
 
   return contours
 
+def case_022_segmentation() -> dict:
+  return {
+    'distal_1': 13,
+    'medial_1': 10,
+    'proximal_1': 8,
+    'metacarpal_1': 3,
+    'distal_2': 18,
+    'medial_2': 15,
+    'proximal_2': 11,
+    'metacarpal_2': 4,
+    'distal_3': 20,
+    'medial_3': 17,
+    'proximal_3': 14,
+    'metacarpal_3': 7,
+    'distal_4': 19,
+    'medial_4': 16,
+    'proximal_4': 12,
+    'metacarpal_4': 6,
+    'distal_5': 9,
+    'proximal_5': 5,
+    'metacarpal_5': 2,
+    'ulna': 0,
+    'radio': 1,
+  }

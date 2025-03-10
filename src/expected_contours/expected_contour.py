@@ -28,7 +28,7 @@ class ExpectedContour(ABC):
     pass
 
   @abstractmethod
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
     pass
 
   @abstractmethod

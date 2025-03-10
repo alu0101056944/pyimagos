@@ -92,7 +92,7 @@ class ExpectedContourSesamoid(ExpectedContour):
       (i + 3) % len(bounding_rect_contour)
     ].tolist()
 
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
     return []
 
   def shape_restrictions(self, criteria: dict = None,
@@ -170,7 +170,8 @@ class ExpectedContourSesamoid(ExpectedContour):
 
       return difference, shape_fail_statuses
 
-  def branch_start_position_restrictions(self) -> list:
+  def branch_start_position_restrictions(self,
+                                         position_factors: dict = None) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
       location is needed to reach the next jump. This is meant to be implemented
       by expected contours at the start of a branch, so that the bones at the end

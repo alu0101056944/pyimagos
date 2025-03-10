@@ -154,15 +154,18 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     )
     self.direction_bottom = self.direction_bottom / np.linalg.norm(self.direction_bottom)
 
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
+    if position_factors is None:
+      position_factors = POSITION_FACTORS
+
     width = self.min_area_rect[1][0]
     right_bound = int(
-      POSITION_FACTORS['metacarpal'][
+      position_factors['metacarpal'][
         'next'
         ]['default'][2]['multiplier']['width'] * width
     )
     left_bound = int(
-      POSITION_FACTORS['metacarpal'][
+      position_factors['metacarpal'][
         'next'
         ]['default'][1]['multiplier']['width'] * width
     )
@@ -431,7 +434,8 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
 
       return difference, shape_fail_statuses
 
-  def branch_start_position_restrictions(self) -> list:
+  def branch_start_position_restrictions(self,
+                                         position_factors: dict = None) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
       location is needed to reach the next jump. This is meant to be implemented
       by expected contours at the start of a branch, so that the bones at the end
@@ -445,12 +449,13 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
                                     direction_right: bool,
                                     width: int,
                                     height: int,
+                                    position_factors: dict,
                                     next_or_jump: str = 'next',
                                     encounter_n_or_default = 'default'):
     '''Applies the formula for using the POSITION_RESTRICTIONS_PADDING at
     constant.py. The goal is to define the actual values from that file.'''
     position_factors_array = (
-      POSITION_FACTORS['distal'][next_or_jump][encounter_n_or_default]
+      position_factors['distal'][next_or_jump][encounter_n_or_default]
     )
     multiplier_factors = position_factors_array[restriction_index]['multiplier']
     additive_factor = position_factors_array[restriction_index]['additive']

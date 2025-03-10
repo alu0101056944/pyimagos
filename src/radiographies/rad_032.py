@@ -1638,3 +1638,28 @@ def case_032():
     dtype=np.int32
     ),
   ]
+
+def case_032_segmentation() -> dict:
+  return {
+    'distal_1': 14,
+    'medial_1': 10,
+    'proximal_1': 8,
+    'metacarpal_1': 3,
+    'distal_2': 19,
+    'medial_2': 15,
+    'proximal_2': 11,
+    'metacarpal_2': 4,
+    'distal_3': 20,
+    'medial_3': 17,
+    'proximal_3': 13,
+    'metacarpal_3': 6,
+    'distal_4': 18,
+    'medial_4': 16,
+    'proximal_4': 12,
+    'metacarpal_4': 7,
+    'distal_5': 9,
+    'proximal_5': 5,
+    'metacarpal_5': 2,
+    'ulna': 1,
+    'radio': 0,
+  }

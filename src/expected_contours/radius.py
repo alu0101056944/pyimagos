@@ -142,7 +142,7 @@ class ExpectedContourRadius(ExpectedContour):
     self.direction_bottom = self.direction_bottom / np.linalg.norm(self.direction_bottom)
 
 
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
     return []
 
   def shape_restrictions(self, criteria: dict = None,
@@ -342,7 +342,8 @@ class ExpectedContourRadius(ExpectedContour):
 
       return difference, shape_fail_statuses
 
-  def branch_start_position_restrictions(self) -> list:
+  def branch_start_position_restrictions(self,
+                                         position_factors: dict = None) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
       location is needed to reach the next jump. This is meant to be implemented
       by expected contours at the start of a branch, so that the bones at the end
