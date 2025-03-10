@@ -146,69 +146,202 @@ class ExpectedContourRadius(ExpectedContour):
   def next_contour_restrictions(self) -> list:
     return []
 
-  def shape_restrictions(self, criteria: dict = None) -> list:
+  def shape_restrictions(self, criteria: dict = None,
+                         decompose: bool = False) -> list:
     if criteria is None:
       criteria = CRITERIA_DICT
 
-    if len(self.contour) == 0:
-      return float('inf')
-
-    area = cv.contourArea(self.contour)
-    if area < criteria['radius']['area']:
-      return float('inf')
-
-    if self._aspect_ratio < criteria['radius']['aspect_ratio']:
-      return float('inf')
-    
-    if len(self.contour) < 3:
-      return float('inf')
-    
-    min_rect_width = self.min_area_rect[1][0]
-    min_rect_height = self.min_area_rect[1][1]
-    hull = cv.convexHull(self.contour)
-    solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
-    if solidity > criteria['radius']['solidity']:
-      return float('inf')
-    
-    try:
-      hull_area = cv.contourArea(hull)
-      significant_convexity_defects = 0
-      hull_indices = cv.convexHull(self.contour, returnPoints=False)
-      hull_indices[::-1].sort(axis=0)
-      defects = cv.convexityDefects(self.contour, hull_indices)
-      if defects is not None:
-        for i in range(defects.shape[0]):
-          start_index, end_index, farthest_point_index, distance = defects[i, 0]
-
-          start = self.contour[start_index]
-          end = self.contour[end_index]
-          farthest = self.contour[farthest_point_index]
-
-          defect_area = cv.contourArea(np.array([start, end, farthest]))
-
-          if defect_area / hull_area > criteria['radius']['defect_area_ratio']:
-            significant_convexity_defects += 1
-
-      if significant_convexity_defects != 5:
+    if not decompose:
+      if len(self.contour) == 0:
         return float('inf')
 
-    except cv.error as e:
-      error_message = str(e).lower()
-      if 'not monotonous' in error_message: # TODO make this more robust
+      area = cv.contourArea(self.contour)
+      if area < criteria['radius']['area']:
         return float('inf')
 
-    moments = cv.moments(self.contour)
-    hu_moments = cv.HuMoments(moments)
-    hu_moments = np.absolute(hu_moments)
-    hu_moments_no_zeros = np.where( # to avoid DivideByZero
-      hu_moments == 0,
-      np.finfo(float).eps,
-      hu_moments
-    )
-    hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+      if self._aspect_ratio < criteria['radius']['aspect_ratio']:
+        return float('inf')
+      
+      if len(self.contour) < 3:
+        return float('inf')
+      
+      min_rect_width = self.min_area_rect[1][0]
+      min_rect_height = self.min_area_rect[1][1]
+      hull = cv.convexHull(self.contour)
+      solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+      if solidity > criteria['radius']['solidity']:
+        return float('inf')
+      
+      try:
+        hull_area = cv.contourArea(hull)
+        significant_convexity_defects = 0
+        hull_indices = cv.convexHull(self.contour, returnPoints=False)
+        hull_indices[::-1].sort(axis=0)
+        defects = cv.convexityDefects(self.contour, hull_indices)
+        if defects is not None:
+          for i in range(defects.shape[0]):
+            start_index, end_index, farthest_point_index, distance = defects[i, 0]
 
-    difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
-    return difference
+            start = self.contour[start_index]
+            end = self.contour[end_index]
+            farthest = self.contour[farthest_point_index]
+
+            defect_area = cv.contourArea(np.array([start, end, farthest]))
+
+            if defect_area / hull_area > criteria['radius']['defect_area_ratio']:
+              significant_convexity_defects += 1
+
+        if significant_convexity_defects != 5:
+          return float('inf')
+
+      except cv.error as e:
+        error_message = str(e).lower()
+        if 'not monotonous' in error_message: # TODO make this more robust
+          return float('inf')
+
+      moments = cv.moments(self.contour)
+      hu_moments = cv.HuMoments(moments)
+      hu_moments = np.absolute(hu_moments)
+      hu_moments_no_zeros = np.where( # to avoid DivideByZero
+        hu_moments == 0,
+        np.finfo(float).eps,
+        hu_moments
+      )
+      hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+
+      difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+      return difference
+    else:
+      shape_fail_statuses = {
+        'empty_contour': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'area': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'aspect_ratio': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'solidity': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'min_length': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'convexity_defects': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+      }
+      shape_fail_statuses['empty_contour']['fail_status'] = (
+        True if len(self.contour) == 0 else False
+      )
+      shape_fail_statuses['empty_contour']['obtained_value'] = (
+        len(self.contour)
+      )
+      shape_fail_statuses['empty_contour']['threshold_value'] = 0
+
+      area = cv.contourArea(self.contour)
+      shape_fail_statuses['area']['fail_status'] = (
+        True if area <= criteria['medial']['area'] else False
+      )
+      shape_fail_statuses['area']['obtained_value'] = area
+      shape_fail_statuses['area']['threshold_value'] = (
+        criteria['medial']['area']
+      )
+      
+      threshold_value = criteria['medial']['aspect_ratio']
+      shape_fail_statuses['aspect_ratio']['fail_status'] = (
+        True if self._aspect_ratio < threshold_value else False
+      )
+      shape_fail_statuses['aspect_ratio']['obtained_value'] = (
+        self._aspect_ratio
+      )
+      shape_fail_statuses['aspect_ratio']['threshold_value'] = (
+        threshold_value
+      )
+
+      shape_fail_statuses['min_length']['fail_status'] = (
+        True if len(self.contour) < 3 else False
+      )
+      shape_fail_statuses['min_length']['obtained_value'] = (
+        len(self.contour)
+      )
+      shape_fail_statuses['min_length']['threshold_value'] = 3
+      
+      min_rect_width = self.min_area_rect[1][0]
+      min_rect_height = self.min_area_rect[1][1]
+      hull = cv.convexHull(self.contour)
+      solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+      shape_fail_statuses['solidity']['fail_status'] = (
+        True if solidity > criteria['medial']['solidity'] else False
+      )
+      shape_fail_statuses['solidity']['obtained_value'] = solidity
+      shape_fail_statuses['solidity']['threshold_value'] = (
+        criteria['medial']['solidity']
+      )
+
+      try:
+        hull_area = cv.contourArea(hull)
+        significant_convexity_defects = 0
+        hull_indices = cv.convexHull(self.contour, returnPoints=False)
+        hull_indices[::-1].sort(axis=0)
+        defects = cv.convexityDefects(self.contour, hull_indices)
+        if defects is not None:
+          for i in range(defects.shape[0]):
+            start_index, end_index, farthest_point_index, distance = defects[i, 0]
+
+            start = self.contour[start_index]
+            end = self.contour[end_index]
+            farthest = self.contour[farthest_point_index]
+
+            defect_area = cv.contourArea(np.array([start, end, farthest]))
+
+            if defect_area / hull_area > criteria['distal']['defect_area_ratio']:
+              significant_convexity_defects += 1
+
+        shape_fail_statuses['convexity_defects']['fail_status'] = (
+          True if significant_convexity_defects != 5 else False
+        )
+        shape_fail_statuses['convexity_defects']['obtained_value'] = (
+          significant_convexity_defects
+        )
+        shape_fail_statuses['convexity_defects']['threshold_value'] = 5
+      except cv.error as e:
+        error_message = str(e).lower()
+        if 'not monotonous' in error_message: # TODO make this more robust
+          shape_fail_statuses['convexity_defects']['fail_status'] = True
+          shape_fail_statuses['convexity_defects']['obtained_value'] = (
+            np.nan
+          )
+          shape_fail_statuses['convexity_defects']['threshold_value'] = (
+            np.nan
+          )
+      
+      moments = cv.moments(self.contour)
+      hu_moments = cv.HuMoments(moments)
+      hu_moments = np.absolute(hu_moments)
+      hu_moments_no_zeros = np.where( # to avoid DivideByZero
+        hu_moments == 0,
+        np.finfo(float).eps,
+        hu_moments
+      )
+      hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+
+      difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+
+      return difference, shape_fail_statuses
 
   def branch_start_position_restrictions(self) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other

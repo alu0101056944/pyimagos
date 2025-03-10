@@ -32,7 +32,8 @@ class ExpectedContour(ABC):
     pass
 
   @abstractmethod
-  def shape_restrictions(self, criteria: dict = None) -> list:
+  def shape_restrictions(self, criteria: dict = None,
+                         decompose: bool = False) -> list:
     pass
 
   @abstractmethod

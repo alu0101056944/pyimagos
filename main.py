@@ -20,7 +20,6 @@ from PIL import Image
 import click
 import numpy as np
 import torchvision.transforms as transforms
-import matplotlib.pyplot as plt
 
 from src.main_execute import process_radiograph
 from src.main_estimate_ideal import estimate_age_from_ideal_contour
@@ -55,6 +54,7 @@ from src.image_filters.contrast_enhancement import ContrastEnhancement
 from src.main_study_cpu_scale_factor import execute_resize_study
 from src.main_canny_study import make_composition
 from src.main_print_positional_differences import positional_differences_main
+from src.main_print_shape_differences import shape_differences_main
 
 @click.group()
 def cli() -> None:
@@ -574,6 +574,12 @@ def positional_differences():
   '''Calculates the positional differences for a bunch of radiography countour
   cases based on real radiographies.'''
   positional_differences_main()
+
+@develop.command()
+def shape_differences():
+  '''Calculates the shape differences for a bunch of radiography countour
+  cases based on real radiographies.'''
+  shape_differences_main()
 
 if __name__ == '__main__':
     cli()

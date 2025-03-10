@@ -4,9 +4,8 @@ Máster en Ingeniería Informática
 Trabajo de Final de Máster
 Pyimagos development
 
-Print per contour-position_restriction the maximum difference between the restriction
-line's y and a contour point's y (only on those that are on the wrong side)
-
+Print per contour-shape the shape score and the reason it returned infinite if
+applies.
 '''
 
 import numpy as np
@@ -21,73 +20,12 @@ from src.expected_contours.metacarpal import ExpectedContourMetacarpal
 from src.expected_contours.ulna import ExpectedContourUlna
 from src.expected_contours.radius import ExpectedContourRadius
 
-def count_invasion_factor(contour: np.array,
-                          position_restrictions: list) -> list[float]:
-  '''The invasion factor is bigger the more of the contour is in the wrong
-  area.'''
-
-  invasion_factors = []
-  for position_restriction in position_restrictions:
-    p1, p2, allowed_side_array = position_restriction
-    x1, y1 = p1[0], p1[1]
-    x2, y2 = p2[0], p2[1]
-
-    local_invasion_factor = 0
-    if x2 == x1:
-      allowed_side = allowed_side_array[3]
-      x_line = x1
-
-      for point in contour:
-        x = point[0][0]
-        if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
-          if x <= x_line:
-            local_invasion_factor += (x_line - x)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
-          if x >= x_line:
-            local_invasion_factor += (x - x_line)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
-          if x < x_line:
-            local_invasion_factor += (x_line - x)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
-          if x > x_line:
-            local_invasion_factor += (x - x_line)
-        else:
-          m = (y2 - y1) / (x2 - x1)
-          b = y1 - m * x1
-          if m > 0:
-            allowed_side = allowed_side_array[0]
-          elif m < 0:
-            allowed_side = allowed_side_array[1]
-          else:
-            allowed_side = allowed_side_array[2]
-          
-          for point in contour:
-            x = point[0][0]
-            y_point = point[0][1]
-            line_y = m * x + b
-            if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
-              if y_point <= line_y:
-                local_invasion_factor += (line_y - y_point)
-            elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
-              if y_point >= line_y:
-                local_invasion_factor += (y_point - line_y)
-            elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
-              if y_point < line_y:
-                local_invasion_factor += (line_y - y_point)
-            elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
-              if y_point > line_y:
-                local_invasion_factor += (y_point - line_y)
-    
-    invasion_factors.append(local_invasion_factor)
-
-  return invasion_factors
-
-def get_string_differences(contours: list, contour_map: list,
+def get_string_scores(contours: list, contour_map: list,
                       expected_contours: list, title: str) -> list[str]:
   '''contour_map is the ordered version of contours which corresponds to the
   expected_contours sequence, which is a list of ExpectedContour classes.'''
-  output_string = f'Printing invasion factors for {title}\n'
-  total_invasion_factor = 0
+  output_string = f'Printing shape score factor statuses for {title}\n'
+  invalid_contours = False
   for i in range(len(contour_map)):
     contour = contours[contour_map[i]]
     expected_contour = expected_contours[i]
@@ -107,28 +45,26 @@ def get_string_differences(contours: list, contour_map: list,
     image_height = int(max_y - min_y)
     expected_contour.prepare(contour, image_width, image_height)
     
-    if i == 0:
-      output_string = output_string + (
-        f'Contour 0 (Type: {type(expected_contour).__name__}): No ' \
-        'previous restrictions.\n')
-      continue
-    
-    previous_expected = expected_contours[i - 1]
-    position_restrictions = previous_expected.next_contour_restrictions()
-    invasion_factors = count_invasion_factor(contour, position_restrictions)
-    local_total_invasion_factors = max(invasion_factors)
+    hu_moment, factorname_to_info = (
+      expected_contour.shape_restrictions(decompose=True)
+    )
+    for factorname in factorname_to_info:
+      info = factorname_to_info[factorname]
+      fail_status = info['fail_status']
+      actual_value = info['obtained_value']
+      threshold_value = info['threshold_value']
 
-    for j, invasion_factor in enumerate(invasion_factors):
-      output_string = output_string + (
-        f'Contour {i}, factor {j} (type={type(expected_contour).__name__}' \
-        f'): invasion factor={invasion_factor}\n')
-    output_string = output_string + (
-      f'Contour {i} (type={type(expected_contour).__name__}): ' \
-      f'local total invasion factor={local_total_invasion_factors}\n')
+      if fail_status == True:
+        invalid_contours = True
 
-    total_invasion_factor += local_total_invasion_factors
+      output_string = output_string + (
+        f'Contour {i}, factor {factorname} ' \
+        f'(type={type(expected_contour).__name__}): ' \
+        f'{'Failed, ' if fail_status else 'Success, '}' \
+        f'obtained={actual_value}, ' \
+        f'threshold={threshold_value}\n')
   output_string = output_string + (
-    f'Total invasion factor for {title}: {total_invasion_factor}\n')
+    f'Contours accepted: {"No." if invalid_contours else "Yes."} For {title}\n')
   return output_string
 
 def case_004():
@@ -1705,7 +1641,7 @@ def case_004():
 
   expected_contours = get_canonical_expected_contours()
 
-  return get_string_differences(
+  return get_string_scores(
     contours,
     contour_map,
     expected_contours,
@@ -1794,11 +1730,11 @@ def get_canonical_expected_contours():
 
   return expected_contours
 
-def positional_differences_main():
+def shape_differences_main():
   output_string = ''
   output_string = output_string + case_004()
 
-  with open('positional_differences.txt', 'w') as f:
+  with open('shape_differences.txt', 'w') as f:
     f.write(output_string)
-    print('Writing positional_differences.txt')
+    print('Writing shape_differences.txt')
     print('Success.')
