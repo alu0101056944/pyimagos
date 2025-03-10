@@ -7,6 +7,7 @@ canny_output.jpg
 shape_differences.txt
 positional_differences.txt
 *_contours.txt
+segmented_radiography.txt
 
 model/*
 !model/README.md

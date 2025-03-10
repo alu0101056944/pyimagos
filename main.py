@@ -55,6 +55,8 @@ from src.main_study_cpu_scale_factor import execute_resize_study
 from src.main_canny_study import make_composition
 from src.main_print_positional_differences import positional_differences_main
 from src.main_print_shape_differences import shape_differences_main
+from src.main_develop_show_segment_tags import visualize_tags_main
+from src.main_develop_segment_radiography import segment_radiography_main
 
 @click.group()
 def cli() -> None:
@@ -580,6 +582,18 @@ def shape_differences():
   '''Calculates the shape differences for a bunch of radiography countour
   cases based on real radiographies.'''
   shape_differences_main()
+
+@develop.command()
+def visualize_tags():
+  '''Visualize the segment tags of a bunch of radiographies.'''
+  visualize_tags_main()
+
+@develop.command()
+@click.argument('filename')
+def segment_radiography(filename: str):
+  '''Segment a clean contour image of the radiography with 21 contours
+  each representing a bone, based on relative coordinates.'''
+  segment_radiography_main(filename)
 
 if __name__ == '__main__':
     cli()

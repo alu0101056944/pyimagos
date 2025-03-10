@@ -10,9 +10,6 @@ applies.
 
 import numpy as np
 
-from src.expected_contours.distal_phalanx import (
-  AllowedLineSideBasedOnYorXOnVertical
-)
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
 from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalanx

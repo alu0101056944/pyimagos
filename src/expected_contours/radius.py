@@ -17,7 +17,6 @@ from src.expected_contours.expected_contour import (
 from src.main_develop_corner_order import get_top_left_corner
 from constants import CRITERIA_DICT
 
-
 class ExpectedContourRadius(ExpectedContour):
 
   def __init__(self):

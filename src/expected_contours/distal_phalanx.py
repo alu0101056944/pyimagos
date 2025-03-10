@@ -10,7 +10,6 @@ to apply to other contours for the distal phalanx hand bone.
 
 import cv2 as cv
 import numpy as np
-from typing import Union
 
 from src.expected_contours.expected_contour import (
   ExpectedContour, AllowedLineSideBasedOnYorXOnVertical

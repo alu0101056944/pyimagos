@@ -26,7 +26,8 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "develop",
-        "test-execute"
+        "segment-radiography",
+        "bar\\004_borders_clean.jpg"
       ]
     },
   ]
