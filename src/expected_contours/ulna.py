@@ -307,7 +307,7 @@ class ExpectedContourUlna(ExpectedContour):
 
       area = cv.contourArea(self.contour)
       shape_fail_statuses['area']['fail_status'] = (
-        True if area <= criteria['ulna']['area'] else False
+        True if area < criteria['ulna']['area'] else False
       )
       shape_fail_statuses['area']['obtained_value'] = area
       shape_fail_statuses['area']['threshold_value'] = (
@@ -316,7 +316,7 @@ class ExpectedContourUlna(ExpectedContour):
       
       threshold_value = criteria['ulna']['aspect_ratio']
       shape_fail_statuses['aspect_ratio']['fail_status'] = (
-        True if self._aspect_ratio < threshold_value else False
+        True if self._aspect_ratio > threshold_value else False
       )
       shape_fail_statuses['aspect_ratio']['obtained_value'] = (
         self._aspect_ratio
