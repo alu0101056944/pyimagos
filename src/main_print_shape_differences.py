@@ -212,7 +212,7 @@ def case_006_local():
     contours,
     contour_map,
     expected_contours,
-    '022 radiography'
+    '006 radiography'
   )
 
 def case_018_local():
@@ -255,7 +255,7 @@ def case_018_local():
     contours,
     contour_map,
     expected_contours,
-    '022 radiography'
+    '018 radiography'
   )
 
 def case_023_local():

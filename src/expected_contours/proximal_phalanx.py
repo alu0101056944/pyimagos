@@ -309,7 +309,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
             if defect_area / hull_area > criteria['proximal']['defect_area_ratio']:
               significant_convexity_defects += 1
 
-        if self.encounter_amount == 5 and significant_convexity_defects != 1:
+        if self.encounter_amount == 5 and significant_convexity_defects != 2:
           return float('inf')
         elif self.encounter_amount != 5 and significant_convexity_defects != 2:
           return float('inf')
@@ -383,7 +383,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
       
       threshold_value = criteria['proximal']['aspect_ratio']
       shape_fail_statuses['aspect_ratio']['fail_status'] = (
-        True if self._aspect_ratio > threshold_value else False
+        True if self._aspect_ratio < threshold_value else False
       )
       shape_fail_statuses['aspect_ratio']['obtained_value'] = (
         self._aspect_ratio
@@ -453,7 +453,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
 
         shape_fail_statuses['defect_area_ratio']['fail_status'] = (
           True if (
-            self.encounter_amount == 5 and significant_convexity_defects != 1 or
+            self.encounter_amount == 5 and significant_convexity_defects != 2 or
             self.encounter_amount != 5 and significant_convexity_defects != 2
           ) else False
         )
@@ -461,8 +461,8 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
           significant_convexity_defects
         )
 
-        if self.encounter_amount == 5 and significant_convexity_defects != 1:
-          shape_fail_statuses['defect_area_ratio']['threshold_value'] = 1
+        if self.encounter_amount == 5 and significant_convexity_defects != 2:
+          shape_fail_statuses['defect_area_ratio']['threshold_value'] = 2
         elif self.encounter_amount != 5 and significant_convexity_defects != 2:
           shape_fail_statuses['defect_area_ratio']['threshold_value'] = 2
       except cv.error as e:

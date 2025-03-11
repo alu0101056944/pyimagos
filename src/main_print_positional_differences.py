@@ -131,7 +131,6 @@ def get_string_differences(contours: list, contour_map: list,
     position_restrictions = expected_contour.next_contour_restrictions()
     invasion_factors = count_invasion_factor_max(contour, position_restrictions)
 
-
     for j, invasion_factor in enumerate(invasion_factors):
       output_string = output_string + (
         f'Contour {i}, factor {j} (type={type(expected_contour).__name__}' \

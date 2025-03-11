@@ -309,7 +309,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
             if defect_area / hull_area > criteria['medial']['defect_area_ratio']:
               significant_convexity_defects += 1
 
-        if significant_convexity_defects != 1:
+        if significant_convexity_defects != 2:
           return float('inf')
       except cv.error as e:
         error_message = str(e).lower()
@@ -381,7 +381,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
       
       threshold_value = criteria['medial']['aspect_ratio']
       shape_fail_statuses['aspect_ratio']['fail_status'] = (
-        True if self._aspect_ratio > threshold_value else False
+        True if self._aspect_ratio < threshold_value else False
       )
       shape_fail_statuses['aspect_ratio']['obtained_value'] = (
         self._aspect_ratio
@@ -450,7 +450,7 @@ class ExpectedContourMedialPhalanx(ExpectedContourOfBranch):
               significant_convexity_defects += 1
 
         shape_fail_statuses['defect_area_ratio']['fail_status'] = (
-          True if significant_convexity_defects != 1 else False
+          True if significant_convexity_defects != 2 else False
         )
         shape_fail_statuses['defect_area_ratio']['obtained_value'] = (
           significant_convexity_defects

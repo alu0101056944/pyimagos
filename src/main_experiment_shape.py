@@ -158,28 +158,48 @@ def write_expected_contours_precisions_stage_1():
   deltas = {
     'distal': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
+      'aspect_ratio': list(np.concatenate(
+          (np.arange(0.8, 0, -0.1),
+          np.arange(-0.8, 0, 0.1)),
+        )
+      ),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [0.04, 0.03, 0.02, 0.01, 0, -0.01, -0.02, -0.03, -0.04]
     },
     'medial': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
+      'aspect_ratio': list(np.concatenate(
+          (np.arange(0.8, 0, -0.1),
+          np.arange(-0.8, 0, 0.1)),
+        )
+      ),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
-      'defect_area_ratio': [0.04, 0.03, 0.02, 0.01, 0, -0.01, -0.02, -0.03, -0.04]
+      'defect_area_ratio': list(np.concatenate(
+          (np.arange(0.8, 0, -0.01),
+          np.arange(-0.8, 0, 0.01)),
+        )
+      ),
     },
     'proximal': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
+      'aspect_ratio': list(np.concatenate(
+          (np.arange(1.6, 0, -0.1),
+          np.arange(-1.6, 0, 0.1)),
+        )
+      ),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [0.04, 0.03, 0.02, 0.01, 0, -0.01, -0.02, -0.03, -0.04]
     },
     'metacarpal': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
+      'aspect_ratio': list(np.concatenate(
+          (np.arange(2.6, 0, -0.1),
+          np.arange(-2.6, 0, 0.1)),
+        )
+      ),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [0.04, 0.03, 0.02, 0.01, 0, -0.01, -0.02, -0.03, -0.04]
@@ -189,14 +209,18 @@ def write_expected_contours_precisions_stage_1():
       'aspect_ratio': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': list(np.concatenate(
-          (np.arange(0.35, 0, -0.01),
-          np.arange(-0.35, 0, 0.01)),
+          (np.arange(1.6, 0, -0.01),
+          np.arange(-1.6, 0, 0.01)),
         )
       )
     },
     'ulna': {
       'area': [30, 20, 10, 0, -10, -20, -30],
-      'aspect_ratio': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
+      'aspect_ratio': list(np.concatenate(
+          (np.arange(1.3, 0, -0.1),
+          np.arange(-1.3, 0, 0.1)),
+        )
+      ),
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [
         0.004,
