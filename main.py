@@ -57,6 +57,7 @@ from src.main_print_positional_differences import positional_differences_main
 from src.main_print_shape_differences import shape_differences_main
 from src.main_develop_show_segment_tags import visualize_tags_main
 from src.main_experiment_positions import write_position_experiment
+from src.main_experiment_shape import write_shape_experiment
 
 @click.group()
 def cli() -> None:
@@ -595,6 +596,13 @@ def experiment_positions():
   restriction the furthest distance into the wrong side globally (all
   radiographies).'''
   write_position_experiment()
+
+@develop.command()
+def experiment_shapes():
+  '''Given a set of clean contour radiographies, calculate per position
+  restriction the furthest distance into the wrong side globally (all
+  radiographies).'''
+  write_shape_experiment()
 
 if __name__ == '__main__':
     cli()

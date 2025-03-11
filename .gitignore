@@ -8,6 +8,7 @@ shape_differences.txt
 positional_differences.txt
 *_contours.txt
 global_furthest_invasions.txt
+best_shape_factors.txt
 
 model/*
 !model/README.md

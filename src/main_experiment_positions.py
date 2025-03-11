@@ -202,7 +202,7 @@ def get_canonical_expected_contours():
   return expected_contours
 
 def get_all_invasion_factors(contours: list, contour_map: list,
-                             expected_contours: list) -> list[str]:
+                             expected_contours: list) -> list:
   '''contour_map is the ordered version of contours which corresponds to the
   expected_contours sequence, which is a list of ExpectedContour classes.'''
   all_invasion_factors = []
@@ -281,8 +281,16 @@ def write_position_experiment_first_stage():
           if new_invasion > old_invasion:
             all_global_furthest_invasion[i][j] = new_invasion
 
+  output_string = 'Restrictions: global furthest invasions:\n'
+  for i, expected_invasions in enumerate(all_global_furthest_invasion):
+    output_string = output_string + f'R{i}: '
+    for j, restriction_invasion in enumerate(expected_invasions):
+      output_string = output_string + f'{restriction_invasion}' + (
+          f'{"," if j != len(expected_invasions) - 1 else ""}')
+    output_string = output_string + f'\n'
+
   with open('global_furthest_invasions.txt', 'w') as f:
-    f.write(str(all_global_furthest_invasion))
+    f.write(output_string)
     print('Writing global_furthest_invasions.txt')
     print('Success.')
 

@@ -387,11 +387,6 @@ class ExpectedContourDistalPhalanx(ExpectedContourOfBranch):
           'threshold_value': None,
           'fail_status': None,
         }
-        shape_fail_statuses['aspect_ratio_tolerance'] = {
-          'obtained_value': None,
-          'threshold_value': None,
-          'fail_status': None,
-        }
         if obtained_value > TOLERANCE:
           shape_fail_statuses['aspect_ratio_tolerance']['fail_status'] = True
         else:
