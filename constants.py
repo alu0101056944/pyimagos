@@ -211,7 +211,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 1,
-            'constant': 203.4,
+            'constant': 0,
           },
         },
         {
@@ -291,7 +291,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 0,
-            'constant': -40.6,
+            'constant': 0,
           },
         },
         {
@@ -332,7 +332,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 0,
-            'constant': -60,
+            'constant': -20,
           },
         },
         {
@@ -390,7 +390,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': -0.3,
             'height': 0,
-            'constant': -23,
+            'constant': 0,
           },
         },
         {

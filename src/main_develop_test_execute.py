@@ -27,6 +27,7 @@ from src.expected_contours.sesamoid import ExpectedContourSesamoid
 from src.expected_contours.metacarpal_sesamoid import (
   ExpectedContourSesamoidMetacarpal
 )
+from src.radiographies.rad_084 import case_084, case_084_segmentation
 
 def show_contours_position_restrictions(
     expected_contours: list, 
@@ -8744,9 +8745,152 @@ def radiography_004_case_bug():
     contour_map_mask=contour_map[19:21]
   )
 
+def radiography_084_case():
+  contours = case_084()
+  contour_map = list(case_084_segmentation().values())
+
+  expected_contours = np.empty(21, dtype=object)
+  expected_contours[0] = ExpectedContourDistalPhalanx(1)
+  expected_contours[1] = ExpectedContourMedialPhalanx(1)
+  expected_contours[2] = ExpectedContourProximalPhalanx(1)
+  expected_contours[3] = ExpectedContourMetacarpal(
+    1,
+    ends_branchs_sequence=True,
+    first_in_branch=expected_contours[0]
+  )
+  expected_contours[4] = ExpectedContourDistalPhalanx(
+    2,
+    first_encounter=expected_contours[0]
+  )
+  expected_contours[5] = ExpectedContourMedialPhalanx(
+    2,
+    first_encounter=expected_contours[1]
+  )
+  expected_contours[6] = ExpectedContourProximalPhalanx(
+    2,
+    first_encounter=expected_contours[2]
+  )
+  expected_contours[7] = ExpectedContourMetacarpal(
+    2,
+    ends_branchs_sequence=True,
+    first_in_branch=expected_contours[4],
+    first_encounter=expected_contours[3]
+  )
+  expected_contours[8] = ExpectedContourDistalPhalanx(
+    3,
+    first_encounter=expected_contours[0]
+  )
+  expected_contours[9] = ExpectedContourMedialPhalanx(
+    3,
+    first_encounter=expected_contours[1]
+  )
+  expected_contours[10] = ExpectedContourProximalPhalanx(
+    3,
+    first_encounter=expected_contours[2]
+  )
+  expected_contours[11] = ExpectedContourMetacarpal(
+    3,
+    ends_branchs_sequence=True,
+    first_in_branch=expected_contours[8],
+    first_encounter=expected_contours[3]
+  )
+  expected_contours[12] = ExpectedContourDistalPhalanx(
+    4,
+    first_encounter=expected_contours[0]
+  )
+  expected_contours[13] = ExpectedContourMedialPhalanx(
+    4,
+    first_encounter=expected_contours[1]
+  )
+  expected_contours[14] = ExpectedContourProximalPhalanx(
+    4,
+    first_encounter=expected_contours[2]
+  )
+  expected_contours[15] = ExpectedContourMetacarpal(
+    4,
+    ends_branchs_sequence=True,
+    first_in_branch=expected_contours[12],
+    first_encounter=expected_contours[3]
+  )
+  expected_contours[16] = ExpectedContourDistalPhalanx(
+    5,
+    first_encounter=expected_contours[0]
+  )
+  expected_contours[17] = ExpectedContourProximalPhalanx(
+    5,
+    first_encounter=expected_contours[2]
+  )
+  expected_contours[18] = ExpectedContourMetacarpal(
+    5,
+    first_encounter=expected_contours[3]
+  )
+  expected_contours[19] = ExpectedContourUlna()
+  expected_contours[20] = ExpectedContourRadius()
+
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='084 radiography, 18.5 age hand. First finger.',
+    minimize_image=False,
+    show_position_restrictions=True,
+    contour_map_mask=contour_map[0:4]
+  )
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='084 radiography, 18.5 age hand. Second finger.',
+    minimize_image=False,
+    show_position_restrictions=True,
+    contour_map_mask=contour_map[4:8]
+  )
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='084 radiography, 18.5 age hand. Third finger.',
+    minimize_image=False,
+    show_position_restrictions=True,
+    contour_map_mask=contour_map[8:12]
+  )
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='084 radiography, 18.5 age hand. Fourth finger.',
+    minimize_image=False,
+    show_position_restrictions=True,
+    contour_map_mask=contour_map[12:16],
+  )
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='084 radiography, 18.5 age hand. Fifth finger.',
+    minimize_image=False,
+    show_position_restrictions=True,
+    contour_map_mask=contour_map[16:19],
+  )
+  show_contours_position_restrictions(
+    expected_contours,
+    contour_map,
+    contours,
+    padding=5,
+    title='084 radiography, 18.5 age hand. Ulna, radius.',
+    minimize_image=False,
+    show_position_restrictions=True,
+    contour_map_mask=contour_map[19:21]
+  )
+
 def visualize_execute_tests():
   # canonical_hand_case()
-  # radiography_004_case()
-  radiography_004_case_bug()
+  radiography_004_case()
+  radiography_084_case()
   
   plt.show()

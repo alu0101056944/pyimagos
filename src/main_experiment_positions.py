@@ -174,24 +174,22 @@ def count_invasion_factor_max(contour: np.array,
         x = point[0][0]
         y_point = point[0][1]
         line_y = m * x + b
+        # closest distance, basically go perpendicular to the line
+        local_invasion_factor = abs(y_point - line_y) / np.sqrt(m ** 2 + 1)
         if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
           if y_point <= line_y:
-            local_invasion_factor = (line_y - y_point)
             if local_invasion_factor > furthest_invasion_factor:
               furthest_invasion_factor = local_invasion_factor
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
           if y_point >= line_y:
-            local_invasion_factor = (y_point - line_y)
             if local_invasion_factor > furthest_invasion_factor:
               furthest_invasion_factor = local_invasion_factor
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
           if y_point < line_y:
-            local_invasion_factor = (line_y - y_point)
             if local_invasion_factor > furthest_invasion_factor:
               furthest_invasion_factor = local_invasion_factor
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
           if y_point > line_y:
-            local_invasion_factor = (y_point - line_y)
             if local_invasion_factor > furthest_invasion_factor:
               furthest_invasion_factor = local_invasion_factor
   
@@ -314,7 +312,18 @@ def get_all_invasion_factors(contours: list, contour_map: list,
         position_restrictions = first_in_branch.branch_start_position_restrictions()
     else:
       position_restrictions = expected_contour.next_contour_restrictions()
-    invasion_factors = count_invasion_factor_max(contour, position_restrictions)
+
+    if j < len(contour_map) - 1:
+      next_contour = contours[contour_map[j + 1]]
+      invasion_factors = count_invasion_factor_max(
+        next_contour,
+        position_restrictions
+      )
+    else:
+      invasion_factors = [
+        float('-inf') for position_restriction in position_restrictions
+      ]
+
     all_invasion_factors.append(invasion_factors)
 
   return all_invasion_factors

@@ -1536,7 +1536,7 @@ def case_030_with_sesamoid_segmentation() -> dict:
     'metacarpal_1': 3,
     'distal_2': 18,
     'medial_2': 15,
-    'proximal_2': 19,
+    'proximal_2': 10,
     'metacarpal_2': 5,
     'distal_3': 20,
     'medial_3': 17,

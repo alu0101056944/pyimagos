@@ -44,67 +44,6 @@ from src.radiographies.rad_2089 import case_2089
 
 from src.main_experiment_positions import count_invasion_factor_max
 
-def count_invasion_factor(contour: np.array,
-                          position_restrictions: list) -> list[float]:
-  '''The invasion factor is bigger the more of the contour is in the wrong
-  area.'''
-
-  invasion_factors = []
-  for position_restriction in position_restrictions:
-    p1, p2, allowed_side_array = position_restriction
-    x1, y1 = p1[0], p1[1]
-    x2, y2 = p2[0], p2[1]
-
-    local_invasion_factor = 0
-    if x2 == x1:
-      allowed_side = allowed_side_array[3]
-      x_line = x1
-
-      for point in contour:
-        x = point[0][0]
-        if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
-          if x <= x_line:
-            local_invasion_factor += (x_line - x)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
-          if x >= x_line:
-            local_invasion_factor += (x - x_line)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
-          if x < x_line:
-            local_invasion_factor += (x_line - x)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
-          if x > x_line:
-            local_invasion_factor += (x - x_line)
-    else:
-      m = (y2 - y1) / (x2 - x1)
-      b = y1 - m * x1
-      if m > 0:
-        allowed_side = allowed_side_array[0]
-      elif m < 0:
-        allowed_side = allowed_side_array[1]
-      else:
-        allowed_side = allowed_side_array[2]
-      
-      for point in contour:
-        x = point[0][0]
-        y_point = point[0][1]
-        line_y = m * x + b
-        if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
-          if y_point <= line_y:
-            local_invasion_factor += (line_y - y_point)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
-          if y_point >= line_y:
-            local_invasion_factor += (y_point - line_y)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
-          if y_point < line_y:
-            local_invasion_factor += (line_y - y_point)
-        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
-          if y_point > line_y:
-            local_invasion_factor += (y_point - line_y)
-  
-    invasion_factors.append(local_invasion_factor)
-
-  return invasion_factors
-
 def get_string_differences(contours: list, contour_map: list,
                       expected_contours: list, title: str) -> list[str]:
   '''contour_map is the ordered version of contours which corresponds to the
@@ -137,13 +76,25 @@ def get_string_differences(contours: list, contour_map: list,
         position_restrictions = first_in_branch.branch_start_position_restrictions()
     else:
       position_restrictions = expected_contour.next_contour_restrictions()
-    invasion_factors = count_invasion_factor_max(contour, position_restrictions)
+
+    if i < len(contour_map) - 1:
+      next_contour = contours[contour_map[i + 1]]
+      invasion_factors = count_invasion_factor_max(
+        next_contour,
+        position_restrictions
+      )
+    else:
+      invasion_factors = [
+        float('-inf') for position_restriction in position_restrictions
+      ]
 
     for j, invasion_factor in enumerate(invasion_factors):
       output_string = output_string + (
         f'Contour {i}, factor {j} (type={type(expected_contour).__name__}' \
-        f'): invasion factor={invasion_factor}\n')
-      
+        f'): invasion factor={invasion_factor},' \
+        f'contour={str(contour).replace('\n', ' ')},' \
+        f'position_restriction={str(position_restrictions[j]).replace('\n', ' ')}\n')
+    
     if len(invasion_factors) > 0:
       local_max_invasion_factors = max(invasion_factors)
       output_string = output_string + (
@@ -723,7 +674,7 @@ def case_030_local():
   metacarpal_1 = 3
   distal_2 = 18
   medial_2 = 15
-  proximal_2 = 19
+  proximal_2 = 10
   metacarpal_2 = 5
   distal_3 = 20
   medial_3 = 17
@@ -815,7 +766,7 @@ def case_084_local():
   medial_3 = 18
   proximal_3 = 13
   metacarpal_3 = 8
-  distal_4 = 7
+  distal_4 = 17
   medial_4 = 14
   proximal_4 = 10
   metacarpal_4 = 7

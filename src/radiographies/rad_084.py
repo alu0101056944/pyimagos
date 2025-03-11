@@ -1401,7 +1401,7 @@ def case_084_segmentation() -> dict:
     'medial_3': 18,
     'proximal_3': 13,
     'metacarpal_3': 8,
-    'distal_4': 7,
+    'distal_4': 17,
     'medial_4': 14,
     'proximal_4': 10,
     'metacarpal_4': 7,

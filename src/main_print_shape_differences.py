@@ -653,7 +653,7 @@ def case_030_local():
   metacarpal_1 = 3
   distal_2 = 18
   medial_2 = 15
-  proximal_2 = 19
+  proximal_2 = 10
   metacarpal_2 = 5
   distal_3 = 20
   medial_3 = 17
@@ -745,7 +745,7 @@ def case_084_local():
   medial_3 = 18
   proximal_3 = 13
   metacarpal_3 = 2
-  distal_4 = 7
+  distal_4 = 17
   medial_4 = 14
   proximal_4 = 10
   metacarpal_4 = 7
@@ -987,7 +987,6 @@ def get_canonical_expected_contours():
 
 def shape_differences_main():
   output_string = ''
-  output_string = output_string + case_004_local()
   output_string = output_string + case_004_local()
   output_string = output_string + case_022_local()
   output_string = output_string + case_006_local()
