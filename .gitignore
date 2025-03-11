@@ -10,6 +10,7 @@ positional_differences.txt
 global_furthest_invasions.txt
 best_shape_factors.txt
 best_shape_factors_stage_2.txt
+global_furthest_invasions_stage_2.txt
 
 model/*
 !model/README.md
