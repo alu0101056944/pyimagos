@@ -210,9 +210,6 @@ def write_expected_contours_precisions_stage_1():
         -0.004
       ]
     },
-    'ulna': {
-      'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
-    },
   }
 
   all_contours = [

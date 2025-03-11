@@ -448,7 +448,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
 
             defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-            if defect_area / hull_area > criteria['distal']['defect_area_ratio']:
+            if defect_area / hull_area > criteria['proximal']['defect_area_ratio']:
               significant_convexity_defects += 1
 
         shape_fail_statuses['defect_area_ratio']['fail_status'] = (

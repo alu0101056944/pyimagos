@@ -307,14 +307,14 @@ class ExpectedContourUlna(ExpectedContour):
 
       area = cv.contourArea(self.contour)
       shape_fail_statuses['area']['fail_status'] = (
-        True if area <= criteria['medial']['area'] else False
+        True if area <= criteria['ulna']['area'] else False
       )
       shape_fail_statuses['area']['obtained_value'] = area
       shape_fail_statuses['area']['threshold_value'] = (
-        criteria['medial']['area']
+        criteria['ulna']['area']
       )
       
-      threshold_value = criteria['medial']['aspect_ratio']
+      threshold_value = criteria['ulna']['aspect_ratio']
       shape_fail_statuses['aspect_ratio']['fail_status'] = (
         True if self._aspect_ratio < threshold_value else False
       )
@@ -338,11 +338,11 @@ class ExpectedContourUlna(ExpectedContour):
       hull = cv.convexHull(self.contour)
       solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
       shape_fail_statuses['solidity']['fail_status'] = (
-        True if solidity > criteria['medial']['solidity'] else False
+        True if solidity > criteria['ulna']['solidity'] else False
       )
       shape_fail_statuses['solidity']['obtained_value'] = solidity
       shape_fail_statuses['solidity']['threshold_value'] = (
-        criteria['medial']['solidity']
+        criteria['ulna']['solidity']
       )
 
       try:
@@ -361,7 +361,7 @@ class ExpectedContourUlna(ExpectedContour):
 
             defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-            if defect_area / hull_area > criteria['distal']['defect_area_ratio']:
+            if defect_area / hull_area > criteria['ulna']['defect_area_ratio']:
               significant_convexity_defects += 1
 
         shape_fail_statuses['defect_area_ratio']['fail_status'] = (

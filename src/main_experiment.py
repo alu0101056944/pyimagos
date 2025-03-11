@@ -99,11 +99,17 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
           }
 
       elif estimated_age == -1:
-        raise ValueError(f'index={i} radiography\'s estimation failed.' \
-                          ' Failed sesamoid search.')
+        ages[filename] = {
+          'estimated': -1,
+          'real': selected_group
+        }
+        filename_to_measurements[filename] = None
       elif estimated_age == -2:
-        raise ValueError(f'index={i} radiography\'s estimation failed.' \
-                          ' Failed fingers search.')
+        ages[filename] = {
+          'estimated': -2,
+          'real': selected_group
+        }
+        filename_to_measurements[filename] = None
   elif selected_group is None:
     for i, image_info in enumerate(images):
       filename = image_info[0]
@@ -242,7 +248,10 @@ def experiment(
       print(f'Measurements for group {selected_group}')
       for filename in filename_to_measurements:
         measurements = filename_to_measurements[filename]
-        print(f'{filename} | {measurements}')
+        if measurements is not None:
+          print(f'{filename} | {measurements}')
+        else:
+          print(f'{filename} | None')
 
       print('\n')
 
@@ -335,7 +344,8 @@ def main_experiment(
     image_formats = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff']
     
     for image_path in non_none_path.glob('*'):
-      if image_path.is_file() and image_path.suffix.lower() in image_formats:
+      if (image_path.is_file() and image_path.suffix.lower() in image_formats and
+          '_stage_2' not in image_path.stem):
         try:
           with Image.open(image_path) as image:
             print(f"Processing image: {image_path.name}")
