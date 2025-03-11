@@ -1696,7 +1696,7 @@ def case_018_with_sesamoid():
 
   ]
 
-def case_018_segmentation() -> dict:
+def case_018_with_sesamoid_segmentation() -> dict:
   return {
     'distal_1': 14,
     'medial_1': 10,

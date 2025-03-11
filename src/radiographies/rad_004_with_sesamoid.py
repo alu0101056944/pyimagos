@@ -1557,7 +1557,7 @@ def case_004_with_sesamoid():
   ]
   return contours
 
-def case_004_segmentation() -> dict:
+def case_004_with_sesamoid_segmentation() -> dict:
   return {
     'distal_1': 14,
     'medial_1': 11,

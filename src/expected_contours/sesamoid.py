@@ -149,11 +149,11 @@ class ExpectedContourSesamoid(ExpectedContour):
       hull = cv.convexHull(self.contour)
       solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
       shape_fail_statuses['solidity']['fail_status'] = (
-        True if solidity > criteria['medial']['solidity'] else False
+        True if solidity > criteria['sesamoid']['solidity'] else False
       )
       shape_fail_statuses['solidity']['obtained_value'] = solidity
       shape_fail_statuses['solidity']['threshold_value'] = (
-        criteria['medial']['solidity']
+        criteria['sesamoid']['solidity']
       )
       
       moments = cv.moments(self.contour)

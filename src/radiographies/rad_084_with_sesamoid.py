@@ -1400,7 +1400,7 @@ def case_084_with_sesamoid():
     dtype=np.int32)
   ]
 
-def case_084_segmentation() -> dict:
+def case_084_with_sesamoid_segmentation() -> dict:
   return {
     'distal_1': 15,
     'medial_1': 12,
