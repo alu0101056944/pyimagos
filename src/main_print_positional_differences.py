@@ -14,6 +14,7 @@ import numpy as np
 from src.expected_contours.distal_phalanx import (
   AllowedLineSideBasedOnYorXOnVertical
 )
+from src.expected_contours.expected_contour_of_branch import ExpectedContourOfBranch
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
 from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalanx
@@ -73,33 +74,33 @@ def count_invasion_factor(contour: np.array,
         elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
           if x > x_line:
             local_invasion_factor += (x - x_line)
-        else:
-          m = (y2 - y1) / (x2 - x1)
-          b = y1 - m * x1
-          if m > 0:
-            allowed_side = allowed_side_array[0]
-          elif m < 0:
-            allowed_side = allowed_side_array[1]
-          else:
-            allowed_side = allowed_side_array[2]
-          
-          for point in contour:
-            x = point[0][0]
-            y_point = point[0][1]
-            line_y = m * x + b
-            if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
-              if y_point <= line_y:
-                local_invasion_factor += (line_y - y_point)
-            elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
-              if y_point >= line_y:
-                local_invasion_factor += (y_point - line_y)
-            elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
-              if y_point < line_y:
-                local_invasion_factor += (line_y - y_point)
-            elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
-              if y_point > line_y:
-                local_invasion_factor += (y_point - line_y)
-    
+    else:
+      m = (y2 - y1) / (x2 - x1)
+      b = y1 - m * x1
+      if m > 0:
+        allowed_side = allowed_side_array[0]
+      elif m < 0:
+        allowed_side = allowed_side_array[1]
+      else:
+        allowed_side = allowed_side_array[2]
+      
+      for point in contour:
+        x = point[0][0]
+        y_point = point[0][1]
+        line_y = m * x + b
+        if allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER:
+          if y_point <= line_y:
+            local_invasion_factor += (line_y - y_point)
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER:
+          if y_point >= line_y:
+            local_invasion_factor += (y_point - line_y)
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL:
+          if y_point < line_y:
+            local_invasion_factor += (line_y - y_point)
+        elif allowed_side == AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL:
+          if y_point > line_y:
+            local_invasion_factor += (y_point - line_y)
+  
     invasion_factors.append(local_invasion_factor)
 
   return invasion_factors
@@ -128,7 +129,14 @@ def get_string_differences(contours: list, contour_map: list,
     image_height = int(max_y - min_y)
     expected_contour.prepare(contour, image_width, image_height)
     
-    position_restrictions = expected_contour.next_contour_restrictions()
+    if isinstance(expected_contour, ExpectedContourOfBranch):
+      if not expected_contour.ends_branchs_sequence:
+        position_restrictions = expected_contour.next_contour_restrictions()
+      else:
+        first_in_branch = expected_contour.first_in_branch
+        position_restrictions = first_in_branch.branch_start_position_restrictions()
+    else:
+      position_restrictions = expected_contour.next_contour_restrictions()
     invasion_factors = count_invasion_factor_max(contour, position_restrictions)
 
     for j, invasion_factor in enumerate(invasion_factors):

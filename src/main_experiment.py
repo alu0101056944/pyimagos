@@ -69,7 +69,8 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
           image_stage_2,
         ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
                                     noresize=noresize,
-                                    input_image_2=image_stage_2)
+                                    input_image_2=image_stage_2,
+                                    use_first_closest_to_origin=True)
 
       if filename not in filename_to_measurements:
         filename_to_measurements[filename] = {}

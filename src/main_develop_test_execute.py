@@ -8691,7 +8691,7 @@ def radiography_004_case_bug():
     title='004 radiography, 17.5 age hand. First finger.',
     minimize_image=False,
     show_position_restrictions=True,
-    contour_map_mask=contour_map[2:3]
+    contour_map_mask=contour_map[0:4]
   )
   show_contours_position_restrictions(
     expected_contours,
