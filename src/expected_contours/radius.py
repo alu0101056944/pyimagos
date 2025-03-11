@@ -190,7 +190,7 @@ class ExpectedContourRadius(ExpectedContour):
             if defect_area / hull_area > criteria['radius']['defect_area_ratio']:
               significant_convexity_defects += 1
 
-        if significant_convexity_defects != 5:
+        if significant_convexity_defects != 1:
           return float('inf')
 
       except cv.error as e:
@@ -237,7 +237,7 @@ class ExpectedContourRadius(ExpectedContour):
           'threshold_value': None,
           'fail_status': None,
         },
-        'convexity_defects': {
+        'defect_area_ratio': {
           'obtained_value': None,
           'threshold_value': None,
           'fail_status': None,
@@ -253,14 +253,14 @@ class ExpectedContourRadius(ExpectedContour):
 
       area = cv.contourArea(self.contour)
       shape_fail_statuses['area']['fail_status'] = (
-        True if area <= criteria['medial']['area'] else False
+        True if area <= criteria['radius']['area'] else False
       )
       shape_fail_statuses['area']['obtained_value'] = area
       shape_fail_statuses['area']['threshold_value'] = (
-        criteria['medial']['area']
+        criteria['radius']['area']
       )
       
-      threshold_value = criteria['medial']['aspect_ratio']
+      threshold_value = criteria['radius']['aspect_ratio']
       shape_fail_statuses['aspect_ratio']['fail_status'] = (
         True if self._aspect_ratio < threshold_value else False
       )
@@ -284,11 +284,11 @@ class ExpectedContourRadius(ExpectedContour):
       hull = cv.convexHull(self.contour)
       solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
       shape_fail_statuses['solidity']['fail_status'] = (
-        True if solidity > criteria['medial']['solidity'] else False
+        True if solidity > criteria['radius']['solidity'] else False
       )
       shape_fail_statuses['solidity']['obtained_value'] = solidity
       shape_fail_statuses['solidity']['threshold_value'] = (
-        criteria['medial']['solidity']
+        criteria['radius']['solidity']
       )
 
       try:
@@ -307,24 +307,24 @@ class ExpectedContourRadius(ExpectedContour):
 
             defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-            if defect_area / hull_area > criteria['distal']['defect_area_ratio']:
+            if defect_area / hull_area > criteria['radius']['defect_area_ratio']:
               significant_convexity_defects += 1
 
-        shape_fail_statuses['convexity_defects']['fail_status'] = (
-          True if significant_convexity_defects != 5 else False
+        shape_fail_statuses['defect_area_ratio']['fail_status'] = (
+          True if significant_convexity_defects != 1 else False
         )
-        shape_fail_statuses['convexity_defects']['obtained_value'] = (
+        shape_fail_statuses['defect_area_ratio']['obtained_value'] = (
           significant_convexity_defects
         )
-        shape_fail_statuses['convexity_defects']['threshold_value'] = 5
+        shape_fail_statuses['defect_area_ratio']['threshold_value'] = 1
       except cv.error as e:
         error_message = str(e).lower()
         if 'not monotonous' in error_message: # TODO make this more robust
-          shape_fail_statuses['convexity_defects']['fail_status'] = True
-          shape_fail_statuses['convexity_defects']['obtained_value'] = (
+          shape_fail_statuses['defect_area_ratio']['fail_status'] = True
+          shape_fail_statuses['defect_area_ratio']['obtained_value'] = (
             np.nan
           )
-          shape_fail_statuses['convexity_defects']['threshold_value'] = (
+          shape_fail_statuses['defect_area_ratio']['threshold_value'] = (
             np.nan
           )
       

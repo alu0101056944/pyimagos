@@ -109,17 +109,11 @@ def write_expected_contours_precisions_stage_1():
       'area': [30, 20, 10, 0, -10, -20, -30],
       'aspect_ratio': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
-      'defect_area_ratio': [
-        0.004,
-        0.003,
-        0.002,
-        0.001,
-        0,
-        -0.001,
-        -0.002,
-        -0.003,
-        -0.004
-      ]
+      'defect_area_ratio': list(np.concatenate(
+          (np.arange(0.35, 0, -0.01),
+          np.arange(-0.35, 0, 0.01)),
+        )
+      )
     },
     'ulna': {
       'area': [30, 20, 10, 0, -10, -20, -30],
@@ -234,23 +228,36 @@ def write_expected_contours_precisions_stage_1():
   output_string = output_string + precisions_string + '\n\n'
   
   best_precisions = {}
+  best_factors = {}
   for expected_contour_key in precisions:
     best_precisions[expected_contour_key] = {}
+    best_factors[expected_contour_key] = {}
     for factor_key in precisions[expected_contour_key]:
-      deltas = precisions[expected_contour_key][factor_key]
+      local_precisions = precisions[expected_contour_key][factor_key]
 
-      best_delta_index = np.argmax(deltas)
-      best_delta = deltas[best_delta_index]
+      best_precision_index = np.argmax(local_precisions)
+      best_precision = (
+        precisions[expected_contour_key][factor_key][best_precision_index]
+      )
 
+      best_precisions[expected_contour_key][factor_key] = best_precision
+
+      best_delta = (
+        deltas[expected_contour_key][factor_key][best_precision_index]
+      )
       original_value = criteria_dict[expected_contour_key][factor_key]
 
-      best_precisions[expected_contour_key][factor_key] = (
+      best_factors[expected_contour_key][factor_key] = (
         original_value + best_delta
       )
 
   output_string = output_string + 'Best precisions:\n'
   best_precisions_string = json.dumps(best_precisions, indent=2)
-  output_string = output_string + best_precisions_string + '\n'
+  output_string = output_string + best_precisions_string + '\n\n'
+
+  output_string = output_string + 'Best factors:\n'
+  best_factors_string = json.dumps(best_factors, indent=2)
+  output_string = output_string + best_factors_string + '\n'
 
   with open('best_shape_factors.txt', 'w') as f:
     f.write(output_string)

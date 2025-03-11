@@ -291,7 +291,7 @@ class ExpectedContourUlna(ExpectedContour):
           'threshold_value': None,
           'fail_status': None,
         },
-        'convexity_defects': {
+        'defect_area_ratio': {
           'obtained_value': None,
           'threshold_value': None,
           'fail_status': None,
@@ -364,21 +364,21 @@ class ExpectedContourUlna(ExpectedContour):
             if defect_area / hull_area > criteria['distal']['defect_area_ratio']:
               significant_convexity_defects += 1
 
-        shape_fail_statuses['convexity_defects']['fail_status'] = (
+        shape_fail_statuses['defect_area_ratio']['fail_status'] = (
           True if significant_convexity_defects != 3 else False
         )
-        shape_fail_statuses['convexity_defects']['obtained_value'] = (
+        shape_fail_statuses['defect_area_ratio']['obtained_value'] = (
           significant_convexity_defects
         )
-        shape_fail_statuses['convexity_defects']['threshold_value'] = 3
+        shape_fail_statuses['defect_area_ratio']['threshold_value'] = 3
       except cv.error as e:
         error_message = str(e).lower()
         if 'not monotonous' in error_message: # TODO make this more robust
-          shape_fail_statuses['convexity_defects']['fail_status'] = True
-          shape_fail_statuses['convexity_defects']['obtained_value'] = (
+          shape_fail_statuses['defect_area_ratio']['fail_status'] = True
+          shape_fail_statuses['defect_area_ratio']['obtained_value'] = (
             np.nan
           )
-          shape_fail_statuses['convexity_defects']['threshold_value'] = (
+          shape_fail_statuses['defect_area_ratio']['threshold_value'] = (
             np.nan
           )
       

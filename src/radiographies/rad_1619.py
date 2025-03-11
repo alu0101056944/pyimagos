@@ -1596,5 +1596,5 @@ def case_1619_segmentation() -> dict:
     'proximal_5': 5,
     'metacarpal_5': 2,
     'ulna': 1,
-    'radio': 0,
+    'radius': 0,
   }
