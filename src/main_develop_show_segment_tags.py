@@ -51,7 +51,7 @@ def show_segment_tags(contours, title: str):
   minimal_image, adjusted_contours = create_minimal_image_from_contours(
     blank_image,
     contours,
-    padding=60,
+    padding=20,
   )
   minimal_image = cv.cvtColor(minimal_image, cv.COLOR_GRAY2RGB)
   contours = adjusted_contours

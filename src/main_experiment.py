@@ -28,7 +28,8 @@ from constants import BONE_AGE_ATLAS
 
 def get_fit_dictionary(images: list, selected_group: Union[float, None],
                        nofilter: bool = False, use_cpu: bool = True,
-                       noresize: bool = False, useinput2: bool = False) -> dict:
+                       noresize: bool = False, useinput2: bool = False,
+                       start_indices_dict: dict = None) -> dict:
   fit = {}
   ages = {}
   filename_to_measurements = {}
@@ -39,6 +40,9 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
     for i, image_info in enumerate(images):
       filename = image_info[0]
       image = image_info[1]
+      start_index = -1
+      if start_indices_dict is not None:
+        start_index = start_indices_dict[filename]
 
       if not useinput2:
         (
@@ -47,7 +51,7 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
           image_stage_1,
           image_stage_2,
         ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
-                                    noresize=noresize)
+                                    noresize=noresize, start_index=start_index)
       else:
         image_stage_2_str = image_info[2]
         image_stage_2 = None
@@ -70,7 +74,7 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
         ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
                                     noresize=noresize,
                                     input_image_2=image_stage_2,
-                                    use_first_closest_to_origin=True)
+                                    start_index=start_index)
 
       if filename not in filename_to_measurements:
         filename_to_measurements[filename] = {}
@@ -207,6 +211,7 @@ def experiment(
     use_cpu: bool = True,
     noresize: bool = False,
     useinput2: bool = False,
+    start_indices_dict: dict = None,
 ):
   if isinstance(images, list):
     if selected_group == 'control':
@@ -214,14 +219,15 @@ def experiment(
         fit,
         ages,
         filename_to_measurements,
-      ) = get_fit_dictionary(images, None, nofilter, use_cpu, noresize, useinput2)
+      ) = get_fit_dictionary(images, None, nofilter, use_cpu, noresize, useinput2,
+                             start_indices_dict)
     else:
       (
         fit,
         ages,
         filename_to_measurements,
       ) = get_fit_dictionary(images, float(selected_group), nofilter, use_cpu,
-                             noresize, useinput2)
+                             noresize, useinput2, start_indices_dict)
 
     print('\n')
     print(f'Fit results for group {selected_group}:')
@@ -268,7 +274,8 @@ def experiment(
         selected_group = None
 
       fit, ages, _ = get_fit_dictionary(images[images_key], selected_group,
-                                     nofilter, use_cpu, noresize, useinput2)
+                                     nofilter, use_cpu, noresize, useinput2,
+                                     start_indices_dict)
 
       print(f'Fit results for group {selected_group}:')
       for measurement_key in fit:
@@ -302,7 +309,8 @@ def main_experiment(
     nofilter: bool = False,
     use_cpu: bool = True,
     noresize: bool = False,
-    useinput2: bool = False
+    useinput2: bool = False,
+    use_starts_file: bool = False,
 ):
   if single:
     amount_of_passed_options = (
@@ -370,6 +378,52 @@ def main_experiment(
         except Exception as e:
           print(f"Error opening image {image_path.name}: {e}")
 
+    start_indices_dict = None
+    if use_starts_file:
+      image_names = [image_content[0] for image_content in images]
+      for file_path in non_none_path.glob('*'):
+        if (file_path.is_file() and file_path.stem.lower() == 'start_indices'):
+          # Read JSON file with filename-start contour index information
+          try:
+            with open(file_path, 'r') as file:
+              filename_to_start_index_dict = json.load(file)
+
+              if not isinstance(filename_to_start_index_dict, dict):
+                raise ValueError(f"Error: start_indices.json JSON file does not ' \
+                                 'contain a dictionary at the top level.")
+              for filename, start_index in filename_to_start_index_dict.items():
+                if not isinstance(filename, str):
+                  raise ValueError(f"Error: JSON dictionary keys should be' \
+                                  ' filenames (strings). Found key: {filename} ' \
+                                    'which is not a string.")
+                if not isinstance(start_index, (int, int)):
+                  raise ValueError(f"Error: JSON dictionary values should be index ' \
+                                    '(int). Value for '{filename}' is not an ' \
+                                    '(int): {start_index}")
+                if not filename in image_names:
+                  raise ValueError(f"Error: Filename key {filename} in the JSON " \
+                                   "is not an actual file")
+                
+              start_indices_dict = filename_to_start_index_dict
+          except FileNotFoundError:
+            print(f"Error: start_indices JSON file not found at path: {groupcontrol}")
+            return None
+          except json.JSONDecodeError as e:
+            print(f"Error: Could not parse JSON from file start_indices.json. Invalid ' \
+                  'JSON format.\nDetails: {e}")
+            return None
+          except Exception as e:
+            print(f"An unexpected error occurred while reading the JSON file: {e}")
+            return None
+          
+          if len(start_indices_dict) != len(images):
+            raise ValueError(f"Error: start_indices.json file is missing " \
+                            f"entries. Expected {len(images)} but found" \
+                              f" {len(start_indices_dict)}")
+    
+    # TODO --single mode has received changes to non control groups, so control
+    # group will probably raise error. Fix it.
+
     control_dict = None
     if selected_group == 'control':
       control_image_names = [image_content[0] for image_content in images]
@@ -410,13 +464,16 @@ def main_experiment(
           
           if len(control_dict) != len(images):
             raise ValueError(f"Error: control group's json file is missing " \
-                            f"entries. Expected {len(images)} but got" \
+                            f"entries. Expected {len(images)} but found" \
                               f" {len(control_dict)}")
           
 
     experiment(images, selected_group, control_dict, nofilter, use_cpu,
-               noresize, useinput2)
+               noresize, useinput2, start_indices_dict)
   else:
+    # TODO --single mode has received changes to non control groups, so not --single
+    # group is not updated and may raise errors. Fix it.
+
     if group17_5 is None:
       print(f'Error: missing group17_5 option.')
       return
@@ -598,7 +655,7 @@ def main_experiment(
         
         if len(control_dict) != len(images['group_control']):
           raise ValueError(f"Error: control group's json file is missing entries. " \
-                          f" Expected {len(images['group_control'])} but got " \
+                          f" Expected {len(images['group_control'])} but found " \
                             f" {len(control_dict)}")
         
     print('\n')

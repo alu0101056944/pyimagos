@@ -222,7 +222,7 @@ def search_complete_contours(
     silent: bool = True,
     criteria_dict: dict = None,
     full_silent: bool = False,
-    use_first_closest_to_origin: bool = False,
+    start_index: int = -1,
 ) -> list:
   if len(contours) == 0:
     return []
@@ -232,40 +232,24 @@ def search_complete_contours(
 
   state_stack = []
 
-  if use_first_closest_to_origin:
-    global_min_distance = -1
-    global_min_distance_index = -1
-    for j, contour in enumerate(contours):
-      min_distance = -1
-      for i, point in enumerate(contour):
-        distance = np.sqrt(point[0][0] ** 2 + point[0][1] ** 2)
-        if min_distance == -1 or distance < min_distance:
-          min_distance = distance
-
-      if global_min_distance == -1 or global_min_distance > min_distance:
-        global_min_distance = min_distance
-        global_min_distance_index = j
-    
-    if global_min_distance_index == -1:
-      raise ValueError('Cannot find closest contour to origin.')
-
-    contour_closest_to_origin = contours[global_min_distance_index]
+  if start_index != -1:
+    start_contour = contours[start_index]
 
     expected_contour_class = expected_contours[0]
     expected_contour_class.prepare(
-      contour_closest_to_origin,
+      start_contour,
       image_width,
       image_height
     )
     score = expected_contour_class.shape_restrictions(criteria_dict)
 
     state_stack.append({
-      'contours_committed': [contour_closest_to_origin],
+      'contours_committed': [start_contour],
       'contours': contours,
-      'chosen_contour_index': global_min_distance_index,
+      'chosen_contour_index': start_index,
       'committed_total_value': score,
     })
-      
+
   elif injected_start_contour is None:
     min_score = float('inf')
     best_contour_index = -1
@@ -591,7 +575,7 @@ def estimate_age_from_image(
     use_cpu: bool = True,
     noresize: bool = False,
     input_image_2: Union[np.ndarray, Image.Image] = None,
-    use_first_closest_to_origin: bool = None,
+    start_index: int = -1,
 ) -> Tuple[float, list]:
   '''Given an image of a radiography, output the estimated age'''
   HIGHER_THRESHOLD = 40
@@ -681,7 +665,7 @@ def estimate_age_from_image(
     image_height=minimum_image_1.shape[0],
     criteria_dict=criteria_dict,
     full_silent=full_silent,
-    use_first_closest_to_origin=use_first_closest_to_origin,
+    start_index=start_index,
   )
 
   if len(complete_contours) > 0:

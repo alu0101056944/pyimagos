@@ -141,9 +141,13 @@ def estimate() -> None:
 @click.option('--useinput2', is_flag=True, default=False,
               help='To search for a x_stage_2.jpg image per image to use for' \
                 ' the second stage search')
+@click.option('--use_starts_file', is_flag=True, default=False,
+              help='To look for a .json with the index of the start contour.' + (
+                'The search will use that as starting contour.'
+              ))
 def experiment(nofilter: bool, single: bool, group17_5: str, group18_5: str,
                group19_5: str, groupcontrol: str, gpu: bool,
-               noresize: bool, useinput2: bool) -> None:
+               noresize: bool, useinput2: bool, use_starts_file: bool) -> None:
   '''Estimate age and show measurement fit for three different groups and
       a control group. If --single option was not used then four options
       group17_5, group18_5 and group19_5, groupcontrol with the folder
@@ -151,7 +155,7 @@ def experiment(nofilter: bool, single: bool, group17_5: str, group18_5: str,
        fail if passed more than one)'''
   main_experiment(single, group17_5, group18_5, group19_5, groupcontrol,
                   nofilter, use_cpu=not gpu, noresize=noresize,
-                  useinput2=useinput2)
+                  useinput2=useinput2, use_starts_file=use_starts_file)
 
 @cli.command()
 @click.argument('filename')
