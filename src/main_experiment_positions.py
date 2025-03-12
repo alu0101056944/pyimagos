@@ -403,10 +403,10 @@ def write_position_experiment_file():
   radius_max_furthest_invasions = all_global_furthest_invasion[20]
   all_max_furthests = {
     'distal_next_default': distal_max_furthest_invasions,
+    'distal_jump_default': metacarpal_jump_max_furthest_invasions,
+    'distal_jump_encounter_4': metacarpal_fourth_jump_max_furthest_invasions,
     'medial_next_default': medial_max_furthest_invasions,
     'proximal_next_default': proximal_max_furthest_invasions,
-    'metacarpal_jump_default': metacarpal_jump_max_furthest_invasions,
-    'metacarpal_jump_encounter_4': metacarpal_fourth_jump_max_furthest_invasions,
     'metacarpal_next_default': metacarpal_next_max_furthest_invasions,
     'ulna_next_default': ulna_max_furthest_invasions,
     'radius_next_default': radius_max_furthest_invasions,
