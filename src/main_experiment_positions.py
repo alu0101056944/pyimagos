@@ -15,7 +15,9 @@ import numpy as np
 from src.expected_contours.distal_phalanx import (
   AllowedLineSideBasedOnYorXOnVertical
 )
-from src.expected_contours.expected_contour_of_branch import ExpectedContourOfBranch
+from src.expected_contours.expected_contour_of_branch import (
+  ExpectedContourOfBranch
+)
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.expected_contours.medial_phalanx import ExpectedContourMedialPhalanx
 from src.expected_contours.proximal_phalanx import ExpectedContourProximalPhalanx
@@ -309,7 +311,9 @@ def get_all_invasion_factors(contours: list, contour_map: list,
         position_restrictions = expected_contour.next_contour_restrictions()
       else:
         first_in_branch = expected_contour.first_in_branch
-        position_restrictions = first_in_branch.branch_start_position_restrictions()
+        position_restrictions = (
+          first_in_branch.branch_start_position_restrictions()
+        )
     else:
       position_restrictions = expected_contour.next_contour_restrictions()
 
@@ -328,7 +332,9 @@ def get_all_invasion_factors(contours: list, contour_map: list,
 
   return all_invasion_factors
 
-def write_position_experiment_first_stage():
+def write_position_experiment_file():
+  ## First stage global furthest invasions
+
   all_contours = [
     [case_004(), case_004_segmentation()],
     [case_022(), case_022_segmentation()],
@@ -361,7 +367,7 @@ def write_position_experiment_first_stage():
     expected_contours
   )
 
-  output_string = 'Restrictions: global furthest invasions:\n'
+  output_string = 'Restrictions: global furthest invasions first stage:\n'
   for i, expected_invasions in enumerate(all_global_furthest_invasion):
     output_string = output_string + f'R{i}: '
     for j, restriction_invasion in enumerate(expected_invasions):
@@ -369,13 +375,54 @@ def write_position_experiment_first_stage():
           f'{"," if j != len(expected_invasions) - 1 else ""}')
     output_string = output_string + f'\n'
 
-  with open('global_furthest_invasions.txt', 'w') as f:
-    f.write(output_string)
-    print('Writing global_furthest_invasions.txt')
-    print('Success.')
+  def get_max_furthest_invasions(all_furthest_invasion_indices: list[int]):
+    first_index = all_furthest_invasion_indices[0]
+    max_furthest_invasions = [
+      None for element in all_global_furthest_invasion[first_index]
+    ]
+    for i in range(len(max_furthest_invasions)):
+      max_value = float('-inf')
+      for j in all_furthest_invasion_indices:
+        local_furthest_invasions = all_global_furthest_invasion[j]
+        local_max_value = local_furthest_invasions[i]
+        if local_max_value > max_value:
+          max_value = local_max_value
 
-def write_position_experiment_second_stage():
-  all_contours = [
+      max_furthest_invasions[i] = max_value
+    return max_furthest_invasions
+  
+  distal_max_furthest_invasions = get_max_furthest_invasions([0, 4, 8, 12, 16])
+  medial_max_furthest_invasions = get_max_furthest_invasions([1, 5, 9, 13])
+  proximal_max_furthest_invasions = get_max_furthest_invasions([2, 6, 10, 14, 17])
+  metacarpal_jump_max_furthest_invasions = get_max_furthest_invasions(
+    [3, 7, 11]
+  )
+  metacarpal_fourth_jump_max_furthest_invasions = all_global_furthest_invasion[15]
+  metacarpal_next_max_furthest_invasions = get_max_furthest_invasions([18])
+  ulna_max_furthest_invasions = all_global_furthest_invasion[19]
+  radius_max_furthest_invasions = all_global_furthest_invasion[20]
+  all_max_furthests = {
+    'distal_next_default': distal_max_furthest_invasions,
+    'medial_next_default': medial_max_furthest_invasions,
+    'proximal_next_default': proximal_max_furthest_invasions,
+    'metacarpal_jump_default': metacarpal_jump_max_furthest_invasions,
+    'metacarpal_jump_encounter_4': metacarpal_fourth_jump_max_furthest_invasions,
+    'metacarpal_next_default': metacarpal_next_max_furthest_invasions,
+    'ulna_next_default': ulna_max_furthest_invasions,
+    'radius_next_default': radius_max_furthest_invasions,
+  }
+  
+  output_string = output_string + '\nRestrictions: final position restrictions:\n'
+  for i, (name, max_furthests) in enumerate(all_max_furthests.items()):
+    output_string = output_string + f'{name}: '
+    for j, restriction_invasion in enumerate(max_furthests):
+      output_string = output_string + f'{restriction_invasion}' + (
+            f'{"," if j != len(expected_invasions) - 1 else ""}')
+    output_string = output_string + f'\n'
+
+  ## Second stage global furthest invasions
+
+  all_contours_2 = [
     [case_004_with_sesamoid(), case_004_with_sesamoid_segmentation()],
     [case_022_with_sesamoid(), case_022_with_sesamoid_segmentation()],
     [case_006_with_sesamoid(), case_006_with_sesamoid_segmentation()],
@@ -396,9 +443,9 @@ def write_position_experiment_second_stage():
     [case_1779_with_sesamoid(), case_1779_with_sesamoid_segmentation()],
     [case_2089_with_sesamoid(), case_2089_with_sesamoid_segmentation()],
   ]
-
-  # change contours to only metacarpal and sesamoid, also segmentation.
-  for contours_info in all_contours:
+  
+  # Change contours to only metacarpal and sesamoid, also segmentation.
+  for contours_info in all_contours_2:
     contours = contours_info[0]
     segmentation = contours_info[1]
     metacarpal_5_index = segmentation['metacarpal_5']
@@ -411,27 +458,61 @@ def write_position_experiment_second_stage():
       'sesamoid': 1,
     }
 
-  expected_contours = get_canonical_expected_contours_stage_2()
+  expected_contours_2 = get_canonical_expected_contours_stage_2()
 
-  if len(all_contours) == 0:
+  if len(all_contours_2) == 0:
     raise ValueError('No contours cases, need at least one.')
 
-  all_global_furthest_invasion = get_furthest_invasions(
-    all_contours,
-    expected_contours
+  all_global_furthest_invasion_2 = get_furthest_invasions(
+    all_contours_2,
+    expected_contours_2
   )
 
-  output_string = 'Restrictions: global furthest invasions:\n'
-  for i, expected_invasions in enumerate(all_global_furthest_invasion):
+  output_string = output_string + (
+    '\nRestrictions: global furthest invasions second stage:\n'
+  )
+  for i, expected_invasions in enumerate(all_global_furthest_invasion_2):
     output_string = output_string + f'R{i}: '
     for j, restriction_invasion in enumerate(expected_invasions):
       output_string = output_string + f'{restriction_invasion}' + (
           f'{"," if j != len(expected_invasions) - 1 else ""}')
     output_string = output_string + f'\n'
 
-  with open('global_furthest_invasions_stage_2.txt', 'w') as f:
+  def get_max_furthest_invasions_2(all_furthest_invasion_indices: list[int]):
+    first_index = all_furthest_invasion_indices[0]
+    max_furthest_invasions = [
+      None for element in all_global_furthest_invasion_2[first_index]
+    ]
+    for i in range(len(max_furthest_invasions)):
+      max_value = float('-inf')
+      for j in all_furthest_invasion_indices:
+        local_furthest_invasions = all_global_furthest_invasion_2[j]
+        local_max_value = local_furthest_invasions[i]
+        if local_max_value > max_value:
+          max_value = local_max_value
+
+      max_furthest_invasions[i] = max_value
+    return max_furthest_invasions
+  
+  metacarpal_sesamoid_max_furthest_invasions = get_max_furthest_invasions_2([0])
+
+  all_max_furthests = {
+    'metacarpal_sesamoid_next_default': metacarpal_sesamoid_max_furthest_invasions,
+  }
+  
+  output_string = output_string + (
+    '\nRestrictions: final position restrictions second stage:\n'
+  )
+  for i, (name, max_furthests) in enumerate(all_max_furthests.items()):
+    output_string = output_string + f'{name}: '
+    for j, restriction_invasion in enumerate(max_furthests):
+      output_string = output_string + f'{restriction_invasion}' + (
+            f'{"," if j != len(expected_invasions) - 1 else ""}')
+    output_string = output_string + f'\n'
+
+  with open('global_furthest_invasions.txt', 'w') as f:
     f.write(output_string)
-    print('Writing global_furthest_invasions_stage_2.txt')
+    print('Writing global_furthest_invasions.txt')
     print('Success.')
 
 def get_furthest_invasions(all_contours: list, expected_contours: list):
@@ -468,6 +549,4 @@ def get_canonical_expected_contours_stage_2():
 
 
 def write_position_experiment():
-  write_position_experiment_first_stage()
-  write_position_experiment_second_stage()
-
+  write_position_experiment_file()
