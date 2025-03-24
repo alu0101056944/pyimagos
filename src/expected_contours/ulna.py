@@ -212,7 +212,10 @@ class ExpectedContourUlna(ExpectedContour):
       if area < criteria['ulna']['area']:
         return float('inf')
 
-      if self._aspect_ratio < criteria['ulna']['aspect_ratio']:
+      if self._aspect_ratio < criteria['ulna']['aspect_ratio_min']:
+        return float('inf')
+      
+      if self._aspect_ratio > criteria['ulna']['aspect_ratio_max']:
         return float('inf')
       
       if len(self.contour) < 3:
@@ -276,7 +279,12 @@ class ExpectedContourUlna(ExpectedContour):
           'threshold_value': None,
           'fail_status': None,
         },
-        'aspect_ratio': {
+        'aspect_ratio_min': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'aspect_ratio_max': {
           'obtained_value': None,
           'threshold_value': None,
           'fail_status': None,
@@ -314,14 +322,25 @@ class ExpectedContourUlna(ExpectedContour):
         criteria['ulna']['area']
       )
       
-      threshold_value = criteria['ulna']['aspect_ratio']
-      shape_fail_statuses['aspect_ratio']['fail_status'] = (
+      threshold_value = criteria['ulna']['aspect_ratio_min']
+      shape_fail_statuses['aspect_ratio_min']['fail_status'] = (
         True if self._aspect_ratio < threshold_value else False
       )
-      shape_fail_statuses['aspect_ratio']['obtained_value'] = (
+      shape_fail_statuses['aspect_ratio_min']['obtained_value'] = (
         self._aspect_ratio
       )
-      shape_fail_statuses['aspect_ratio']['threshold_value'] = (
+      shape_fail_statuses['aspect_ratio_min']['threshold_value'] = (
+        threshold_value
+      )
+
+      threshold_value = criteria['ulna']['aspect_ratio_max']
+      shape_fail_statuses['aspect_ratio_max']['fail_status'] = (
+        True if self._aspect_ratio > threshold_value else False
+      )
+      shape_fail_statuses['aspect_ratio_max']['obtained_value'] = (
+        self._aspect_ratio
+      )
+      shape_fail_statuses['aspect_ratio_max']['threshold_value'] = (
         threshold_value
       )
 

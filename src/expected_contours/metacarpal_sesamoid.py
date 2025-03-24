@@ -30,7 +30,7 @@ class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
     # (a clipped image focused on the fifth metacarpal)
     super().__init__(
       encounter_amount=5,
-      first_encounter=None,
+      previous_encounter=None,
       first_in_branch=None,
       ends_branchs_sequence=False,
     )
@@ -41,8 +41,8 @@ class ExpectedContourSesamoidMetacarpal(ExpectedContourMetacarpal):
     # encounter
     class AnonymousFirstEncounter:
       pass
-    self.first_encounter = AnonymousFirstEncounter()
-    self.first_encounter._aspect_ratio = self._aspect_ratio
+    self.previous_encounter = AnonymousFirstEncounter()
+    self.previous_encounter._aspect_ratio = self._aspect_ratio
 
   def next_contour_restrictions(self, position_factors: dict = None) -> list:
     if position_factors is None:

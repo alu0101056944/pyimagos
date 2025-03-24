@@ -121,106 +121,52 @@ from src.radiographies.rad_2089_with_sesamoid import (
 )
 from constants import CRITERIA_DICT
 
-def get_precision(contours: list, contour_map: list,
-                       expected_contours: list, criteria_dict: dict) -> list:
-  '''contour_map is the ordered version of contours which corresponds to the
-  expected_contours sequence, which is a list of ExpectedContour classes.'''
-  factor_results = []
-  for i in range(len(contour_map)):
-    contour = contours[contour_map[i]]
-    expected_contour = expected_contours[i]
-    
-    points = np.reshape(contour, (-1, 2))
-    if len(points) == 0:
-      output_string = output_string + (
-        f'Contour {i} is empty. Skipping.\n')
-    
-    all_x = points[:, 0]
-    all_y = points[:, 1]
-    min_x = np.min(all_x)
-    max_x = np.max(all_x)
-    min_y = np.min(all_y)
-    max_y = np.max(all_y)
-    image_width = int(max_x - min_x)
-    image_height = int(max_y - min_y)
-    expected_contour.prepare(contour, image_width, image_height)
-    
-    hu_moment, factorname_to_info = (
-      expected_contour.shape_restrictions(criteria=criteria_dict,
-                                          decompose=True)
-    )
-    factor_results.append(factorname_to_info)
-
-  return factor_results
-
 def write_expected_contours_precisions_stage_1():
   output_string = ''
   deltas = {
     'distal': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio': list(np.concatenate(
-          (np.arange(0.8, 0, -0.1),
-          np.arange(-0.8, 0, 0.1)),
-        )
-      ),
+      'aspect_ratio_min': list(np.arange(1.6, -0.8, -0.1)),
+      'aspect_ratio_max': list(np.arange(1.6, -0.8, -0.1)),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [0.04, 0.03, 0.02, 0.01, 0, -0.01, -0.02, -0.03, -0.04]
     },
     'medial': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio': list(np.concatenate(
-          (np.arange(0.8, 0, -0.1),
-          np.arange(-0.8, 0, 0.1)),
-        )
-      ),
+      'aspect_ratio_min': list(np.arange(0.8, -1.6, -0.1)),
+      'aspect_ratio_max': list(np.arange(0.8, -1.6, -0.1)),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
-      'defect_area_ratio': list(np.concatenate(
-          (np.arange(0.8, 0, -0.01),
-          np.arange(-0.8, 0, 0.01)),
-        )
-      ),
+      'defect_area_ratio': list(np.arange(0.8, -0.8, -0.01))
     },
     'proximal': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio': list(np.concatenate(
-          (np.arange(1.6, 0, -0.1),
-          np.arange(-1.6, 0, 0.1)),
-        )
-      ),
+      'aspect_ratio_min': list(np.arange(1.6, -2, -0.1)),
+      'aspect_ratio_max': list(np.arange(1.6, -2, -0.1)),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [0.04, 0.03, 0.02, 0.01, 0, -0.01, -0.02, -0.03, -0.04]
     },
     'metacarpal': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio': list(np.concatenate(
-          (np.arange(2.6, 0, -0.1),
-          np.arange(-2.6, 0, 0.1)),
-        )
-      ),
+      'aspect_ratio_min': list(np.arange(2.6, -2.6, -0.1)),
+      'aspect_ratio_max': list(np.arange(2.6, -2.6, -0.1)),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [0.04, 0.03, 0.02, 0.01, 0, -0.01, -0.02, -0.03, -0.04]
     },
     'radius': {
       'area': [30, 20, 10, 0, -10, -20, -30],
-      'aspect_ratio': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
+      'aspect_ratio_min': list(np.arange(0.3, -1.6, -0.1)),
+      'aspect_ratio_max': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
-      'defect_area_ratio': list(np.concatenate(
-          (np.arange(1.6, 0, -0.01),
-          np.arange(-1.6, 0, 0.01)),
-        )
-      )
+      'defect_area_ratio': list(np.arange(1.6, -1.6, -0.01))
     },
     'ulna': {
       'area': [30, 20, 10, 0, -10, -20, -30],
-      'aspect_ratio': list(np.concatenate(
-          (np.arange(1.3, 0, -0.1),
-          np.arange(-1.3, 0, 0.1)),
-        )
-      ),
+      'aspect_ratio_min': list(np.arange(1.3, -1.3, -0.1)),
+      'aspect_ratio_max': list(np.arange(1.3, -1.3, -0.1)),
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [
         0.004,
@@ -233,6 +179,55 @@ def write_expected_contours_precisions_stage_1():
         -0.003,
         -0.004
       ]
+    },
+  }
+
+  incorrect_expected_contours = {
+    'distal': {
+      'area': [],
+      'aspect_ratio_min': [],
+      'aspect_ratio_max': ['medial'],
+      'aspect_ratio_tolerance': [],
+      'solidity': [],
+      'defect_area_ratio': [],
+    },
+    'medial': {
+      'area': [],
+      'aspect_ratio_min': ['distal'],
+      'aspect_ratio_max': ['proximal'],
+      'aspect_ratio_tolerance': [],
+      'solidity': [],
+      'defect_area_ratio': [],
+    },
+    'proximal': {
+      'area': [],
+      'aspect_ratio_min': ['medial'],
+      'aspect_ratio_max': ['metacarpal'],
+      'aspect_ratio_tolerance': [],
+      'solidity': [],
+      'defect_area_ratio': [],
+    },
+    'metacarpal': {
+      'area': [],
+      'aspect_ratio_min': ['proximal'],
+      'aspect_ratio_max': [],
+      'aspect_ratio_tolerance': [],
+      'solidity': [],
+      'defect_area_ratio': [],
+    },
+    'radius': {
+      'area': [],
+      'aspect_ratio_min': [],
+      'aspect_ratio_max': [],
+      'solidity': [],
+      'defect_area_ratio': [],
+    },
+    'ulna': {
+      'area': [],
+      'aspect_ratio_min': [],
+      'aspect_ratio_max': [],
+      'solidity': [],
+      'defect_area_ratio': [],
     },
   }
 
@@ -264,21 +259,22 @@ def write_expected_contours_precisions_stage_1():
     precisions,
     best_precisions,
     best_factors,
-  ) = get_results(deltas, all_contours, expected_contours)
+  ) = get_results(deltas, all_contours, expected_contours,
+                  incorrect_expected_contours)
 
-  output_string = output_string + 'Deltas:\n'
+  output_string = output_string + '#Deltas:\n'
   deltas_string = json.dumps(deltas, indent=2)
   output_string = output_string + deltas_string + '\n\n'
 
-  output_string = output_string + 'Precisions obtained:\n'
+  output_string = output_string + '#Precisions obtained:\n'
   precisions_string = json.dumps(precisions, indent=2)
   output_string = output_string + precisions_string + '\n\n'
   
-  output_string = output_string + 'Best precisions:\n'
+  output_string = output_string + '#Best precisions:\n'
   best_precisions_string = json.dumps(best_precisions, indent=2)
   output_string = output_string + best_precisions_string + '\n\n'
 
-  output_string = output_string + 'Best factors:\n'
+  output_string = output_string + '#Best factors:\n'
   best_factors_string = json.dumps(best_factors, indent=2)
   output_string = output_string + best_factors_string + '\n'
 
@@ -292,6 +288,11 @@ def write_expected_contours_precisions_stage_2():
   deltas = {
     'sesamoid': {
       'solidity': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
+    },
+  }
+  incorrect_expected_contours = {
+    'sesamoid': {
+      'solidity': [],
     },
   }
 
@@ -337,21 +338,22 @@ def write_expected_contours_precisions_stage_2():
     precisions,
     best_precisions,
     best_factors,
-  ) = get_results(deltas, all_contours, expected_contours)
+  ) = get_results(deltas, all_contours, expected_contours,
+                  incorrect_expected_contours)
 
-  output_string = output_string + 'Deltas:\n'
+  output_string = output_string + '#Deltas:\n'
   deltas_string = json.dumps(deltas, indent=2)
   output_string = output_string + deltas_string + '\n\n'
 
-  output_string = output_string + 'Precisions obtained:\n'
+  output_string = output_string + '#Precisions obtained:\n'
   precisions_string = json.dumps(precisions, indent=2)
   output_string = output_string + precisions_string + '\n\n'
   
-  output_string = output_string + 'Best precisions:\n'
+  output_string = output_string + '#Best precisions:\n'
   best_precisions_string = json.dumps(best_precisions, indent=2)
   output_string = output_string + best_precisions_string + '\n\n'
 
-  output_string = output_string + 'Best factors:\n'
+  output_string = output_string + '#Best factors:\n'
   best_factors_string = json.dumps(best_factors, indent=2)
   output_string = output_string + best_factors_string + '\n'
 
@@ -360,8 +362,9 @@ def write_expected_contours_precisions_stage_2():
     print('Writing best_shape_factors_stage_2.txt')
     print('Success.')
 
-def get_results(deltas: dict, all_contours: list, expected_contours: list):
-  # dict of expected_contour-factor-delta to precision
+def get_results(deltas: dict, all_contours: list, expected_contours: list,
+                incorrect_expected_contours: dict):
+  # dict of expected_contour-factor-to array of precisions (one per delta)
   precisions = copy.deepcopy(deltas)
 
   for expected_contour_key in deltas:
@@ -374,16 +377,18 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list):
           criteria_dict[expected_contour_key][factor_key] + delta
         )
 
-        failures_list = []
+        success_list = []
         for i, contours_info in enumerate(all_contours):
           contours = contours_info[0]
           segmentation = contours_info[1]
 
-          relevant_contour_indices = [
-            (i, value) for i, (key, value) in enumerate(segmentation.items()) if key.startswith(expected_contour_key)
+          relevant_contour_info = [
+            (i, value)
+            for i, (key, value) in enumerate(segmentation.items())
+            if key.startswith(expected_contour_key)
           ]
 
-          for contour_info in relevant_contour_indices:
+          for contour_info in relevant_contour_info:
             contour = contours[contour_info[1]]
             expected_contour = expected_contours[contour_info[0]]
             
@@ -408,14 +413,73 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list):
 
             if factor_key in factorname_to_info:
               if factorname_to_info[factor_key]['fail_status'] == True:
-                failures_list.append(True)
+                success_list.append(False)
               else:
-                failures_list.append(False)
+                success_list.append(True)
 
-        positive_amount = failures_list.count(False)
+          # To test other expected contours with the new (factor + delta) value
+          # so that a penalization happens if the new factor is generalizing too
+          # much, those other "incorrect" expected contours are taken into
+          # account in the fail rate. If an expected contour of the incorrect, which
+          # are used as incorrect reference fail, the final precision must go
+          # down as penalization, so reverse the fail result of the incorrect
+          # expected contour.
 
-        if len(failures_list) > 0:
-          precision = positive_amount / len(failures_list)
+          # Example: ['distal', 'medial']
+          incorrect_expected_contours_local = (
+            incorrect_expected_contours[expected_contour_key][factor_key]
+          )
+
+          for expected_contour_key_2 in incorrect_expected_contours_local:
+            if expected_contour_key_2 == expected_contour_key:
+              raise ValueError('Specified same key as incorrect key.')
+
+            original_factor = criteria_dict[expected_contour_key_2][factor_key]
+            new_factor = criteria_dict[expected_contour_key][factor_key]
+            criteria_dict[expected_contour_key_2][factor_key] = new_factor
+
+            relevant_contour_indices_incorrect_2 = [
+              (i, value)
+              for i, (key, value) in enumerate(segmentation.items())
+              if key.startswith(expected_contour_key_2)
+            ]
+
+            for contour_info in relevant_contour_indices_incorrect_2:
+              contour = contours[contour_info[1]]
+              expected_contour = expected_contours[contour_info[0]]
+
+              points = np.reshape(contour, (-1, 2))
+              if len(points) == 0:
+                raise ValueError(f'Found empty contour at rad. index={i}')
+              
+              all_x = points[:, 0]
+              all_y = points[:, 1]
+              min_x = np.min(all_x)
+              max_x = np.max(all_x)
+              min_y = np.min(all_y)
+              max_y = np.max(all_y)
+              image_width = int(max_x - min_x)
+              image_height = int(max_y - min_y)
+              expected_contour.prepare(contour, image_width, image_height)
+
+              hu_moment, factorname_to_info = (
+                expected_contour.shape_restrictions(criteria=criteria_dict,
+                                                    decompose=True)
+              )
+
+              if factor_key in factorname_to_info:
+                if factorname_to_info[factor_key]['fail_status'] == True:
+                  success_list.append(True)
+                else:
+                  success_list.append(False)
+
+            # Put the original factor back in, testing is done.
+            criteria_dict[expected_contour_key_2][factor_key] = original_factor
+
+        positive_amount = success_list.count(True)
+
+        if len(success_list) > 0:
+          precision = positive_amount / len(success_list)
           precisions[expected_contour_key][factor_key].append(precision)
         else:
           precisions[expected_contour_key][factor_key].append(float('-inf'))
@@ -428,7 +492,8 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list):
     for factor_key in precisions[expected_contour_key]:
       local_precisions = precisions[expected_contour_key][factor_key]
 
-      best_precision_index = np.argmax(local_precisions)
+      # flip so that it returns the last max equal occurence and not the latest.
+      best_precision_index = np.argmax(np.flip(local_precisions))
       best_precision = (
         precisions[expected_contour_key][factor_key][best_precision_index]
       )
@@ -459,69 +524,69 @@ def get_canonical_expected_contours():
   )
   expected_contours[4] = ExpectedContourDistalPhalanx(
     2,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[5] = ExpectedContourMedialPhalanx(
     2,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[6] = ExpectedContourProximalPhalanx(
     2,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[7] = ExpectedContourMetacarpal(
     2,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[4],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[8] = ExpectedContourDistalPhalanx(
     3,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[9] = ExpectedContourMedialPhalanx(
     3,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[10] = ExpectedContourProximalPhalanx(
     3,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[11] = ExpectedContourMetacarpal(
     3,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[8],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[12] = ExpectedContourDistalPhalanx(
     4,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[13] = ExpectedContourMedialPhalanx(
     4,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[14] = ExpectedContourProximalPhalanx(
     4,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[15] = ExpectedContourMetacarpal(
     4,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[12],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[16] = ExpectedContourDistalPhalanx(
     5,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[17] = ExpectedContourProximalPhalanx(
     5,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[18] = ExpectedContourMetacarpal(
     5,
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[19] = ExpectedContourUlna()
   expected_contours[20] = ExpectedContourRadius()

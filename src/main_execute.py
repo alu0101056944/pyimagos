@@ -471,72 +471,72 @@ def get_expected_contours_model() -> list:
 
   distal_phalanx_2 = ExpectedContourDistalPhalanx(
     encounter_amount=2,
-    first_encounter=distal_phalanx_1
+    previous_encounter=distal_phalanx_1
   )
   medial_phalanx_2 = ExpectedContourMedialPhalanx(
     encounter_amount=2,
-    first_encounter=medial_phalanx_1,
+    previous_encounter=medial_phalanx_1,
   )
   proximal_phalanx_2 = ExpectedContourProximalPhalanx(
     encounter_amount=2,
-    first_encounter=proximal_phalanx_1,
+    previous_encounter=proximal_phalanx_1,
   )
   metacarpal_2 = ExpectedContourMetacarpal(
     encounter_amount=2,
-    first_encounter=metacarpal_1,
+    previous_encounter=metacarpal_1,
     ends_branchs_sequence=True,
     first_in_branch=distal_phalanx_2,
   )
 
   distal_phalanx_3 = ExpectedContourDistalPhalanx(
     encounter_amount=3,
-    first_encounter=distal_phalanx_1,
+    previous_encounter=distal_phalanx_1,
   )
   medial_phalanx_3 = ExpectedContourMedialPhalanx(
     encounter_amount=3,
-    first_encounter=medial_phalanx_1,
+    previous_encounter=medial_phalanx_1,
   )
   proximal_phalanx_3 = ExpectedContourProximalPhalanx(
     encounter_amount=3,
-    first_encounter=proximal_phalanx_1,
+    previous_encounter=proximal_phalanx_1,
   )
   metacarpal_3 = ExpectedContourMetacarpal(
     encounter_amount=3,
-    first_encounter=metacarpal_1,
+    previous_encounter=metacarpal_1,
     ends_branchs_sequence=True,
     first_in_branch=distal_phalanx_3
   )
 
   distal_phalanx_4 = ExpectedContourDistalPhalanx(
     encounter_amount=4,
-    first_encounter=distal_phalanx_1,
+    previous_encounter=distal_phalanx_1,
   )
   medial_phalanx_4 = ExpectedContourMedialPhalanx(
     encounter_amount=4,
-    first_encounter=medial_phalanx_1,
+    previous_encounter=medial_phalanx_1,
   )
   proximal_phalanx_4 = ExpectedContourProximalPhalanx(
     encounter_amount=4,
-    first_encounter=proximal_phalanx_1,
+    previous_encounter=proximal_phalanx_1,
   )
   metacarpal_4 = ExpectedContourMetacarpal(
     encounter_amount=4,
-    first_encounter=metacarpal_1,
+    previous_encounter=metacarpal_1,
     ends_branchs_sequence=True,
     first_in_branch=distal_phalanx_4
   )
 
   distal_phalanx_5 = ExpectedContourDistalPhalanx(
     encounter_amount=5,
-    first_encounter=distal_phalanx_1,
+    previous_encounter=distal_phalanx_1,
   )
   proximal_phalanx_5 = ExpectedContourProximalPhalanx(
     encounter_amount=5,
-    first_encounter=proximal_phalanx_1,
+    previous_encounter=proximal_phalanx_1,
   )
   metacarpal_5 = ExpectedContourMetacarpal(
     encounter_amount=5,
-    first_encounter=metacarpal_1,
+    previous_encounter=metacarpal_1,
   )
 
   radius = ExpectedContourRadius()

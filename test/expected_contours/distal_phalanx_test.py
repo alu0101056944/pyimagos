@@ -13,6 +13,8 @@ import cv2 as cv
 from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
 from src.main_execute import is_in_allowed_space
 
+# TODO update this test and the others
+
 class TestDistalPhalanxExpectedContour:
 
   @pytest.fixture(scope='class')

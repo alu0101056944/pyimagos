@@ -33,5 +33,15 @@
         "--use_starts_file"
       ]
     },
+    {
+      "name": "Shape experiment file. Python Debugger: Python File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": [
+        "develop",
+        "experiment-shapes"
+      ]
+    },
   ]
 }

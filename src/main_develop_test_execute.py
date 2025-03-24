@@ -3600,69 +3600,69 @@ def canonical_hand_case():
   )
   expected_contours[4] = ExpectedContourDistalPhalanx(
     2,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[5] = ExpectedContourMedialPhalanx(
     2,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[6] = ExpectedContourProximalPhalanx(
     2,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[7] = ExpectedContourMetacarpal(
     2,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[4],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[8] = ExpectedContourDistalPhalanx(
     3,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[9] = ExpectedContourMedialPhalanx(
     3,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[10] = ExpectedContourProximalPhalanx(
     3,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[11] = ExpectedContourMetacarpal(
     3,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[8],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[12] = ExpectedContourDistalPhalanx(
     4,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[13] = ExpectedContourMedialPhalanx(
     4,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[14] = ExpectedContourProximalPhalanx(
     4,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[15] = ExpectedContourMetacarpal(
     4,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[12],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[16] = ExpectedContourDistalPhalanx(
     5,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[17] = ExpectedContourProximalPhalanx(
     5,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[18] = ExpectedContourMetacarpal(
     5,
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[19] = ExpectedContourUlna()
   expected_contours[20] = ExpectedContourRadius()
@@ -5536,69 +5536,69 @@ def radiography_004_case():
   )
   expected_contours[4] = ExpectedContourDistalPhalanx(
     2,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[5] = ExpectedContourMedialPhalanx(
     2,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[6] = ExpectedContourProximalPhalanx(
     2,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[7] = ExpectedContourMetacarpal(
     2,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[4],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[8] = ExpectedContourDistalPhalanx(
     3,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[9] = ExpectedContourMedialPhalanx(
     3,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[10] = ExpectedContourProximalPhalanx(
     3,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[11] = ExpectedContourMetacarpal(
     3,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[8],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[12] = ExpectedContourDistalPhalanx(
     4,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[13] = ExpectedContourMedialPhalanx(
     4,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[14] = ExpectedContourProximalPhalanx(
     4,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[15] = ExpectedContourMetacarpal(
     4,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[12],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[16] = ExpectedContourDistalPhalanx(
     5,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[17] = ExpectedContourProximalPhalanx(
     5,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[18] = ExpectedContourMetacarpal(
     5,
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[19] = ExpectedContourUlna()
   expected_contours[20] = ExpectedContourRadius()
@@ -8617,69 +8617,69 @@ def radiography_004_case_bug():
   )
   expected_contours[4] = ExpectedContourDistalPhalanx(
     2,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[5] = ExpectedContourMedialPhalanx(
     2,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[6] = ExpectedContourProximalPhalanx(
     2,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[7] = ExpectedContourMetacarpal(
     2,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[4],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[8] = ExpectedContourDistalPhalanx(
     3,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[9] = ExpectedContourMedialPhalanx(
     3,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[10] = ExpectedContourProximalPhalanx(
     3,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[11] = ExpectedContourMetacarpal(
     3,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[8],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[12] = ExpectedContourDistalPhalanx(
     4,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[13] = ExpectedContourMedialPhalanx(
     4,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[14] = ExpectedContourProximalPhalanx(
     4,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[15] = ExpectedContourMetacarpal(
     4,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[12],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[16] = ExpectedContourDistalPhalanx(
     5,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[17] = ExpectedContourProximalPhalanx(
     5,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[18] = ExpectedContourMetacarpal(
     5,
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[19] = ExpectedContourUlna()
   expected_contours[20] = ExpectedContourRadius()
@@ -8760,69 +8760,69 @@ def radiography_084_case():
   )
   expected_contours[4] = ExpectedContourDistalPhalanx(
     2,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[5] = ExpectedContourMedialPhalanx(
     2,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[6] = ExpectedContourProximalPhalanx(
     2,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[7] = ExpectedContourMetacarpal(
     2,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[4],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[8] = ExpectedContourDistalPhalanx(
     3,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[9] = ExpectedContourMedialPhalanx(
     3,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[10] = ExpectedContourProximalPhalanx(
     3,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[11] = ExpectedContourMetacarpal(
     3,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[8],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[12] = ExpectedContourDistalPhalanx(
     4,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[13] = ExpectedContourMedialPhalanx(
     4,
-    first_encounter=expected_contours[1]
+    previous_encounter=expected_contours[1]
   )
   expected_contours[14] = ExpectedContourProximalPhalanx(
     4,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[15] = ExpectedContourMetacarpal(
     4,
     ends_branchs_sequence=True,
     first_in_branch=expected_contours[12],
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[16] = ExpectedContourDistalPhalanx(
     5,
-    first_encounter=expected_contours[0]
+    previous_encounter=expected_contours[0]
   )
   expected_contours[17] = ExpectedContourProximalPhalanx(
     5,
-    first_encounter=expected_contours[2]
+    previous_encounter=expected_contours[2]
   )
   expected_contours[18] = ExpectedContourMetacarpal(
     5,
-    first_encounter=expected_contours[3]
+    previous_encounter=expected_contours[3]
   )
   expected_contours[19] = ExpectedContourUlna()
   expected_contours[20] = ExpectedContourRadius()

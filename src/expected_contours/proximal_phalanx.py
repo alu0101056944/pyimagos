@@ -23,7 +23,7 @@ from constants import CRITERIA_DICT, POSITION_FACTORS
 class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
 
   def __init__(self, encounter_amount : int,
-               first_encounter: ExpectedContour = None,
+               previous_encounter: ExpectedContour = None,
                first_in_branch: ExpectedContour = None,
                ends_branchs_sequence: bool = False):
     self.contour = None
@@ -37,7 +37,7 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
     self.ends_branchs_sequence = None
     self.min_area_rect = None
     self.encounter_amount = encounter_amount
-    self.first_encounter = first_encounter
+    self.previous_encounter = previous_encounter
     self.first_in_branch = first_in_branch
     self.ends_branchs_sequence = ends_branchs_sequence
     self._aspect_ratio = None
@@ -271,13 +271,16 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
       if area < criteria['proximal']['area']:
         return float('inf')
       
-      if self._aspect_ratio < criteria['proximal']['aspect_ratio']:
+      if self._aspect_ratio < criteria['proximal']['aspect_ratio_min']:
+        return float('inf')
+      
+      if self._aspect_ratio > criteria['proximal']['aspect_ratio_max']:
         return float('inf')
 
       if self.encounter_amount > 1:
-        first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
+        previous_encounter_aspect_ratio = self.previous_encounter._aspect_ratio
         TOLERANCE = criteria['proximal']['aspect_ratio_tolerance']
-        if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
+        if abs(previous_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
           return float('inf')
         
       if len(self.contour) < 3:
@@ -342,7 +345,12 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
           'threshold_value': None,
           'fail_status': None,
         },
-        'aspect_ratio': {
+        'aspect_ratio_min': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'aspect_ratio_max': {
           'obtained_value': None,
           'threshold_value': None,
           'fail_status': None,
@@ -381,21 +389,32 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
         criteria['proximal']['area']
       )
       
-      threshold_value = criteria['proximal']['aspect_ratio']
-      shape_fail_statuses['aspect_ratio']['fail_status'] = (
+      threshold_value = criteria['proximal']['aspect_ratio_min']
+      shape_fail_statuses['aspect_ratio_min']['fail_status'] = (
         True if self._aspect_ratio < threshold_value else False
       )
-      shape_fail_statuses['aspect_ratio']['obtained_value'] = (
+      shape_fail_statuses['aspect_ratio_min']['obtained_value'] = (
         self._aspect_ratio
       )
-      shape_fail_statuses['aspect_ratio']['threshold_value'] = (
+      shape_fail_statuses['aspect_ratio_min']['threshold_value'] = (
+        threshold_value
+      )
+
+      threshold_value = criteria['proximal']['aspect_ratio_max']
+      shape_fail_statuses['aspect_ratio_max']['fail_status'] = (
+        True if self._aspect_ratio > threshold_value else False
+      )
+      shape_fail_statuses['aspect_ratio_max']['obtained_value'] = (
+        self._aspect_ratio
+      )
+      shape_fail_statuses['aspect_ratio_max']['threshold_value'] = (
         threshold_value
       )
 
       if self.encounter_amount > 1:
         TOLERANCE = criteria['proximal']['aspect_ratio_tolerance']
-        first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
-        obtained_value = abs(first_encounter_aspect_ratio - self._aspect_ratio)
+        previous_encounter_aspect_ratio = self.previous_encounter._aspect_ratio
+        obtained_value = abs(previous_encounter_aspect_ratio - self._aspect_ratio)
         shape_fail_statuses['aspect_ratio_tolerance'] = {
           'obtained_value': None,
           'threshold_value': None,
