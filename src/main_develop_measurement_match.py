@@ -330,7 +330,7 @@ def visualize_shape_match():
     [[ 75, 211]]],
     dtype=np.int32
   )
-  target_shape = np.np.array([0.47967672, 0.23311022, 0.10885446, 0.04182705,
+  target_shape = np.array([0.47967672, 0.23311022, 0.10885446, 0.04182705,
                               0.0368656 , 0.03411718, 0.07823383, 0.08240334,
                               0.07883134, 0.0411524 ], dtype=np.float32)
   show_contours_measurement_match(

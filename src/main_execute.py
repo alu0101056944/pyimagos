@@ -8,6 +8,7 @@ Processing steps of the radiograph
 '''
 
 import os.path
+from pathlib import Path
 from PIL import Image
 import time
 import copy
@@ -221,6 +222,7 @@ def search_complete_contours(
     silent: bool = True,
     criteria_dict: dict = None,
     full_silent: bool = False,
+    start_index: int = -1,
 ) -> list:
   if len(contours) == 0:
     return []
@@ -230,7 +232,25 @@ def search_complete_contours(
 
   state_stack = []
 
-  if injected_start_contour is None:
+  if start_index != -1:
+    start_contour = contours[start_index]
+
+    expected_contour_class = expected_contours[0]
+    expected_contour_class.prepare(
+      start_contour,
+      image_width,
+      image_height
+    )
+    score = expected_contour_class.shape_restrictions(criteria_dict)
+
+    state_stack.append({
+      'contours_committed': [start_contour],
+      'contours': contours,
+      'chosen_contour_index': start_index,
+      'committed_total_value': score,
+    })
+
+  elif injected_start_contour is None:
     min_score = float('inf')
     best_contour_index = -1
     for i in range(len(contours)):
@@ -451,72 +471,72 @@ def get_expected_contours_model() -> list:
 
   distal_phalanx_2 = ExpectedContourDistalPhalanx(
     encounter_amount=2,
-    first_encounter=distal_phalanx_1
+    previous_encounter=distal_phalanx_1
   )
   medial_phalanx_2 = ExpectedContourMedialPhalanx(
     encounter_amount=2,
-    first_encounter=medial_phalanx_1,
+    previous_encounter=medial_phalanx_1,
   )
   proximal_phalanx_2 = ExpectedContourProximalPhalanx(
     encounter_amount=2,
-    first_encounter=proximal_phalanx_1,
+    previous_encounter=proximal_phalanx_1,
   )
   metacarpal_2 = ExpectedContourMetacarpal(
     encounter_amount=2,
-    first_encounter=metacarpal_1,
+    previous_encounter=metacarpal_1,
     ends_branchs_sequence=True,
     first_in_branch=distal_phalanx_2,
   )
 
   distal_phalanx_3 = ExpectedContourDistalPhalanx(
     encounter_amount=3,
-    first_encounter=distal_phalanx_1,
+    previous_encounter=distal_phalanx_1,
   )
   medial_phalanx_3 = ExpectedContourMedialPhalanx(
     encounter_amount=3,
-    first_encounter=medial_phalanx_1,
+    previous_encounter=medial_phalanx_1,
   )
   proximal_phalanx_3 = ExpectedContourProximalPhalanx(
     encounter_amount=3,
-    first_encounter=proximal_phalanx_1,
+    previous_encounter=proximal_phalanx_1,
   )
   metacarpal_3 = ExpectedContourMetacarpal(
     encounter_amount=3,
-    first_encounter=metacarpal_1,
+    previous_encounter=metacarpal_1,
     ends_branchs_sequence=True,
     first_in_branch=distal_phalanx_3
   )
 
   distal_phalanx_4 = ExpectedContourDistalPhalanx(
     encounter_amount=4,
-    first_encounter=distal_phalanx_1,
+    previous_encounter=distal_phalanx_1,
   )
   medial_phalanx_4 = ExpectedContourMedialPhalanx(
     encounter_amount=4,
-    first_encounter=medial_phalanx_1,
+    previous_encounter=medial_phalanx_1,
   )
   proximal_phalanx_4 = ExpectedContourProximalPhalanx(
     encounter_amount=4,
-    first_encounter=proximal_phalanx_1,
+    previous_encounter=proximal_phalanx_1,
   )
   metacarpal_4 = ExpectedContourMetacarpal(
     encounter_amount=4,
-    first_encounter=metacarpal_1,
+    previous_encounter=metacarpal_1,
     ends_branchs_sequence=True,
     first_in_branch=distal_phalanx_4
   )
 
   distal_phalanx_5 = ExpectedContourDistalPhalanx(
     encounter_amount=5,
-    first_encounter=distal_phalanx_1,
+    previous_encounter=distal_phalanx_1,
   )
   proximal_phalanx_5 = ExpectedContourProximalPhalanx(
     encounter_amount=5,
-    first_encounter=proximal_phalanx_1,
+    previous_encounter=proximal_phalanx_1,
   )
   metacarpal_5 = ExpectedContourMetacarpal(
     encounter_amount=5,
-    first_encounter=metacarpal_1,
+    previous_encounter=metacarpal_1,
   )
 
   radius = ExpectedContourRadius()
@@ -551,24 +571,28 @@ def estimate_age_from_image(
     input_image: Union[np.array, Image.Image],
     nofilter: bool = False,
     criteria_dict: dict = None,
-    full_silent: bool = False
+    full_silent: bool = False,
+    use_cpu: bool = True,
+    noresize: bool = False,
+    input_image_2: Union[np.ndarray, Image.Image] = None,
+    start_index: int = -1,
 ) -> Tuple[float, list]:
   '''Given an image of a radiography, output the estimated age'''
-  HIGHER_THRESOLD = 40
-  LOWER_THRESOLD = 30
+  HIGHER_THRESHOLD = 40
+  LOWER_THRESHOLD = 30
   if not nofilter:
     input_image = transforms.ToTensor()(input_image)
-    he_enchanced = ContrastEnhancement().process(input_image)
+    he_enchanced = ContrastEnhancement(use_cpu, noresize).process(input_image)
     he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
                                 cv.CV_8U)
 
     gaussian_blurred = cv.GaussianBlur(he_enchanced, (3, 3), 0)
 
-    borders_detected = cv.Canny(gaussian_blurred, HIGHER_THRESOLD, 135)
+    borders_detected = cv.Canny(gaussian_blurred, HIGHER_THRESHOLD, 135)
     borders_detected = cv.normalize(borders_detected, None, 0, 255,
                                     cv.NORM_MINMAX, cv.CV_8U)
     
-    borders_detected_2 = cv.Canny(gaussian_blurred, LOWER_THRESOLD, 135)
+    borders_detected_2 = cv.Canny(gaussian_blurred, LOWER_THRESHOLD, 135)
     borders_detected_2 = cv.normalize(borders_detected_2, None, 0, 255,
                                     cv.NORM_MINMAX, cv.CV_8U)
   else:
@@ -577,10 +601,19 @@ def estimate_age_from_image(
 
     borders_detected = np.array(input_image)
     borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
-    _, thresh = cv.threshold(borders_detected, HIGHER_THRESOLD, 255,
+    _, thresh = cv.threshold(borders_detected, HIGHER_THRESHOLD, 255,
                              cv.THRESH_BINARY)
     borders_detected = thresh
-    borders_detected_2 = thresh
+
+    if input_image_2 is None:
+      borders_detected_2 = thresh
+    else:
+      borders_detected_2 = np.array(input_image_2)
+      borders_detected_2 = cv.cvtColor(borders_detected_2, cv.COLOR_RGB2GRAY)
+      _, thresh_2 = cv.threshold(borders_detected_2, HIGHER_THRESHOLD, 255,
+                              cv.THRESH_BINARY)
+      borders_detected_2 = thresh_2
+
 
   # Segmentation
   contours_2, _ = cv.findContours(borders_detected_2, cv.RETR_EXTERNAL,
@@ -631,7 +664,8 @@ def estimate_age_from_image(
     image_width=minimum_image_1.shape[1],
     image_height=minimum_image_1.shape[0],
     criteria_dict=criteria_dict,
-    full_silent=full_silent
+    full_silent=full_silent,
+    start_index=start_index,
   )
 
   if len(complete_contours) > 0:
@@ -735,23 +769,47 @@ def process_radiograph(
     write_images: bool = False,
     show_images: bool = False,
     nofilter: bool = False,
-    all: bool = False
+    all: bool = False,
+    use_cpu: bool = True,
+    noresize: bool = False,
+    input_image_2: Path = None
 ) -> None:
   input_image = None
   try:
     with Image.open(filename) as image:
-      input_image = np.array(image)
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        input_image = np.array(image)
+      elif image.mode == 'RGB':
+        input_image = np.array(image)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
     raise
+
+  if input_image_2 is not None:
+    try:
+      with Image.open(input_image_2) as image2:
+        if image2.mode == 'L':
+          image2 = image.convert('RGB')
+          input_image_2 = np.array(image2)
+        elif image2.mode == 'RGB':
+          input_image_2 = np.array(image2)
+    except Exception as e:
+      print(f"Error opening image {input_image_2}: {e}")
+      raise
 
   (
     estimated_age,
     measurements,
     image_search_stage_1,
     image_search_stage_2,
-  ) = estimate_age_from_image(input_image, nofilter)
-
+  ) = estimate_age_from_image(
+    input_image,
+    nofilter=nofilter,
+    use_cpu=use_cpu,
+    noresize=noresize,
+    input_image_2=input_image_2
+  )
 
   if not all:
     if estimated_age == -1:

@@ -251,7 +251,16 @@ def show_contour(contour, test_contour=None, padding=0,
                               show_convex_defects=show_convex_defects)
 
 def visualize_metacarpal_shape():
-  borders_detected = Image.open('docs/metacarpal_closed.jpg')
+  try:
+    with Image.open('docs/metacarpal_closed.jpg') as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        borders_detected = np.array(image)
+      elif image.mode == 'RGB':
+        borders_detected = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {'docs/metacarpal_closed.jpg'}: {e}")
+    raise
   borders_detected = np.array(borders_detected)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
 

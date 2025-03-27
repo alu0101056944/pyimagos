@@ -4,7 +4,8 @@ Máster en Ingeniería Informática
 Trabajo de Final de Máster
 Pyimagos development
 
-Test criteria parameter variations age estiamtion results.
+Test criteria parameter variations age estimation results. Unused, 29 parameters
+is unworkable.
 '''
 
 import os.path
@@ -36,16 +37,8 @@ def generate_nested_variations(original_params, x_dict):
   for j, signs in enumerate(sign_combinations):
     variation = copy.deepcopy(original_params)
 
-    # TODO: remove this limit after testing
-    if j > 10:
-      break
-
     for i, (path, original_val, x_val) in enumerate(flattened):
       print(f'Variation generated ({j}, {i})')
-
-      # TODO: remove this limit after testing
-      if i > 50:
-        break
 
       sign = signs[i]
       keys = path.split('.')
@@ -86,11 +79,16 @@ def flatten_with_x(params, x_dict, parent_key='', sep='.'):
   return items
 
 def test_criteria_parameters(filename: str, outputfilename: str,
-                             nofilter: bool = False):
+                             nofilter: bool = False, use_cpu: bool = True,
+                             noresize: bool = False):
   input_image = None
   try:
     with Image.open(filename) as image:
-      input_image = np.array(image)
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        input_image = np.array(image)
+      elif image.mode == 'RGB':
+        input_image = np.array(image)
   except Exception as e:
     print(f"Error opening image {filename}: {e}")
     raise
@@ -109,7 +107,9 @@ def test_criteria_parameters(filename: str, outputfilename: str,
       measurements,
       image_stage_1,
       image_stage_2,
-    ) = estimate_age_from_image(image, nofilter=nofilter, full_silent=True)
+    ) = estimate_age_from_image(input_image, nofilter=nofilter,
+                                full_silent=True, use_cpu=use_cpu,
+                                noresize=noresize)
     string = f'{estimated_age}, {variation_dict}'
     output_string += string + "\n"
 

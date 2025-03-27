@@ -28,11 +28,12 @@ class ExpectedContour(ABC):
     pass
 
   @abstractmethod
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
     pass
 
   @abstractmethod
-  def shape_restrictions(self, criteria: dict = None) -> list:
+  def shape_restrictions(self, criteria: dict = None,
+                         decompose: bool = False) -> list:
     pass
 
   @abstractmethod

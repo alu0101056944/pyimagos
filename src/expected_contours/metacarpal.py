@@ -18,12 +18,12 @@ from src.expected_contours.expected_contour_of_branch import (
   ExpectedContourOfBranch
 )
 from src.main_develop_corner_order import get_top_left_corner
-from constants import CRITERIA_DICT
+from constants import CRITERIA_DICT, POSITION_FACTORS
 
 class ExpectedContourMetacarpal(ExpectedContourOfBranch):
 
   def __init__(self, encounter_amount : int,
-               first_encounter: ExpectedContour = None,
+               previous_encounter: ExpectedContour = None,
                first_in_branch: ExpectedContour = None,
                ends_branchs_sequence: bool = False):
     self.contour = None
@@ -36,7 +36,7 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     self.ends_branchs_sequence = None
     self.min_area_rect = None
     self.encounter_amount = encounter_amount
-    self.first_encounter = first_encounter
+    self.previous_encounter = previous_encounter
     self.first_in_branch = first_in_branch
     self.ends_branchs_sequence = ends_branchs_sequence
     self._aspect_ratio = None
@@ -154,10 +154,21 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
     )
     self.direction_bottom = self.direction_bottom / np.linalg.norm(self.direction_bottom)
 
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
+    if position_factors is None:
+      position_factors = POSITION_FACTORS
+
     width = self.min_area_rect[1][0]
-    right_bound = int(width)
-    left_bound = int(width * 7)
+    right_bound = int(
+      position_factors['metacarpal'][
+        'next'
+        ]['default'][2]['multiplier']['width'] * width
+    )
+    left_bound = int(
+      position_factors['metacarpal'][
+        'next'
+        ]['default'][1]['multiplier']['width'] * width
+    )
     return [
       [
         np.array([0, self.max_y]),
@@ -170,8 +181,8 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
         ]
       ],
       [
-        np.array([self.min_x - left_bound, 0]),
-        np.array([self.min_x - left_bound, self.image_height]),
+        np.array([self.min_x + left_bound, 0]),
+        np.array([self.min_x + left_bound, self.image_height]),
         [
           AllowedLineSideBasedOnYorXOnVertical.GREATER_EQUAL, # m = +1
           AllowedLineSideBasedOnYorXOnVertical.LOWER_EQUAL, # m = -1
@@ -191,78 +202,259 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
       ],
     ]
 
-  def shape_restrictions(self, criteria: dict = None) -> list:
+  def shape_restrictions(self, criteria: dict = None,
+                         decompose: bool = False) -> list:
     if criteria is None:
       criteria = CRITERIA_DICT
 
-    if len(self.contour) == 0:
-      return float('inf')
+    if not decompose:
+      if len(self.contour) == 0:
+        return float('inf')
 
-    area = cv.contourArea(self.contour)
-    if area < criteria['metacarpal']['area']:
-      return float('inf')
+      area = cv.contourArea(self.contour)
+      if area < criteria['metacarpal']['area']:
+        return float('inf')
+  
+      if self._aspect_ratio < criteria['metacarpal']['aspect_ratio_min']:
+        return float('inf')
+      
+      if self._aspect_ratio > criteria['metacarpal']['aspect_ratio_max']:
+        return float('inf')
+      
+      if self.encounter_amount > 1:
+        previous_encounter_aspect_ratio = self.previous_encounter._aspect_ratio
+        TOLERANCE = criteria['metacarpal']['aspect_ratio_tolerance']
+        if abs(previous_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
+          return float('inf')
+
+      if len(self.contour) < 3:
+        return float('inf')
+      
+      min_rect_width = self.min_area_rect[1][0]
+      min_rect_height = self.min_area_rect[1][1]
+      hull = cv.convexHull(self.contour)
+      solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+      if solidity > criteria['metacarpal']['solidity']:
+        return float('inf')
+      
+      try:
+        hull_area = cv.contourArea(hull)
+        significant_convexity_defects = 0
+        hull_indices = cv.convexHull(self.contour, returnPoints=False)
+        hull_indices[::-1].sort(axis=0)
+        defects = cv.convexityDefects(self.contour, hull_indices)
+        if defects is not None:
+          for i in range(defects.shape[0]):
+            start_index, end_index, farthest_point_index, distance = defects[i, 0]
+
+            start = self.contour[start_index]
+            end = self.contour[end_index]
+            farthest = self.contour[farthest_point_index]
+
+            defect_area = cv.contourArea(np.array([start, end, farthest]))
+
+            if defect_area / hull_area > criteria['metacarpal']['defect_area_ratio']:
+              significant_convexity_defects += 1
+
+        if self.encounter_amount == 5 and significant_convexity_defects != 2:
+          return float('inf')
+        elif self.encounter_amount != 5 and significant_convexity_defects != 2:
+          return float('inf')
+      except cv.error as e:
+        error_message = str(e).lower()
+        if 'not monotonous' in error_message: # TODO make this more robust
+          return float('inf')
+
+      moments = cv.moments(self.contour)
+      hu_moments = cv.HuMoments(moments)
+      hu_moments = np.absolute(hu_moments)
+      hu_moments_no_zeros = np.where( # to avoid DivideByZero
+        hu_moments == 0,
+        np.finfo(float).eps,
+        hu_moments
+      )
+      hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+
+      difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+      return difference
+    else:
+      shape_fail_statuses = {
+        'empty_contour': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'area': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'aspect_ratio_min': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'aspect_ratio_max': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
  
-    if self._aspect_ratio < criteria['metacarpal']['aspect_ratio']:
-      return float('inf')
-    
-    if self.encounter_amount > 1:
-      first_encounter_aspect_ratio = self.first_encounter._aspect_ratio
-      TOLERANCE = criteria['metacarpal']['aspect_ratio_tolerance']
-      if abs(first_encounter_aspect_ratio - self._aspect_ratio) > TOLERANCE:
-        return float('inf')
+        'solidity': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'min_length': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'defect_area_ratio': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+      }
+      shape_fail_statuses['empty_contour']['fail_status'] = (
+        True if len(self.contour) == 0 else False
+      )
+      shape_fail_statuses['empty_contour']['obtained_value'] = (
+        len(self.contour)
+      )
+      shape_fail_statuses['empty_contour']['threshold_value'] = 0
 
-    if len(self.contour) < 3:
-      return float('inf')
-    
-    min_rect_width = self.min_area_rect[1][0]
-    min_rect_height = self.min_area_rect[1][1]
-    hull = cv.convexHull(self.contour)
-    solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
-    if solidity > criteria['metacarpal']['solidity']:
-      return float('inf')
-    
-    try:
-      hull_area = cv.contourArea(hull)
-      significant_convexity_defects = 0
-      hull_indices = cv.convexHull(self.contour, returnPoints=False)
-      hull_indices[::-1].sort(axis=0)
-      defects = cv.convexityDefects(self.contour, hull_indices)
-      if defects is not None:
-        for i in range(defects.shape[0]):
-          start_index, end_index, farthest_point_index, distance = defects[i, 0]
+      area = cv.contourArea(self.contour)
+      shape_fail_statuses['area']['fail_status'] = (
+        True if area < criteria['metacarpal']['area'] else False
+      )
+      shape_fail_statuses['area']['obtained_value'] = area
+      shape_fail_statuses['area']['threshold_value'] = (
+        criteria['metacarpal']['area']
+      )
+      
+      threshold_value = criteria['metacarpal']['aspect_ratio_min']
+      shape_fail_statuses['aspect_ratio_min']['fail_status'] = (
+        True if self._aspect_ratio < threshold_value else False
+      )
+      shape_fail_statuses['aspect_ratio_min']['obtained_value'] = (
+        self._aspect_ratio
+      )
+      shape_fail_statuses['aspect_ratio_min']['threshold_value'] = (
+        threshold_value
+      )
 
-          start = self.contour[start_index]
-          end = self.contour[end_index]
-          farthest = self.contour[farthest_point_index]
+      threshold_value = criteria['metacarpal']['aspect_ratio_max']
+      shape_fail_statuses['aspect_ratio_max']['fail_status'] = (
+        True if self._aspect_ratio > threshold_value else False
+      )
+      shape_fail_statuses['aspect_ratio_max']['obtained_value'] = (
+        self._aspect_ratio
+      )
+      shape_fail_statuses['aspect_ratio_max']['threshold_value'] = (
+        threshold_value
+      )
 
-          defect_area = cv.contourArea(np.array([start, end, farthest]))
+      if self.encounter_amount > 1:
+        TOLERANCE = criteria['metacarpal']['aspect_ratio_tolerance']
+        previous_encounter_aspect_ratio = self.previous_encounter._aspect_ratio
+        obtained_value = abs(previous_encounter_aspect_ratio - self._aspect_ratio)
+        shape_fail_statuses['aspect_ratio_tolerance'] = {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        }
+        if obtained_value > TOLERANCE:
+          shape_fail_statuses['aspect_ratio_tolerance']['fail_status'] = True
+        else:
+          shape_fail_statuses['aspect_ratio_tolerance']['fail_status'] = False
+        shape_fail_statuses['aspect_ratio_tolerance']['obtained_value'] = (
+          obtained_value
+        )
+        shape_fail_statuses['aspect_ratio_tolerance']['threshold_value'] = (
+          TOLERANCE
+        )
 
-          if defect_area / hull_area > criteria['metacarpal']['defect_area_ratio']:
-            significant_convexity_defects += 1
+      shape_fail_statuses['min_length']['fail_status'] = (
+        True if len(self.contour) < 3 else False
+      )
+      shape_fail_statuses['min_length']['obtained_value'] = (
+        len(self.contour)
+      )
+      shape_fail_statuses['min_length']['threshold_value'] = 3
+      
+      min_rect_width = self.min_area_rect[1][0]
+      min_rect_height = self.min_area_rect[1][1]
+      hull = cv.convexHull(self.contour)
+      solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+      shape_fail_statuses['solidity']['fail_status'] = (
+        True if solidity > criteria['metacarpal']['solidity'] else False
+      )
+      shape_fail_statuses['solidity']['obtained_value'] = solidity
+      shape_fail_statuses['solidity']['threshold_value'] = (
+        criteria['metacarpal']['solidity']
+      )
 
-      if self.encounter_amount == 5 and significant_convexity_defects != 1:
-        return float('inf')
-      elif self.encounter_amount != 5 and significant_convexity_defects != 2:
-        return float('inf')
-    except cv.error as e:
-      error_message = str(e).lower()
-      if 'not monotonous' in error_message: # TODO make this more robust
-        return float('inf')
+      try:
+        hull_area = cv.contourArea(hull)
+        significant_convexity_defects = 0
+        hull_indices = cv.convexHull(self.contour, returnPoints=False)
+        hull_indices[::-1].sort(axis=0)
+        defects = cv.convexityDefects(self.contour, hull_indices)
+        if defects is not None:
+          for i in range(defects.shape[0]):
+            start_index, end_index, farthest_point_index, distance = defects[i, 0]
 
-    moments = cv.moments(self.contour)
-    hu_moments = cv.HuMoments(moments)
-    hu_moments = np.absolute(hu_moments)
-    hu_moments_no_zeros = np.where( # to avoid DivideByZero
-      hu_moments == 0,
-      np.finfo(float).eps,
-      hu_moments
-    )
-    hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+            start = self.contour[start_index]
+            end = self.contour[end_index]
+            farthest = self.contour[farthest_point_index]
 
-    difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
-    return difference
+            defect_area = cv.contourArea(np.array([start, end, farthest]))
 
-  def branch_start_position_restrictions(self) -> list:
+            if defect_area / hull_area > criteria['metacarpal']['defect_area_ratio']:
+              significant_convexity_defects += 1
+
+        shape_fail_statuses['defect_area_ratio']['fail_status'] = (
+          True if (
+            self.encounter_amount == 5 and significant_convexity_defects != 2 or
+            self.encounter_amount != 5 and significant_convexity_defects != 2
+          ) else False
+        )
+        shape_fail_statuses['defect_area_ratio']['obtained_value'] = (
+          significant_convexity_defects
+        )
+
+        if self.encounter_amount == 5 and significant_convexity_defects != 2:
+          shape_fail_statuses['defect_area_ratio']['threshold_value'] = 2
+        elif self.encounter_amount != 5 and significant_convexity_defects != 2:
+          shape_fail_statuses['defect_area_ratio']['threshold_value'] = 2
+      except cv.error as e:
+        error_message = str(e).lower()
+        if 'not monotonous' in error_message: # TODO make this more robust
+          shape_fail_statuses['defect_area_ratio']['fail_status'] = True
+          shape_fail_statuses['defect_area_ratio']['obtained_value'] = (
+            np.nan
+          )
+          shape_fail_statuses['defect_area_ratio']['threshold_value'] = (
+            np.nan
+          )
+      
+      moments = cv.moments(self.contour)
+      hu_moments = cv.HuMoments(moments)
+      hu_moments = np.absolute(hu_moments)
+      hu_moments_no_zeros = np.where( # to avoid DivideByZero
+        hu_moments == 0,
+        np.finfo(float).eps,
+        hu_moments
+      )
+      hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+
+      difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+
+      return difference, shape_fail_statuses
+
+  def branch_start_position_restrictions(self,
+                                         position_factors: dict = None) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
       location is needed to reach the next jump. This is meant to be implemented
       by expected contours at the start of a branch, so that the bones at the end
@@ -270,6 +462,42 @@ class ExpectedContourMetacarpal(ExpectedContourOfBranch):
       be. For example when jumping from metacarpal to next finger's distal phalanx
       in a top-left to bottom-right fashion (cv coords wise)'''
     return []
+
+  def _add_factors_from_start_point(self, start_point: list,
+                                    restriction_index: int,
+                                    direction_right: bool,
+                                    width: int,
+                                    height: int,
+                                    position_factors: dict,
+                                    next_or_jump: str = 'next',
+                                    encounter_n_or_default = 'default'):
+    '''Applies the formula for using the POSITION_RESTRICTIONS_PADDING at
+    constant.py. The goal is to define the actual values from that file.'''
+    position_factors_array = (
+      position_factors['distal'][next_or_jump][encounter_n_or_default]
+    )
+    multiplier_factors = position_factors_array[restriction_index]['multiplier']
+    additive_factor = position_factors_array[restriction_index]['additive']
+    if direction_right:
+      return start_point + (
+          self.direction_right * width * multiplier_factors['width']
+        ) + (
+          self.direction_right * height * multiplier_factors['height']
+        ) + (
+          self.direction_right * multiplier_factors['constant']
+        ) + (
+          self.direction_right * additive_factor
+        )
+    else: # direction bottom
+      return start_point + (
+          self.direction_bottom * width * multiplier_factors['width']
+        ) + (
+          self.direction_bottom * height * multiplier_factors['height']
+        ) + (
+          self.direction_bottom * multiplier_factors['constant']
+        ) + (
+          self.direction_bottom * additive_factor
+        )
 
   def measure(self) -> dict:
     width = self.min_area_rect[1][0]

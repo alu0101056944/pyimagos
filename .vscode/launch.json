@@ -25,10 +25,22 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "criteria-study",
-        ".\\bar\\a_name.jpg",
-        "report",
+        "experiment",
+        "--group17_5=bar",
+        "--single",
+        "--useinput2",
         "--nofilter",
+        "--use_starts_file"
+      ]
+    },
+    {
+      "name": "Shape experiment file. Python Debugger: Python File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": [
+        "develop",
+        "experiment-positions"
       ]
     },
   ]

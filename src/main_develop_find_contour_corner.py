@@ -22,7 +22,17 @@ def get_bounding_box_xy(contour):
   return x, y
 
 def case_1():
-  borders_detected = Image.open('docs/radius_bone_minimal.jpg')
+  try:
+    with Image.open('docs/radius_bone_minimal.jpg') as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        borders_detected = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        borders_detected = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {'docs/radius_bone_minimal.jpg'}: {e}")
+    raise
+
   borders_detected = np.array(borders_detected)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_BGR2GRAY)
 

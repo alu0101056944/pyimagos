@@ -92,37 +92,86 @@ class ExpectedContourSesamoid(ExpectedContour):
       (i + 3) % len(bounding_rect_contour)
     ].tolist()
 
-  def next_contour_restrictions(self) -> list:
+  def next_contour_restrictions(self, position_factors: dict = None) -> list:
     return []
 
-  def shape_restrictions(self, criteria: dict = None) -> list:
+  def shape_restrictions(self, criteria: dict = None,
+                         decompose: bool = False) -> list:
     if criteria is None:
       criteria = CRITERIA_DICT
 
-    if len(self.contour) == 0:
-      return float('inf')
-    
-    min_rect_width = self.min_area_rect[1][0]
-    min_rect_height = self.min_area_rect[1][1]
-    hull = cv.convexHull(self.contour)
-    solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
-    if solidity > criteria['sesamoid']['solidity']:
-      return float('inf')
-    
-    moments = cv.moments(self.contour)
-    hu_moments = cv.HuMoments(moments)
-    hu_moments = np.absolute(hu_moments)
-    hu_moments_no_zeros = np.where( # to avoid DivideByZero
-      hu_moments == 0,
-      np.finfo(float).eps,
-      hu_moments
-    )
-    hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+    if not decompose:
+      if len(self.contour) == 0:
+        return float('inf')
+      
+      min_rect_width = self.min_area_rect[1][0]
+      min_rect_height = self.min_area_rect[1][1]
+      hull = cv.convexHull(self.contour)
+      solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+      if solidity > criteria['sesamoid']['solidity']:
+        return float('inf')
+      
+      moments = cv.moments(self.contour)
+      hu_moments = cv.HuMoments(moments)
+      hu_moments = np.absolute(hu_moments)
+      hu_moments_no_zeros = np.where( # to avoid DivideByZero
+        hu_moments == 0,
+        np.finfo(float).eps,
+        hu_moments
+      )
+      hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
-    difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
-    return difference
+      difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+      return difference
+    else:
+      shape_fail_statuses = {
+        'empty_contour': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+        'solidity': {
+          'obtained_value': None,
+          'threshold_value': None,
+          'fail_status': None,
+        },
+      }
+      shape_fail_statuses['empty_contour']['fail_status'] = (
+        True if len(self.contour) == 0 else False
+      )
+      shape_fail_statuses['empty_contour']['obtained_value'] = (
+        len(self.contour)
+      )
+      shape_fail_statuses['empty_contour']['threshold_value'] = 0
 
-  def branch_start_position_restrictions(self) -> list:
+      min_rect_width = self.min_area_rect[1][0]
+      min_rect_height = self.min_area_rect[1][1]
+      hull = cv.convexHull(self.contour)
+      solidity = (min_rect_width * min_rect_height) / (cv.contourArea(hull))
+      shape_fail_statuses['solidity']['fail_status'] = (
+        True if solidity > criteria['sesamoid']['solidity'] else False
+      )
+      shape_fail_statuses['solidity']['obtained_value'] = solidity
+      shape_fail_statuses['solidity']['threshold_value'] = (
+        criteria['sesamoid']['solidity']
+      )
+      
+      moments = cv.moments(self.contour)
+      hu_moments = cv.HuMoments(moments)
+      hu_moments = np.absolute(hu_moments)
+      hu_moments_no_zeros = np.where( # to avoid DivideByZero
+        hu_moments == 0,
+        np.finfo(float).eps,
+        hu_moments
+      )
+      hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
+
+      difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+
+      return difference, shape_fail_statuses
+
+  def branch_start_position_restrictions(self,
+                                         position_factors: dict = None) -> list:
     '''Positional restrictions for when a branch has ended and a jump to other
       location is needed to reach the next jump. This is meant to be implemented
       by expected contours at the start of a branch, so that the bones at the end

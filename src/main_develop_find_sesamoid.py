@@ -65,7 +65,17 @@ def create_minimal_image_from_contour(image: np.array,
   return cropped_image
 
 def case_1():
-  borders_detected = Image.open('docs/metacarpal_bone_minimal_larger.jpg')
+  try:
+    with Image.open('docs/metacarpal_bone_minimal_larger.jpg') as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        borders_detected = np.array(image)
+      elif image.mode == 'RGB':
+        borders_detected = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {'docs/metacarpal_bone_minimal_larger.jpg'}: {e}")
+    raise
+
   borders_detected = np.array(borders_detected)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_BGR2GRAY)
 

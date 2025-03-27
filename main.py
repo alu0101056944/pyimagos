@@ -19,6 +19,7 @@ import cv2 as cv
 from PIL import Image
 import click
 import numpy as np
+import torchvision.transforms as transforms
 
 from src.main_execute import process_radiograph
 from src.main_estimate_ideal import estimate_age_from_ideal_contour
@@ -49,6 +50,14 @@ from src.main_develop_test_measurement_match_fourier import (
 )
 from src.main_experiment import main_experiment
 from src.main_develop_criteria_study import test_criteria_parameters
+from src.image_filters.contrast_enhancement import ContrastEnhancement
+from src.main_study_cpu_scale_factor import execute_resize_study
+from src.main_canny_study import make_composition
+from src.main_print_positional_differences import positional_differences_main
+from src.main_print_shape_differences import shape_differences_main
+from src.main_develop_show_segment_tags import visualize_tags_main
+from src.main_experiment_positions import write_position_experiment
+from src.main_experiment_shape import write_shape_experiment
 
 @click.group()
 def cli() -> None:
@@ -65,15 +74,32 @@ def cli() -> None:
 @click.option('--all', is_flag=True, default=False,
               help='Print the exact estimated age and the measurement ' \
                 'dictionary.')
+@click.option('--gpu', is_flag=True, default=False,
+              help='Use gpu for the contrast enchancement step, which uses a' \
+                'vision transformer')
+@click.option('--noresize', is_flag=True, default=False,
+              help='Do not resize the image before applying contrast ' \
+                'enhancement.')
+@click.option('--input2',
+              type=click.Path(
+                exists=True, file_okay=True, dir_okay=False, writable=True
+              ),
+              help='Input image to use on second stage when nofilter is set.' \
+                'Fallsback to using input image 1.')
 def execute(filename: str, write_files: bool, show: bool,
-            nofilter: bool, all: bool) -> None:
-  '''Left hand radiography segmentation.'''
+            nofilter: bool, all: bool, gpu: bool, noresize: bool,
+            input2: click.Path) -> None:
+  '''Left hand radiography age estimation.'''
+  
   process_radiograph(
     filename,
     write_images=write_files,
     show_images=show,
     nofilter=nofilter,
-    all=all
+    all=all,
+    use_cpu=not gpu,
+    noresize=noresize,
+    input_image_2=input2
   )
 
 @cli.command()
@@ -106,29 +132,55 @@ def estimate() -> None:
                 exists=True, file_okay=False, dir_okay=True, writable=True
               ),
               help='Folder path with radiographies for control group.')
+@click.option('--gpu', is_flag=True, default=False,
+              help='Use gpu for the contrast enchancement step, which uses a' \
+                'vision transformer')
+@click.option('--noresize', is_flag=True, default=False,
+              help='Do not resize the image before applying contrast ' \
+                'enhancement.')
+@click.option('--useinput2', is_flag=True, default=False,
+              help='To search for a x_stage_2.jpg image per image to use for' \
+                ' the second stage search')
+@click.option('--use_starts_file', is_flag=True, default=False,
+              help='To look for a .json with the index of the start contour.' + (
+                'The search will use that as starting contour.'
+              ))
 def experiment(nofilter: bool, single: bool, group17_5: str, group18_5: str,
-               group19_5: str, groupcontrol: str) -> None:
+               group19_5: str, groupcontrol: str, gpu: bool,
+               noresize: bool, useinput2: bool, use_starts_file: bool) -> None:
   '''Estimate age and show measurement fit for three different groups and
       a control group. If --single option was not used then four options
       group17_5, group18_5 and group19_5, groupcontrol with the folder
       paths are required. Otherwise just a single group is required (will
        fail if passed more than one)'''
-  main_experiment(single, group17_5, group18_5, group19_5, groupcontrol, nofilter)
+  main_experiment(single, group17_5, group18_5, group19_5, groupcontrol,
+                  nofilter, use_cpu=not gpu, noresize=noresize,
+                  useinput2=useinput2, use_starts_file=use_starts_file)
 
 @cli.command()
 @click.argument('filename')
 @click.argument('outputfilename')
 @click.option('--nofilter', is_flag=True, default=False,
               help='Skip image processing and use the input image directly.')
-def criteria_study(nofilter: bool, filename: str, outputfilename: str):
+@click.option('--gpu', is_flag=True, default=False,
+              help='Use gpu for the contrast enchancement step, which uses a' \
+                'vision transformer')
+@click.option('--noresize', is_flag=True, default=False,
+              help='Do not resize the image before applying contrast ' \
+                'enhancement.')
+def criteria_study(nofilter: bool, filename: str, outputfilename: str,
+                   gpu: bool, noresize: bool):
   '''Estimate age of a given radiography image file with different criteria
   parameter variations.'''
-  test_criteria_parameters(filename, outputfilename, nofilter)
+  test_criteria_parameters(filename, outputfilename, nofilter, use_cpu=not gpu,
+                           noresize=noresize)
 
 @cli.group()
 def develop() -> None:
    '''Developer-focused commands'''
    pass
+
+# TODO add gpu flag to remaining commands, like attmap, filters_gui
 
 @develop.command()
 @click.argument('filename')
@@ -136,10 +188,25 @@ def develop() -> None:
               help='Enable writing processed images to disk.')
 @click.option('--noshow', is_flag=True, default=False,
               help='Skip image showing through new windows.')
-def attmap(filename: str, write_files: bool, noshow: bool) -> None:
+@click.option('--noresize', is_flag=True, default=False,
+help='Do not resize the image before applying contrast ' \
+  'enhancement.')
+def attmap(filename: str, write_files: bool, noshow: bool,
+            noresize: bool) -> None:
   '''Show the attention map of the given image.'''
-  input_image = Image.open(filename)
-  attention_map = AttentionMap().process(input_image)
+  input_image = None
+  try:
+    with Image.open(filename) as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        input_image = np.array(image)
+      elif image.mode == 'RGB':
+        input_image = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+  input_image = transforms.ToTensor()(input_image)
+  attention_map = AttentionMap(noresize=noresize).process(input_image)
   if write_files:
     cv.imwrite(f'docs/local_images/{os.path.basename(filename)}_attention_map.jpg',
                attention_map)
@@ -280,7 +347,17 @@ def test_shape_match_fourier():
               help='Output to a file instead of to console.')
 def contour(filename: str, write_file: bool):
   '''Given a binary image, print its contour.'''
-  input_image = Image.open(filename)
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        input_image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        input_image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
   borders_detected = np.array(input_image)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
   _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
@@ -310,7 +387,17 @@ def contour(filename: str, write_file: bool):
 @click.argument("filename")
 def hu_moments(filename: str):
   '''Given a binary image, print its hu moments.'''
-  input_image = Image.open(filename)
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        input_image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        input_image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
   borders_detected = np.array(input_image)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
   _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
@@ -338,7 +425,17 @@ def hu_moments(filename: str):
 def fourier(filename: str):
   '''Given a binary image, print the fourier transforms of each contour in it.
   10 descriptors.'''
-  input_image = Image.open(filename)
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        input_image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        input_image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
   borders_detected = np.array(input_image)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
   _, thresholded = cv.threshold(borders_detected, 40, 255, cv.THRESH_BINARY)
@@ -366,6 +463,150 @@ def fourier(filename: str):
     
   print('Fourier descriptors (No DC component (traslacion info)):')
   print(descriptors)
+
+@develop.command()
+@click.argument("filename")
+@click.option('--lower_thresh',
+              help='Lower threshold for the canny binarization')
+@click.option('--higher_thresh',
+              help='Higher threshold for the canny binarization')
+@click.option('--gpu', is_flag=True, default=False,
+              help='Use gpu for the contrast enchancement step, which uses a' \
+                'vision transformer')
+@click.option('--noresize', is_flag=True, default=False,
+              help='Do not resize the image before applying contrast ' \
+                'enhancement.')
+def canny(filename: str, lower_thresh: str, higher_thresh: str, gpu: bool,
+          noresize: bool):
+  '''Process the radiography image file to border detect it.'''
+
+  if lower_thresh is None or higher_thresh is None:
+    raise ValueError('Missing either lower_threshold or higher_threshold option')
+
+  input_image = None
+  try:
+    with Image.open(filename) as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        input_image = np.array(image)
+      elif image.mode == 'RGB':
+        input_image = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
+  input_image = transforms.ToTensor()(input_image)
+  he_enchanced = ContrastEnhancement(
+    use_cpu=not gpu,
+    noresize=noresize
+  ).process(input_image)
+  he_enchanced = cv.normalize(he_enchanced, None, 0, 255, cv.NORM_MINMAX,
+                              cv.CV_8U)
+
+  # gaussian_blurred = cv.GaussianBlur(he_enchanced, (3, 3), 0)
+
+  scaled_image = cv.resize(
+    he_enchanced,
+    (0, 0),
+    fx=0.3,
+    fy=0.3,
+    interpolation=cv.INTER_AREA
+  )
+
+  borders_detected = cv.Canny(scaled_image, float(lower_thresh),
+                              float(higher_thresh))
+  
+  borders_detected = cv.normalize(borders_detected, None, 0, 255,
+                                    cv.NORM_MINMAX, cv.CV_8U)
+
+  cv.imwrite('canny_output.jpg', borders_detected)
+  print('Sucesfully written image canny_output.jpg')
+
+@develop.command()
+def study_resize():
+  '''Show contrast enhancement execution times for image sizes 360p,
+  480p and 720p.'''
+  execute_resize_study()
+
+@develop.command()
+@click.argument('filename')
+def study_canny(filename: str):
+  '''Write images to be able to be able to study the best combination of
+  filters such that all the fingers are fully present.'''
+  make_composition(filename)
+
+@develop.command()
+@click.argument('filename')
+def validate_contours(filename: str):
+  '''Count contour amount'''
+  image = None
+  try:
+    with Image.open(filename) as imagefile:
+      if imagefile.mode == 'L':
+        imagefile = imagefile.convert('RGB')
+        image = np.array(imagefile)
+      elif imagefile.mode == 'RGB':
+        image = np.array(imagefile)
+  except Exception as e:
+    print(f"Error opening image {filename}: {e}")
+    raise
+
+  image = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+  _, thresholded = cv.threshold(image, 40, 255, cv.THRESH_BINARY)
+  contours, _ = cv.findContours(
+    thresholded,
+    cv.RETR_EXTERNAL,
+    cv.CHAIN_APPROX_SIMPLE
+  )
+
+  # TODO remove these two commented parts meant for debug
+
+  # image = np.zeros((thresholded.shape[0], thresholded.shape[1], 3), dtype=np.uint8)
+  # for i, contour in enumerate(contours):
+  #   color = ((i + 1) * 123 % 256, (i + 1) * 456 % 256, (i + 1) * 789 % 256)
+  #   if len(contour) > 0:
+  #     cv.drawContours(image, contours, i, color, 1)
+
+  # fig = plt.figure()
+  # plt.imshow(image)
+  # plt.title('title')
+  # plt.axis('off')
+  # fig.canvas.manager.set_window_title('title')
+  # plt.show()
+
+  print('Contour amount:')
+  print(len(contours))
+
+@develop.command()
+def positional_differences():
+  '''Calculates the positional differences for a bunch of radiography countour
+  cases based on real radiographies.'''
+  positional_differences_main()
+
+@develop.command()
+def shape_differences():
+  '''Calculates the shape differences for a bunch of radiography countour
+  cases based on real radiographies.'''
+  shape_differences_main()
+
+@develop.command()
+def visualize_tags():
+  '''Visualize the segment tags of a bunch of radiographies.'''
+  visualize_tags_main()
+
+@develop.command()
+def experiment_positions():
+  '''Given a set of clean contour radiographies, calculate per position
+  restriction the furthest distance into the wrong side globally (all
+  radiographies).'''
+  write_position_experiment()
+
+@develop.command()
+def experiment_shapes():
+  '''Given a set of clean contour radiographies, calculate per position
+  restriction the furthest distance into the wrong side globally (all
+  radiographies).'''
+  write_shape_experiment()
 
 if __name__ == '__main__':
     cli()

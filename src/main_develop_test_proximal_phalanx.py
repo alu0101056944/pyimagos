@@ -248,7 +248,16 @@ def show_contour(contour, test_contour=None, padding=0,
                               show_convex_defects=show_convex_defects)
 
 def visualize_proximal_phalanx_shape():
-  borders_detected = Image.open('docs/proximal_phalanx.jpg')
+  try:
+    with Image.open('docs/proximal_phalanx.jpg') as image:
+      if image.mode == 'L':
+        image = image.convert('RGB')
+        borders_detected = np.array(image)
+      elif image.mode == 'RGB':
+        borders_detected = np.array(image)
+  except Exception as e:
+    print(f"Error opening image {'docs/proximal_phalanx.jpg'}: {e}")
+    raise
   borders_detected = np.array(borders_detected)
   borders_detected = cv.cvtColor(borders_detected, cv.COLOR_RGB2GRAY)
 
