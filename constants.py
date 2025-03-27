@@ -48,51 +48,51 @@ CRITERIA_DICT = {
   'distal': {
     'area': 24,
     'aspect_ratio_min': 1.4,
-    'aspect_ratio_max': 2.30001,
-    'aspect_ratio_tolerance': 2.75,
-    'solidity': 2.51,
+    'aspect_ratio_max': 2.71,
+    'aspect_ratio_tolerance': 3.05,
+    'solidity': 2.66,
     'defect_area_ratio': 0.03,
   },
   'medial': {
-    'area': 9,
-    'aspect_ratio_min': 2.30001,
-    'aspect_ratio_max': 2.40001,
-    'aspect_ratio_tolerance': 2.4,
-    'solidity': 2.35,
-    'defect_area_ratio': 0.02001,
+    'area': 11,
+    'aspect_ratio_min': 3.1001,
+    'aspect_ratio_max': 1.31,
+    'aspect_ratio_tolerance': 2.7,
+    'solidity': 2.5,
+    'defect_area_ratio': 0.03001,
   },
   'proximal': {
-    'area': 24,
-    'aspect_ratio_min': 2.4,
-    'aspect_ratio_max': 3.4,
-    'aspect_ratio_tolerance': 2.6,
-    'solidity': 2.35,
+    'area': 26,
+    'aspect_ratio_min': 4,
+    'aspect_ratio_max': 3.1,
+    'aspect_ratio_tolerance': 2.9,
+    'solidity': 2.5,
     'defect_area_ratio': 0.03,
   },
   'metacarpal': {
-    'area': 10,
-    'aspect_ratio_min': 3.4,
-    'aspect_ratio_max': 12.2,
-    'aspect_ratio_tolerance': 2.7,
-    'solidity': 2.4,
+    'area': 12,
+    'aspect_ratio_min': 6.0,
+    'aspect_ratio_max': 14.8,
+    'aspect_ratio_tolerance': 3,
+    'solidity': 2.55,
     'defect_area_ratio': 0.01,
   },
   'radius': {
     'area': 8,
-    'aspect_ratio_min': 1.0,
-    'aspect_ratio_max': 5.6,
-    'solidity': 2.5,
-    'defect_area_ratio': 0.035,
+    'aspect_ratio_min': 1.3,
+    'aspect_ratio_max': 5.9,
+    'solidity': 2.65,
+    'defect_area_ratio': 0.055,
   },
   'ulna': {
     'area': 430,
-    'aspect_ratio_min': 1.4,
-    'aspect_ratio_max': 7.6,
-    'solidity': 2.5,
-    'defect_area_ratio': 0.005,
+    'aspect_ratio_min': 2.7,
+    'aspect_ratio_max': 8.9,
+    'solidity': 2.65,
+    'defect_area_ratio': 0.0,
   },
   'sesamoid': {
-    'solidity': 1.3
+    'solidity': 0.9
   }
 }
 
@@ -179,7 +179,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0.5,
             'height': 0,
-            'constant': 9.74,
+            'constant': 0,
           },
         },
         {
@@ -215,7 +215,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': -2.5,
-            'constant': -28.5,
+            'constant': 0,
           },
         },
         {
@@ -223,7 +223,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 1,
-            'constant': 21,
+            'constant': 0,
           },
         },
         {
@@ -231,7 +231,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0.5,
             'height': 0,
-            'constant': -13.8,
+            'constant': 0,
           },
         },
         {
@@ -257,7 +257,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 9,
-            'constant': 55.665,
+            'constant': 0,
           },
         },
         {
@@ -273,7 +273,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 6,
             'height': 0,
-            'constant': 18,
+            'constant': 0,
           },
         },
       ]
@@ -303,7 +303,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 0,
-            'constant': -1,
+            'constant': 0,
           },
         },
         {
@@ -311,7 +311,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 4,
-            'constant': 10.024,
+            'constant': 0,
           },
         },
       ]
@@ -328,7 +328,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0.5,
             'height': 0,
-            'constant': 5.094,
+            'constant': 0,
           },
         },
         {
@@ -336,7 +336,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': -0.5,
             'height': 0,
-            'constant': -2.84,
+            'constant': 0,
           },
         },
         {
@@ -352,7 +352,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 3,
-            'constant': 53,
+            'constant': 0,
           },
         },
       ]
@@ -451,7 +451,7 @@ POSITION_FACTORS = {
           'multiplier': {
             'width': 0,
             'height': 1/8,
-            'constant': -8.306,
+            'constant': 0,
           },
         },
       ]

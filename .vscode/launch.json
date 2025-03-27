@@ -40,7 +40,7 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "develop",
-        "experiment-shapes"
+        "experiment-positions"
       ]
     },
   ]

@@ -10,6 +10,9 @@ precision-pair results highlighting the best assignments.
 
 '''
 
+import json
+import time
+
 import numpy as np
 
 from src.expected_contours.distal_phalanx import (
@@ -283,14 +286,17 @@ def get_canonical_expected_contours():
   return expected_contours
 
 def get_all_invasion_factors(contours: list, contour_map: list,
-                             expected_contours: list) -> list:
+                             expected_contours: list,
+                             segment_names: list, case_name: str) -> list:
   '''contour_map is the ordered version of contours which corresponds to the
   expected_contours sequence, which is a list of ExpectedContour classes.'''
   all_invasion_factors = []
+  local_atomic_furthest = {}
   
   for j in range(len(contour_map)):
     contour = contours[contour_map[j]]
     expected_contour = expected_contours[j]
+    segment_name = segment_names[j]
     
     points = np.reshape(contour, (-1, 2))
     if len(points) == 0:
@@ -329,32 +335,33 @@ def get_all_invasion_factors(contours: list, contour_map: list,
       ]
 
     all_invasion_factors.append(invasion_factors)
+    local_atomic_furthest[f'{case_name}_{segment_name}'] = invasion_factors
 
-  return all_invasion_factors
+  return all_invasion_factors, local_atomic_furthest
 
 def write_position_experiment_file():
   ## First stage global furthest invasions
 
   all_contours = [
-    [case_004(), case_004_segmentation()],
-    [case_022(), case_022_segmentation()],
-    [case_006(), case_006_segmentation()],
-    [case_018(), case_018_segmentation()],
-    [case_023(), case_023_segmentation()],
-    [case_029(), case_029_segmentation()],
-    [case_032(), case_032_segmentation()],
-    [case_217(), case_217_segmentation()],
-    [case_1622(), case_1622_segmentation()],
-    [case_1886(), case_1886_segmentation()],
-    [case_013(), case_013_segmentation()],
-    [case_016(), case_016_segmentation()],
-    [case_019(), case_019_segmentation()],
-    [case_030(), case_030_segmentation()],
-    [case_031(), case_031_segmentation()],
-    [case_084(), case_084_segmentation()],
-    [case_1619(), case_1619_segmentation()],
-    [case_1779(), case_1779_segmentation()],
-    [case_2089(), case_2089_segmentation()],
+    ['case_004', [case_004(), case_004_segmentation()]],
+    ['case_022', [case_022(), case_022_segmentation()]],
+    ['case_006', [case_006(), case_006_segmentation()]],
+    ['case_018', [case_018(), case_018_segmentation()]],
+    ['case_023', [case_023(), case_023_segmentation()]],
+    ['case_029', [case_029(), case_029_segmentation()]],
+    ['case_032', [case_032(), case_032_segmentation()]],
+    ['case_217', [case_217(), case_217_segmentation()]],
+    ['case_1622', [case_1622(), case_1622_segmentation()]],
+    ['case_1886', [case_1886(), case_1886_segmentation()]],
+    ['case_013', [case_013(), case_013_segmentation()]],
+    ['case_016', [case_016(), case_016_segmentation()]],
+    ['case_019', [case_019(), case_019_segmentation()]],
+    ['case_030', [case_030(), case_030_segmentation()]],
+    ['case_031', [case_031(), case_031_segmentation()]],
+    ['case_084', [case_084(), case_084_segmentation()]],
+    ['case_1619', [case_1619(), case_1619_segmentation()]],
+    ['case_1779', [case_1779(), case_1779_segmentation()]],
+    ['case_2089', [case_2089(), case_2089_segmentation()]],
   ]
 
   expected_contours = get_canonical_expected_contours()
@@ -362,12 +369,15 @@ def write_position_experiment_file():
   if len(all_contours) == 0:
     raise ValueError('No contours cases, need at least one.')
 
-  all_global_furthest_invasion = get_furthest_invasions(
+  (
+    all_global_furthest_invasion,
+    global_atomic_furthest_invasion,
+  ) = get_furthest_invasions(
     all_contours,
     expected_contours
   )
 
-  output_string = 'Restrictions: global furthest invasions first stage:\n'
+  output_string = '#Restrictions: global furthest invasions first stage:\n'
   for i, expected_invasions in enumerate(all_global_furthest_invasion):
     output_string = output_string + f'R{i}: '
     for j, restriction_invasion in enumerate(expected_invasions):
@@ -412,7 +422,7 @@ def write_position_experiment_file():
     'radius_next_default': radius_max_furthest_invasions,
   }
   
-  output_string = output_string + '\nRestrictions: final position restrictions:\n'
+  output_string = output_string + '\n#Restrictions: final position restrictions:\n'
   for i, (name, max_furthests) in enumerate(all_max_furthests.items()):
     output_string = output_string + f'{name}: '
     for j, restriction_invasion in enumerate(max_furthests):
@@ -420,40 +430,46 @@ def write_position_experiment_file():
             f'{"," if j != len(expected_invasions) - 1 else ""}')
     output_string = output_string + f'\n'
 
+  output_string = output_string + f'\n'
+
+  output_string = output_string + '#Atomic furthest invasions:\n'
+  atomic_invasions_string = json.dumps(global_atomic_furthest_invasion, indent=2)
+  output_string = output_string + atomic_invasions_string + '\n\n'
+
   ## Second stage global furthest invasions
 
   all_contours_2 = [
-    [case_004_with_sesamoid(), case_004_with_sesamoid_segmentation()],
-    [case_022_with_sesamoid(), case_022_with_sesamoid_segmentation()],
-    [case_006_with_sesamoid(), case_006_with_sesamoid_segmentation()],
-    [case_018_with_sesamoid(), case_018_with_sesamoid_segmentation()],
-    [case_023_with_sesamoid(), case_023_with_sesamoid_segmentation()],
-    [case_029_with_sesamoid(), case_029_with_sesamoid_segmentation()],
-    [case_032_with_sesamoid(), case_032_with_sesamoid_segmentation()],
-    [case_217_with_sesamoid(), case_217_with_sesamoid_segmentation()],
-    [case_1622_with_sesamoid(), case_1622_with_sesamoid_segmentation()],
-    [case_1886_with_sesamoid(), case_1886_with_sesamoid_segmentation()],
-    [case_013_with_sesamoid(), case_013_with_sesamoid_segmentation()],
-    [case_016_with_sesamoid(), case_016_with_sesamoid_segmentation()],
-    [case_019_with_sesamoid(), case_019_with_sesamoid_segmentation()],
-    [case_030_with_sesamoid(), case_030_with_sesamoid_segmentation()],
-    [case_031_with_sesamoid(), case_031_with_sesamoid_segmentation()],
-    [case_084_with_sesamoid(), case_084_with_sesamoid_segmentation()],
-    [case_1619_with_sesamoid(), case_1619_with_sesamoid_segmentation()],
-    [case_1779_with_sesamoid(), case_1779_with_sesamoid_segmentation()],
-    [case_2089_with_sesamoid(), case_2089_with_sesamoid_segmentation()],
+    ['case_004_with_sesamoid', [case_004_with_sesamoid(), case_004_with_sesamoid_segmentation()]],
+    ['case_022_with_sesamoid', [case_022_with_sesamoid(), case_022_with_sesamoid_segmentation()]],
+    ['case_006_with_sesamoid', [case_006_with_sesamoid(), case_006_with_sesamoid_segmentation()]],
+    ['case_018_with_sesamoid', [case_018_with_sesamoid(), case_018_with_sesamoid_segmentation()]],
+    ['case_023_with_sesamoid', [case_023_with_sesamoid(), case_023_with_sesamoid_segmentation()]],
+    ['case_029_with_sesamoid', [case_029_with_sesamoid(), case_029_with_sesamoid_segmentation()]],
+    ['case_032_with_sesamoid', [case_032_with_sesamoid(), case_032_with_sesamoid_segmentation()]],
+    ['case_217_with_sesamoid', [case_217_with_sesamoid(), case_217_with_sesamoid_segmentation()]],
+    ['case_1622_with_sesamoid', [case_1622_with_sesamoid(), case_1622_with_sesamoid_segmentation()]],
+    ['case_1886_with_sesamoid', [case_1886_with_sesamoid(), case_1886_with_sesamoid_segmentation()]],
+    ['case_013_with_sesamoid', [case_013_with_sesamoid(), case_013_with_sesamoid_segmentation()]],
+    ['case_016_with_sesamoid', [case_016_with_sesamoid(), case_016_with_sesamoid_segmentation()]],
+    ['case_019_with_sesamoid', [case_019_with_sesamoid(), case_019_with_sesamoid_segmentation()]],
+    ['case_030_with_sesamoid', [case_030_with_sesamoid(), case_030_with_sesamoid_segmentation()]],
+    ['case_031_with_sesamoid', [case_031_with_sesamoid(), case_031_with_sesamoid_segmentation()]],
+    ['case_084_with_sesamoid', [case_084_with_sesamoid(), case_084_with_sesamoid_segmentation()]],
+    ['case_1619_with_sesamoid', [case_1619_with_sesamoid(), case_1619_with_sesamoid_segmentation()]],
+    ['case_1779_with_sesamoid', [case_1779_with_sesamoid(), case_1779_with_sesamoid_segmentation()]],
+    ['case_2089_with_sesamoid', [case_2089_with_sesamoid(), case_2089_with_sesamoid_segmentation()]],
   ]
   
   # Change contours to only metacarpal and sesamoid, also segmentation.
   for contours_info in all_contours_2:
-    contours = contours_info[0]
-    segmentation = contours_info[1]
+    contours = contours_info[1][0]
+    segmentation = contours_info[1][1]
     metacarpal_5_index = segmentation['metacarpal_5']
     sesamoid_index = segmentation['sesamoid']
-    contours_info[0] = [
+    contours_info[1][0] = [
       contours[i] for i in [metacarpal_5_index, sesamoid_index]
     ]
-    contours_info[1] = {
+    contours_info[1][1] = {
       'metacarpal_5': 0,
       'sesamoid': 1,
     }
@@ -463,13 +479,16 @@ def write_position_experiment_file():
   if len(all_contours_2) == 0:
     raise ValueError('No contours cases, need at least one.')
 
-  all_global_furthest_invasion_2 = get_furthest_invasions(
+  (
+    all_global_furthest_invasion_2,
+    atomic_global_furthest_invasion_2,
+  ) = get_furthest_invasions(
     all_contours_2,
     expected_contours_2
   )
 
   output_string = output_string + (
-    '\nRestrictions: global furthest invasions second stage:\n'
+    '\n#Restrictions: global furthest invasions second stage:\n'
   )
   for i, expected_invasions in enumerate(all_global_furthest_invasion_2):
     output_string = output_string + f'R{i}: '
@@ -501,7 +520,7 @@ def write_position_experiment_file():
   }
   
   output_string = output_string + (
-    '\nRestrictions: final position restrictions second stage:\n'
+    '\n#Restrictions: final position restrictions second stage:\n'
   )
   for i, (name, max_furthests) in enumerate(all_max_furthests.items()):
     output_string = output_string + f'{name}: '
@@ -509,6 +528,12 @@ def write_position_experiment_file():
       output_string = output_string + f'{restriction_invasion}' + (
             f'{"," if j != len(expected_invasions) - 1 else ""}')
     output_string = output_string + f'\n'
+
+  output_string = output_string + f'\n'
+
+  output_string = output_string + '#Atomic furthest invasions second stage:\n'
+  atomic_invasions_string_2 = json.dumps(atomic_global_furthest_invasion_2, indent=2)
+  output_string = output_string + atomic_invasions_string_2 + '\n\n'
 
   with open('global_furthest_invasions.txt', 'w') as f:
     f.write(output_string)
@@ -518,14 +543,23 @@ def write_position_experiment_file():
 def get_furthest_invasions(all_contours: list, expected_contours: list):
   # calculate furthest on each position restriction
   all_global_furthest_invasion = None
-  for contours_info in all_contours:
-    contours = contours_info[0]
-    contour_map = list(contours_info[1].values())
+  global_atomic_furthest = {}
 
-    all_local_furthest_invasion = get_all_invasion_factors(
+  for contours_info in all_contours:
+    case_name = contours_info[0]
+    contours = contours_info[1][0]
+    contour_map = list(contours_info[1][1].values())
+    segment_names = list(contours_info[1][1].keys())
+
+    (
+      all_local_furthest_invasion,
+      local_atomic_furthest,
+    ) = get_all_invasion_factors(
       contours,
       contour_map,
       expected_contours,
+      segment_names,
+      case_name,
     )
 
     if all_global_furthest_invasion is None:
@@ -537,8 +571,10 @@ def get_furthest_invasions(all_contours: list, expected_contours: list):
           old_invasion = restriction_invasion
           if new_invasion > old_invasion:
             all_global_furthest_invasion[i][j] = new_invasion
+    
+    global_atomic_furthest.update(local_atomic_furthest)
 
-  return all_global_furthest_invasion
+  return all_global_furthest_invasion, global_atomic_furthest
 
 def get_canonical_expected_contours_stage_2():
   expected_contours = [
@@ -549,4 +585,7 @@ def get_canonical_expected_contours_stage_2():
 
 
 def write_position_experiment():
+  start_time = time.time()
   write_position_experiment_file()
+  elapsed_time = time.time() - start_time
+  print(f'Tiempo de ejecución: {elapsed_time}')

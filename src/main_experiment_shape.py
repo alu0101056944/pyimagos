@@ -10,6 +10,7 @@ applies.
 
 import copy
 import json
+import time
 
 import numpy as np
 
@@ -186,30 +187,30 @@ def write_expected_contours_precisions_stage_1():
     'distal': {
       'area': [],
       'aspect_ratio_min': [],
-      'aspect_ratio_max': ['medial'],
+      'aspect_ratio_max': [],
       'aspect_ratio_tolerance': [],
       'solidity': [],
       'defect_area_ratio': [],
     },
     'medial': {
       'area': [],
-      'aspect_ratio_min': ['distal'],
-      'aspect_ratio_max': ['proximal'],
+      'aspect_ratio_min': [],
+      'aspect_ratio_max': [],
       'aspect_ratio_tolerance': [],
       'solidity': [],
       'defect_area_ratio': [],
     },
     'proximal': {
       'area': [],
-      'aspect_ratio_min': ['medial'],
-      'aspect_ratio_max': ['metacarpal'],
+      'aspect_ratio_min': [],
+      'aspect_ratio_max': [],
       'aspect_ratio_tolerance': [],
       'solidity': [],
       'defect_area_ratio': [],
     },
     'metacarpal': {
       'area': [],
-      'aspect_ratio_min': ['proximal'],
+      'aspect_ratio_min': [],
       'aspect_ratio_max': [],
       'aspect_ratio_tolerance': [],
       'solidity': [],
@@ -232,25 +233,25 @@ def write_expected_contours_precisions_stage_1():
   }
 
   all_contours = [
-    [case_004(), case_004_segmentation()],
-    [case_022(), case_022_segmentation()],
-    [case_006(), case_006_segmentation()],
-    [case_018(), case_018_segmentation()],
-    [case_023(), case_023_segmentation()],
-    [case_029(), case_029_segmentation()],
-    [case_032(), case_032_segmentation()],
-    [case_217(), case_217_segmentation()],
-    [case_1622(), case_1622_segmentation()],
-    [case_1886(), case_1886_segmentation()],
-    [case_013(), case_013_segmentation()],
-    [case_016(), case_016_segmentation()],
-    [case_019(), case_019_segmentation()],
-    [case_030(), case_030_segmentation()],
-    [case_031(), case_031_segmentation()],
-    [case_084(), case_084_segmentation()],
-    [case_1619(), case_1619_segmentation()],
-    [case_1779(), case_1779_segmentation()],
-    [case_2089(), case_2089_segmentation()],
+    ['case_004', [case_004(), case_004_segmentation()]],
+    ['case_022', [case_022(), case_022_segmentation()]],
+    ['case_006', [case_006(), case_006_segmentation()]],
+    ['case_018', [case_018(), case_018_segmentation()]],
+    ['case_023', [case_023(), case_023_segmentation()]],
+    ['case_029', [case_029(), case_029_segmentation()]],
+    ['case_032', [case_032(), case_032_segmentation()]],
+    ['case_217', [case_217(), case_217_segmentation()]],
+    ['case_1622', [case_1622(), case_1622_segmentation()]],
+    ['case_1886', [case_1886(), case_1886_segmentation()]],
+    ['case_013', [case_013(), case_013_segmentation()]],
+    ['case_016', [case_016(), case_016_segmentation()]],
+    ['case_019', [case_019(), case_019_segmentation()]],
+    ['case_030', [case_030(), case_030_segmentation()]],
+    ['case_031', [case_031(), case_031_segmentation()]],
+    ['case_084', [case_084(), case_084_segmentation()]],
+    ['case_1619', [case_1619(), case_1619_segmentation()]],
+    ['case_1779', [case_1779(), case_1779_segmentation()]],
+    ['case_2089', [case_2089(), case_2089_segmentation()]],
   ]
 
   expected_contours = get_canonical_expected_contours()
@@ -259,12 +260,17 @@ def write_expected_contours_precisions_stage_1():
     precisions,
     best_precisions,
     best_factors,
+    atomic_precisions,
   ) = get_results(deltas, all_contours, expected_contours,
                   incorrect_expected_contours)
 
   output_string = output_string + '#Deltas:\n'
   deltas_string = json.dumps(deltas, indent=2)
   output_string = output_string + deltas_string + '\n\n'
+
+  output_string = output_string + '#Atomic precisions:\n'
+  atomic_precisions_string = json.dumps(atomic_precisions, indent=2)
+  output_string = output_string + atomic_precisions_string + '\n\n'
 
   output_string = output_string + '#Precisions obtained:\n'
   precisions_string = json.dumps(precisions, indent=2)
@@ -297,37 +303,37 @@ def write_expected_contours_precisions_stage_2():
   }
 
   all_contours = [
-    [case_004_with_sesamoid(), case_004_with_sesamoid_segmentation()],
-    [case_022_with_sesamoid(), case_022_with_sesamoid_segmentation()],
-    [case_006_with_sesamoid(), case_006_with_sesamoid_segmentation()],
-    [case_018_with_sesamoid(), case_018_with_sesamoid_segmentation()],
-    [case_023_with_sesamoid(), case_023_with_sesamoid_segmentation()],
-    [case_029_with_sesamoid(), case_029_with_sesamoid_segmentation()],
-    [case_032_with_sesamoid(), case_032_with_sesamoid_segmentation()],
-    [case_217_with_sesamoid(), case_217_with_sesamoid_segmentation()],
-    [case_1622_with_sesamoid(), case_1622_with_sesamoid_segmentation()],
-    [case_1886_with_sesamoid(), case_1886_with_sesamoid_segmentation()],
-    [case_013_with_sesamoid(), case_013_with_sesamoid_segmentation()],
-    [case_016_with_sesamoid(), case_016_with_sesamoid_segmentation()],
-    [case_019_with_sesamoid(), case_019_with_sesamoid_segmentation()],
-    [case_030_with_sesamoid(), case_030_with_sesamoid_segmentation()],
-    [case_031_with_sesamoid(), case_031_with_sesamoid_segmentation()],
-    [case_084_with_sesamoid(), case_084_with_sesamoid_segmentation()],
-    [case_1619_with_sesamoid(), case_1619_with_sesamoid_segmentation()],
-    [case_1779_with_sesamoid(), case_1779_with_sesamoid_segmentation()],
-    [case_2089_with_sesamoid(), case_2089_with_sesamoid_segmentation()],
+    ['case_004_with_sesamoid', [case_004_with_sesamoid(), case_004_with_sesamoid_segmentation()]],
+    ['case_022_with_sesamoid', [case_022_with_sesamoid(), case_022_with_sesamoid_segmentation()]],
+    ['case_006_with_sesamoid', [case_006_with_sesamoid(), case_006_with_sesamoid_segmentation()]],
+    ['case_018_with_sesamoid', [case_018_with_sesamoid(), case_018_with_sesamoid_segmentation()]],
+    ['case_023_with_sesamoid', [case_023_with_sesamoid(), case_023_with_sesamoid_segmentation()]],
+    ['case_029_with_sesamoid', [case_029_with_sesamoid(), case_029_with_sesamoid_segmentation()]],
+    ['case_032_with_sesamoid', [case_032_with_sesamoid(), case_032_with_sesamoid_segmentation()]],
+    ['case_217_with_sesamoid', [case_217_with_sesamoid(), case_217_with_sesamoid_segmentation()]],
+    ['case_1622_with_sesamoid', [case_1622_with_sesamoid(), case_1622_with_sesamoid_segmentation()]],
+    ['case_1886_with_sesamoid', [case_1886_with_sesamoid(), case_1886_with_sesamoid_segmentation()]],
+    ['case_013_with_sesamoid', [case_013_with_sesamoid(), case_013_with_sesamoid_segmentation()]],
+    ['case_016_with_sesamoid', [case_016_with_sesamoid(), case_016_with_sesamoid_segmentation()]],
+    ['case_019_with_sesamoid', [case_019_with_sesamoid(), case_019_with_sesamoid_segmentation()]],
+    ['case_030_with_sesamoid', [case_030_with_sesamoid(), case_030_with_sesamoid_segmentation()]],
+    ['case_031_with_sesamoid', [case_031_with_sesamoid(), case_031_with_sesamoid_segmentation()]],
+    ['case_084_with_sesamoid', [case_084_with_sesamoid(), case_084_with_sesamoid_segmentation()]],
+    ['case_1619_with_sesamoid', [case_1619_with_sesamoid(), case_1619_with_sesamoid_segmentation()]],
+    ['case_1779_with_sesamoid', [case_1779_with_sesamoid(), case_1779_with_sesamoid_segmentation()]],
+    ['case_2089_with_sesamoid', [case_2089_with_sesamoid(), case_2089_with_sesamoid_segmentation()]],
   ]
 
   # change contours to only metacarpal and sesamoid, also segmentation.
   for contours_info in all_contours:
-    contours = contours_info[0]
-    segmentation = contours_info[1]
+    contours = contours_info[1][0]
+    segmentation = contours_info[1][1]
     metacarpal_5_index = segmentation['metacarpal_5']
     sesamoid_index = segmentation['sesamoid']
-    contours_info[0] = [
+    contours_info[1][0] = [
       contours[i] for i in [metacarpal_5_index, sesamoid_index]
     ]
-    contours_info[1] = {
+    contours_info[1][1] = {
       'metacarpal_5': 0,
       'sesamoid': 1,
     }
@@ -338,12 +344,17 @@ def write_expected_contours_precisions_stage_2():
     precisions,
     best_precisions,
     best_factors,
+    atomic_precisions,
   ) = get_results(deltas, all_contours, expected_contours,
                   incorrect_expected_contours)
 
   output_string = output_string + '#Deltas:\n'
   deltas_string = json.dumps(deltas, indent=2)
   output_string = output_string + deltas_string + '\n\n'
+
+  output_string = output_string + '#Atomic precisions:\n'
+  atomic_precisions_string = json.dumps(atomic_precisions, indent=2)
+  output_string = output_string + atomic_precisions_string + '\n\n'
 
   output_string = output_string + '#Precisions obtained:\n'
   precisions_string = json.dumps(precisions, indent=2)
@@ -366,30 +377,38 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list,
                 incorrect_expected_contours: dict):
   # dict of expected_contour-factor-to array of precisions (one per delta)
   precisions = copy.deepcopy(deltas)
+  atomic_precisions = copy.deepcopy(deltas)
 
   for expected_contour_key in deltas:
     for factor_key in deltas[expected_contour_key]:
       precisions[expected_contour_key][factor_key] = []
+      atomic_precisions[expected_contour_key][factor_key] = {}
 
       for delta in deltas[expected_contour_key][factor_key]:
         criteria_dict = copy.deepcopy(CRITERIA_DICT)
         criteria_dict[expected_contour_key][factor_key] = (
           criteria_dict[expected_contour_key][factor_key] + delta
         )
+        new_value = criteria_dict[expected_contour_key][factor_key]
+        atomic_precisions[expected_contour_key][factor_key][new_value] = {}
 
         success_list = []
         for i, contours_info in enumerate(all_contours):
-          contours = contours_info[0]
-          segmentation = contours_info[1]
+          case_name = contours_info[0] 
+          contours = contours_info[1][0]
+          segmentation = contours_info[1][1]
 
           relevant_contour_info = [
-            (i, value)
+            (i, key, value)
             for i, (key, value) in enumerate(segmentation.items())
             if key.startswith(expected_contour_key)
           ]
 
           for contour_info in relevant_contour_info:
-            contour = contours[contour_info[1]]
+            segment_name = contour_info[1]
+            atomic_key = f'{case_name}_{segment_name}'
+
+            contour = contours[contour_info[2]]
             expected_contour = expected_contours[contour_info[0]]
             
             points = np.reshape(contour, (-1, 2))
@@ -413,8 +432,14 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list,
 
             if factor_key in factorname_to_info:
               if factorname_to_info[factor_key]['fail_status'] == True:
+                atomic_precisions[expected_contour_key][factor_key][new_value][atomic_key] = (
+                  False
+                )
                 success_list.append(False)
               else:
+                atomic_precisions[expected_contour_key][factor_key][new_value][atomic_key] = (
+                  True
+                )
                 success_list.append(True)
 
           # To test other expected contours with the new (factor + delta) value
@@ -439,13 +464,16 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list,
             criteria_dict[expected_contour_key_2][factor_key] = new_factor
 
             relevant_contour_indices_incorrect_2 = [
-              (i, value)
+              (i, key, value)
               for i, (key, value) in enumerate(segmentation.items())
               if key.startswith(expected_contour_key_2)
             ]
 
             for contour_info in relevant_contour_indices_incorrect_2:
-              contour = contours[contour_info[1]]
+              segment_name = contour_info[1]
+              atomic_key = f'{case_name}_incorrect_{segment_name}'
+
+              contour = contours[contour_info[2]]
               expected_contour = expected_contours[contour_info[0]]
 
               points = np.reshape(contour, (-1, 2))
@@ -469,8 +497,14 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list,
 
               if factor_key in factorname_to_info:
                 if factorname_to_info[factor_key]['fail_status'] == True:
+                  atomic_precisions[expected_contour_key][factor_key][new_value][atomic_key] = (
+                    True
+                  )
                   success_list.append(True)
                 else:
+                  atomic_precisions[expected_contour_key][factor_key][new_value][atomic_key] = (
+                    False
+                  )
                   success_list.append(False)
 
             # Put the original factor back in, testing is done.
@@ -490,13 +524,11 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list,
     best_precisions[expected_contour_key] = {}
     best_factors[expected_contour_key] = {}
     for factor_key in precisions[expected_contour_key]:
-      local_precisions = precisions[expected_contour_key][factor_key]
-
-      # flip so that it returns the last max equal occurence and not the latest.
-      best_precision_index = np.argmax(np.flip(local_precisions))
-      best_precision = (
-        precisions[expected_contour_key][factor_key][best_precision_index]
-      )
+      # flip so that argmax returns the first max equal occurence and not the last.
+      local_precisions = np.flip(precisions[expected_contour_key][factor_key])
+      
+      best_precision_index = np.argmax(local_precisions)
+      best_precision = local_precisions[best_precision_index]
 
       best_precisions[expected_contour_key][factor_key] = best_precision
 
@@ -509,7 +541,7 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list,
         original_value + best_delta
       )
 
-  return precisions, best_precisions, best_factors
+  return precisions, best_precisions, best_factors, atomic_precisions
 
 def get_canonical_expected_contours():
   '''Does not include sesamoid'''
@@ -601,5 +633,8 @@ def get_canonical_expected_contours_stage_2():
   return expected_contours
 
 def write_shape_experiment():
+  start_time = time.time()
   write_expected_contours_precisions_stage_1()
   write_expected_contours_precisions_stage_2()
+  elapsed_time = time.time() - start_time
+  print(f'Tiempo de ejecución: {elapsed_time}')
