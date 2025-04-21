@@ -136,14 +136,14 @@ def write_expected_contours_precisions_stage_1():
     'medial': {
       'area': [2, 1, 0, -1, -2],
       'aspect_ratio_min': list(np.arange(0.8, -1.6, -0.1)),
-      'aspect_ratio_max': list(np.arange(0.8, -1.6, -0.1)),
+      'aspect_ratio_max': list(np.arange(2, -1.6, -0.1)),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': list(np.arange(0.8, -0.8, -0.01))
     },
     'proximal': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio_min': list(np.arange(1.6, -2, -0.1)),
+      'aspect_ratio_min': list(np.arange(1.6, -2.3, -0.1)),
       'aspect_ratio_max': list(np.arange(1.6, -2, -0.1)),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
@@ -151,7 +151,7 @@ def write_expected_contours_precisions_stage_1():
     },
     'metacarpal': {
       'area': [2, 1, 0, -1, -2],
-      'aspect_ratio_min': list(np.arange(2.6, -2.6, -0.1)),
+      'aspect_ratio_min': list(np.arange(2.6, -3.6, -0.1)),
       'aspect_ratio_max': list(np.arange(2.6, -2.6, -0.1)),
       'aspect_ratio_tolerance': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
@@ -166,7 +166,7 @@ def write_expected_contours_precisions_stage_1():
     },
     'ulna': {
       'area': [30, 20, 10, 0, -10, -20, -30],
-      'aspect_ratio_min': list(np.arange(1.3, -1.3, -0.1)),
+      'aspect_ratio_min': list(np.arange(1.3, -1.7, -0.1)),
       'aspect_ratio_max': list(np.arange(1.3, -1.3, -0.1)),
       'solidity': [0.15, 0.10, 0.05, 0, -0.05, -0.1, -0.15],
       'defect_area_ratio': [
@@ -293,7 +293,7 @@ def write_expected_contours_precisions_stage_2():
   output_string = ''
   deltas = {
     'sesamoid': {
-      'solidity': [0.3, 0.2, 0.1, 0, -0.1, -0.2, -0.3],
+      'solidity': list(np.arange(1.2, -0.3, -0.1)),
     },
   }
   incorrect_expected_contours = {
@@ -525,7 +525,7 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list,
     best_factors[expected_contour_key] = {}
     for factor_key in precisions[expected_contour_key]:
       # flip so that argmax returns the first max equal occurence and not the last.
-      local_precisions = np.flip(precisions[expected_contour_key][factor_key])
+      local_precisions = precisions[expected_contour_key][factor_key]
       
       best_precision_index = np.argmax(local_precisions)
       best_precision = local_precisions[best_precision_index]
