@@ -328,7 +328,7 @@ def test_execute():
 
 @develop.command()
 def test_execute_2():
-  '''Image visualization of the execute tests 2'''
+  '''Image visualization of the execute tests (second stage search)'''
   visualize_execute_tests_2()
 
 @develop.command()

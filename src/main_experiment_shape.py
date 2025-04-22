@@ -232,6 +232,55 @@ def write_expected_contours_precisions_stage_1():
     },
   }
 
+  limits_expected_contours = {
+    'distal': {
+      'area': None,
+      'aspect_ratio_min': 'max',
+      'aspect_ratio_max': 'min',
+      'aspect_ratio_tolerance': None,
+      'solidity': None,
+      'defect_area_ratio': None,
+    },
+    'medial': {
+      'area': None,
+      'aspect_ratio_min': 'max',
+      'aspect_ratio_max': 'min',
+      'aspect_ratio_tolerance': None,
+      'solidity': None,
+      'defect_area_ratio': None,
+    },
+    'proximal': {
+      'area': None,
+      'aspect_ratio_min': 'max',
+      'aspect_ratio_max': 'min',
+      'aspect_ratio_tolerance': None,
+      'solidity': None,
+      'defect_area_ratio': None,
+    },
+    'metacarpal': {
+      'area': None,
+      'aspect_ratio_min': 'max',
+      'aspect_ratio_max': 'min',
+      'aspect_ratio_tolerance': None,
+      'solidity': None,
+      'defect_area_ratio': None,
+    },
+    'radius': {
+      'area': None,
+      'aspect_ratio_min': 'max',
+      'aspect_ratio_max': 'min',
+      'solidity': None,
+      'defect_area_ratio': None,
+    },
+    'ulna': {
+      'area': None,
+      'aspect_ratio_min': 'max',
+      'aspect_ratio_max': 'min',
+      'solidity': None,
+      'defect_area_ratio': None,
+    },
+  }
+
   all_contours = [
     ['case_004', [case_004(), case_004_segmentation()]],
     ['case_022', [case_022(), case_022_segmentation()]],
@@ -262,7 +311,8 @@ def write_expected_contours_precisions_stage_1():
     best_factors,
     atomic_precisions,
   ) = get_results(deltas, all_contours, expected_contours,
-                  incorrect_expected_contours)
+                  incorrect_expected_contours,
+                  limits_expected_contours)
 
   output_string = output_string + '#Deltas:\n'
   deltas_string = json.dumps(deltas, indent=2)
@@ -299,6 +349,11 @@ def write_expected_contours_precisions_stage_2():
   incorrect_expected_contours = {
     'sesamoid': {
       'solidity': [],
+    },
+  }
+  limits_expected_contours = {
+    'sesamoid': {
+      'solidity': None,
     },
   }
 
@@ -346,7 +401,7 @@ def write_expected_contours_precisions_stage_2():
     best_factors,
     atomic_precisions,
   ) = get_results(deltas, all_contours, expected_contours,
-                  incorrect_expected_contours)
+                  incorrect_expected_contours, limits_expected_contours)
 
   output_string = output_string + '#Deltas:\n'
   deltas_string = json.dumps(deltas, indent=2)
@@ -374,7 +429,8 @@ def write_expected_contours_precisions_stage_2():
     print('Success.')
 
 def get_results(deltas: dict, all_contours: list, expected_contours: list,
-                incorrect_expected_contours: dict):
+                incorrect_expected_contours: dict,
+                limits_expected_contour: dict):
   # dict of expected_contour-factor-to array of precisions (one per delta)
   precisions = copy.deepcopy(deltas)
   atomic_precisions = copy.deepcopy(deltas)
@@ -527,7 +583,17 @@ def get_results(deltas: dict, all_contours: list, expected_contours: list,
       # flip so that argmax returns the first max equal occurence and not the last.
       local_precisions = precisions[expected_contour_key][factor_key]
       
-      best_precision_index = np.argmax(local_precisions)
+      if limits_expected_contour[expected_contour_key][factor_key] == 'max' or (
+        limits_expected_contour[expected_contour_key][factor_key] == None
+      ):
+        # the first indices are the bigger deltas
+        best_precision_index = np.argmax(local_precisions)
+      elif limits_expected_contour[expected_contour_key][factor_key] == 'min':
+        # the later indices are the smaller deltas
+        best_precision_index = (
+          len(local_precisions) - 1 - np.argmax(local_precisions[::-1])
+        )
+
       best_precision = local_precisions[best_precision_index]
 
       best_precisions[expected_contour_key][factor_key] = best_precision
