@@ -602,11 +602,13 @@ def experiment_positions():
   write_position_experiment()
 
 @develop.command()
-def experiment_shapes():
+@click.option('--debug', is_flag=True, default=False,
+              help='Don\'t write the results to the output file.')
+def experiment_shapes(debug: bool):
   '''Given a set of clean contour radiographies, calculate per position
   restriction the furthest distance into the wrong side globally (all
   radiographies).'''
-  write_shape_experiment()
+  write_shape_experiment(debug)
 
 if __name__ == '__main__':
     cli()

@@ -46,53 +46,53 @@ BONE_AGE_ATLAS = {
 
 CRITERIA_DICT = {
   'distal': {
-    'area': 28,
-    'aspect_ratio_min': 1.3999999999999986,
-    'aspect_ratio_max': 4.3100000000000005,
-    'aspect_ratio_tolerance': 3.3499999999999996,
-    'solidity': 2.81,
-    'defect_area_ratio': 0.03
+    'area': 20,
+    'aspect_ratio_min': 1.4,
+    'aspect_ratio_max': 2.71,
+    'aspect_ratio_tolerance': 2.75,
+    'solidity': 2.511,
+    'defect_area_ratio': 0.03,
   },
   'medial': {
-    'area': 9,
-    'aspect_ratio_min': 1.8001000000000003,
-    'aspect_ratio_max': 3.31,
-    'aspect_ratio_tolerance': 3.0,
-    'solidity': 2.65,
-    'defect_area_ratio': 0.020009999999999323
+    'area': 7,
+    'aspect_ratio_min': 1.81,
+    'aspect_ratio_max': 2.71,
+    'aspect_ratio_tolerance': 2.41,
+    'solidity': 2.35,
+    'defect_area_ratio': 0.02001,
   },
   'proximal': {
-    'area': 28,
-    'aspect_ratio_min': 1.8999999999999968,
-    'aspect_ratio_max': 4.7,
-    'aspect_ratio_tolerance': 3.1999999999999997,
-    'solidity': 2.65,
-    'defect_area_ratio': 0.03
+    'area': 22,
+    'aspect_ratio_min': 1.9,
+    'aspect_ratio_max': 3.4,
+    'aspect_ratio_tolerance': 2.6,
+    'solidity': 2.35,
+    'defect_area_ratio': 0.03,
   },
   'metacarpal': {
-    'area': 10,
-    'aspect_ratio_min': 2.499999999999995,
-    'aspect_ratio_max': 17.400000000000002,
-    'aspect_ratio_tolerance': 3.3,
-    'solidity': 2.6999999999999997,
-    'defect_area_ratio': 0.01
+    'area': 8,
+    'aspect_ratio_min': 2.5,
+    'aspect_ratio_max': 9.8,
+    'aspect_ratio_tolerance': 2.7,
+    'solidity': 2.4,
+    'defect_area_ratio': 0.01,
   },
   'radius': {
-    'area': 8,
+    'area': -52,
     'aspect_ratio_min': 1.0,
-    'aspect_ratio_max': 6.2,
-    'solidity': 2.8,
-    'defect_area_ratio': 0.03499999999999865
+    'aspect_ratio_max': 5.311,
+    'solidity': 2.5,
+    'defect_area_ratio': 0.035,
   },
   'ulna': {
-    'area': 460,
-    'aspect_ratio_min': 1.399999999999998,
-    'aspect_ratio_max': 10.200000000000001,
+    'area': 370,
+    'aspect_ratio_min': 1.4,
+    'aspect_ratio_max': 6.5,
     'solidity': 2.8,
-    'defect_area_ratio': 0.0
+    'defect_area_ratio': 0.012900000000218292,
   },
   'sesamoid': {
-    'solidity': 0.9
+    'solidity': 1.4
   }
 }
 
