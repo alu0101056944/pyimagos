@@ -614,10 +614,16 @@ def experiment_shapes(debug: bool):
 @develop.command()
 @click.option('--debug', is_flag=True, default=False,
               help='Don\'t write the results to the output file.')
-def experiment_penalization(debug: bool):
+@click.option('--step', is_flag=False, default=0.0025,
+              help='Amount by which the algorithm jumps when trying out a new'
+              'penalization factor value. Must be a positive value.')
+@click.option('--range', is_flag=False, default=40,
+              help='How many times to jump a step amount when trying out a new'
+              'penalizatio nfactor value. Must be a positive value.')
+def experiment_penalization(debug: bool, step: int, range: int):
   '''Given a set of position penalization factor values calculate the precision
   for especific cases where the wrong contour was chosen.'''
-  experiment_penalization_main(debug)
+  experiment_penalization_main(debug, step, range)
 
 if __name__ == '__main__':
     cli()

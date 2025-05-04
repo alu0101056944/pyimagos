@@ -951,7 +951,8 @@ def all_case_tuples() -> dict[list[list]]:
 
   return expected_contour_to_cases
 
-def experiment_penalization_main(debug_mode: bool):
+def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
+                                 range: int = 40):
   start_time = time.time()
 
   output_string = ''
@@ -999,6 +1000,8 @@ def experiment_penalization_main(debug_mode: bool):
           ][case_title]['original']['chosen_candidate_index'] = chosen_candidate_index
 
 
+  output_string = output_string + '# Stage 1 penalization factors:\n'
+
   expected_contour_to_factor_to_precision = {}
   for expected_contour_key in expected_contour_to_cases:
     expected_contour_to_factor_to_precision[expected_contour_key] = {}
@@ -1007,10 +1010,68 @@ def experiment_penalization_main(debug_mode: bool):
     contour_type = expected_contour_key.split('_')[0]
     for case_info in expected_contour_to_cases[expected_contour_key]:
 
-      # TODO algorithm: first try out big jumps to see where the precision changes most,
-      # then use small jumps to fine tune.
-      penalization_factors = list(np.arange(1, 0.0001, -0.0001))
-      for penalization_factor in penalization_factors:
+      first_stage_penalization_factors = list(np.arange(1.0, 0.1, -0.1))
+      first_stage_penalization_factors = [
+        float(factor) for factor in first_stage_penalization_factors
+      ]
+
+      local_precisions = []
+      for penalization_factor in first_stage_penalization_factors:
+        original_penalization_factor = (
+          criteria_dict[contour_type]['positional_penalization']
+        )
+        criteria_dict[contour_type]['positional_penalization'] = (
+          penalization_factor
+        )
+
+        target_expected_contour = case_info[0]
+        candidate_contours = case_info[1]
+        correct_candidate_index = case_info[2]
+        case_title = case_info[3]
+
+        success_list = []
+        scores = []
+        for candidate_contour in candidate_contours:
+          target_expected_contour.prepare(
+            candidate_contour,
+            image_width=301,
+            image_height=462,
+          )
+          score = target_expected_contour.shape_restrictions(criteria_dict)
+          scores.append(score)
+        chosen_candidate_index = int(np.argmin(scores))
+        if chosen_candidate_index == correct_candidate_index:
+          success_list.append(True)
+        else:
+          success_list.append(False)
+        precision = success_list.count(True) / len(success_list)
+        local_precisions.append(precision)
+
+        criteria_dict[contour_type]['positional_penalization'] = (
+          original_penalization_factor
+        )
+
+      best_precision_penalization_factor_index = (
+        len(local_precisions) - 1 - np.argmax(local_precisions[::-1])
+      )
+      best_precision_penalization_factor = first_stage_penalization_factors[
+        best_precision_penalization_factor_index]
+
+      output_string = output_string + f'expected_contour_key={expected_contour_key}, ' + (
+        f'case_title={case_title}, ') + (
+        f'best_precision_first_stage={best_precision_penalization_factor}\n')
+
+      upper_bound = min(1, best_precision_penalization_factor + (step * (range / 2)))
+      lower_bound = max(0, best_precision_penalization_factor - (step * (range / 2)))
+      second_stage_penalization_factors = (
+        list(np.arange(upper_bound, best_precision_penalization_factor, (-1) * step)) +
+        list(np.arange(best_precision_penalization_factor, lower_bound, (-1) * step))
+      )
+      second_stage_penalization_factors = [
+        float(factor) for factor in second_stage_penalization_factors
+      ]
+
+      for penalization_factor in second_stage_penalization_factors:
         original_penalization_factor = (
           criteria_dict[contour_type]['positional_penalization']
         )
@@ -1062,6 +1123,9 @@ def experiment_penalization_main(debug_mode: bool):
         criteria_dict[contour_type]['positional_penalization'] = (
           original_penalization_factor
         )
+
+  output_string = output_string + f'step={step}, range={range}.\n\n'
+
 
   output_string = output_string + '# All expected_contour_to_factor_to_precision\n'
   output_string = output_string +  json.dumps(expected_contour_to_factor_to_precision, indent=2)
