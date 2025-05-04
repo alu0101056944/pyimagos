@@ -25,12 +25,8 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "experiment",
-        "--group17_5=bar",
-        "--single",
-        "--useinput2",
-        "--nofilter",
-        "--use_starts_file"
+        "develop",
+        "experiment-penalization",
       ]
     },
     {

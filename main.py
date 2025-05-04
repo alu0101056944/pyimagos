@@ -58,6 +58,7 @@ from src.main_print_shape_differences import shape_differences_main
 from src.main_develop_show_segment_tags import visualize_tags_main
 from src.main_experiment_positions import write_position_experiment
 from src.main_experiment_shape import write_shape_experiment
+from src.main_experiment_penalization import experiment_penalization_main
 
 @click.group()
 def cli() -> None:
@@ -609,6 +610,14 @@ def experiment_shapes(debug: bool):
   restriction the furthest distance into the wrong side globally (all
   radiographies).'''
   write_shape_experiment(debug)
+
+@develop.command()
+@click.option('--debug', is_flag=True, default=False,
+              help='Don\'t write the results to the output file.')
+def experiment_penalization(debug: bool):
+  '''Given a set of position penalization factor values calculate the precision
+  for especific cases where the wrong contour was chosen.'''
+  experiment_penalization_main(debug)
 
 if __name__ == '__main__':
     cli()

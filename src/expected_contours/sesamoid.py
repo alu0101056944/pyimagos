@@ -122,6 +122,16 @@ class ExpectedContourSesamoid(ExpectedContour):
       hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
       difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+
+      minimum_distance_to_origin = np.min(
+        np.sqrt(np.sum(self.contour ** 2, axis=1))
+      )
+      difference = difference + (
+        criteria['sesamoid']['positional_penalization'] * (
+          minimum_distance_to_origin
+        )
+      )
+
       return difference
     else:
       shape_fail_statuses = {
@@ -168,6 +178,15 @@ class ExpectedContourSesamoid(ExpectedContour):
 
       difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
 
+      minimum_distance_to_origin = np.min(
+        np.sqrt(np.sum(self.contour ** 2, axis=1))
+      )
+      difference = difference + (
+        criteria['sesamoid']['positional_penalization'] * (
+          minimum_distance_to_origin
+        )
+      )
+
       return difference, shape_fail_statuses
 
   def branch_start_position_restrictions(self,
@@ -176,7 +195,7 @@ class ExpectedContourSesamoid(ExpectedContour):
       location is needed to reach the next jump. This is meant to be implemented
       by expected contours at the start of a branch, so that the bones at the end
       of a branch know where should the next expected contour of the next branch
-      be. For example when jumping from metacarpal to next finger's distal phalanx
+      be. For example when jumping from metacarpal to next finger's sesamoid phalanx
       in a top-left to bottom-right fashion (cv coords wise)'''
     return []
 
