@@ -59,6 +59,16 @@ from src.main_develop_show_segment_tags import visualize_tags_main
 from src.main_experiment_positions import write_position_experiment
 from src.main_experiment_shape import write_shape_experiment
 from src.main_experiment_penalization import experiment_penalization_main
+from src.main_generate_tab_all_contours import generate_contours_table_main
+from src.main_generate_sequence_differences import (
+  generate_sequence_differences_table_main
+)
+from src.main_generate_shape_differences import (
+  generate_shape_differences_table_main
+)
+from src.main_generate_shape_failure_reasons import (
+  generate_shape_failure_reasons_table_main
+)
 
 @click.group()
 def cli() -> None:
@@ -624,6 +634,35 @@ def experiment_penalization(debug: bool, step: int, range: int):
   '''Given a set of position penalization factor values calculate the precision
   for especific cases where the wrong contour was chosen.'''
   experiment_penalization_main(debug, step, range)
+
+@cli.group()
+def generate() -> None:
+   '''Table generation commands'''
+   pass
+
+@generate.command()
+def tab_all_contours():
+  '''Generate a big table of (filename, index, contour points)'''
+  generate_contours_table_main()
+
+@generate.command()
+def tab_sequence_differences():
+  '''Generate a table with the (filename, origin, 0...22 selected contour
+  index) to be able to debug the outputs of the experiment.'''
+  generate_sequence_differences_table_main()
+
+@generate.command()
+def tab_shape_differences():
+  '''Generate a table with the (filename, 0...22 selected contour
+  index, case valid or not) to be able to debug the outputs of the experiment.'''
+  generate_shape_differences_table_main()
+
+@generate.command()
+def tab_shape_failure_reasons():
+  '''Generate a table with the (filename, contour, failure reasons)
+  of failed contours to be able to debug the outputs of the experiment.'''
+  generate_shape_failure_reasons_table_main()
+
 
 if __name__ == '__main__':
     cli()
