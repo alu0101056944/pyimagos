@@ -1494,28 +1494,29 @@ def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
 
   for expected_contour_key in expected_contour_to_cases:
     contour_type = expected_contour_key.split('_')[0]
-    for case_info in expected_contour_to_cases[expected_contour_key]:
+    
+    first_stage_penalization_factors = list(np.arange(1.0, 0.1, -0.1))
+    first_stage_penalization_factors = [
+      float(factor) for factor in first_stage_penalization_factors
+    ]
 
-      first_stage_penalization_factors = list(np.arange(1.0, 0.1, -0.1))
-      first_stage_penalization_factors = [
-        float(factor) for factor in first_stage_penalization_factors
-      ]
+    penalization_to_success_list = {}
+    for penalization_factor in first_stage_penalization_factors:
+      penalization_to_success_list[penalization_factor] = []
 
-      local_precisions = []
-      for penalization_factor in first_stage_penalization_factors:
-        original_penalization_factor = (
-          criteria_dict[contour_type]['positional_penalization']
-        )
-        criteria_dict[contour_type]['positional_penalization'] = (
-          penalization_factor
-        )
+      original_penalization_factor = (
+        criteria_dict[contour_type]['positional_penalization']
+      )
+      criteria_dict[contour_type]['positional_penalization'] = (
+        penalization_factor
+      )
 
+      for case_info in expected_contour_to_cases[expected_contour_key]:
         target_expected_contour = case_info[0]
         candidate_contours = case_info[1]
         correct_candidate_index = case_info[2]
         case_title = case_info[3]
 
-        success_list = []
         scores = []
         for candidate_contour in candidate_contours:
           target_expected_contour.prepare(
@@ -1527,44 +1528,53 @@ def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
           scores.append(score)
         chosen_candidate_index = int(np.argmin(scores))
         if chosen_candidate_index == correct_candidate_index:
-          success_list.append(True)
+          penalization_to_success_list[penalization_factor].append(True)
         else:
-          success_list.append(False)
-        precision = success_list.count(True) / len(success_list)
-        local_precisions.append(precision)
+          penalization_to_success_list[penalization_factor].append(False)
 
-        criteria_dict[contour_type]['positional_penalization'] = (
-          original_penalization_factor
-        )
-
-      best_precision_penalization_factor_index = (
-        len(local_precisions) - 1 - np.argmax(local_precisions[::-1])
+      criteria_dict[contour_type]['positional_penalization'] = (
+        original_penalization_factor
       )
-      best_precision_penalization_factor = first_stage_penalization_factors[
-        best_precision_penalization_factor_index]
+      
+    expected_contour_to_penalization_to_precision = {}
+    for penalization_factor in first_stage_penalization_factors:
+      positive_amount = penalization_to_success_list[penalization_factor].count(True)
+      length = len(penalization_to_success_list[penalization_factor])
+      expected_contour_to_penalization_to_precision[penalization_factor] = positive_amount / length
 
-      output_string = output_string + f'expected_contour_key={expected_contour_key}, ' + (
-        f'case_title={case_title}, ') + (
-        f'best_precision_first_stage={best_precision_penalization_factor}\n')
+    all_precisions_first_stage = list(expected_contour_to_penalization_to_precision.values())
+    best_precision_penalization_factor_index = (
+      len(all_precisions_first_stage) - 1 - np.argmax(all_precisions_first_stage[::-1])
+    )
+    best_precision_penalization_factor = first_stage_penalization_factors[
+      best_precision_penalization_factor_index]
 
-      upper_bound = min(1, best_precision_penalization_factor + (step * (range / 2)))
-      lower_bound = max(0, best_precision_penalization_factor - (step * (range / 2)))
-      second_stage_penalization_factors = (
-        list(np.arange(upper_bound, best_precision_penalization_factor, (-1) * step)) +
-        list(np.arange(best_precision_penalization_factor, lower_bound, (-1) * step))
+    output_string = output_string + f'expected_contour_key={expected_contour_key}, ' + (
+      f'case_title={case_title}, ') + (
+      f'best_precision_first_stage={best_precision_penalization_factor}\n')
+
+    upper_bound = min(1, best_precision_penalization_factor + (step * (range / 2)))
+    lower_bound = max(0, best_precision_penalization_factor - (step * (range / 2)))
+    second_stage_penalization_factors = (
+      list(np.arange(upper_bound, best_precision_penalization_factor, (-1) * step)) +
+      list(np.arange(best_precision_penalization_factor, lower_bound, (-1) * step))
+    )
+    second_stage_penalization_factors = [
+      float(factor) for factor in second_stage_penalization_factors
+    ]
+
+    penalization_to_success_list = {}
+    for penalization_factor in second_stage_penalization_factors:
+      penalization_to_success_list[penalization_factor] = []
+
+      original_penalization_factor = (
+        criteria_dict[contour_type]['positional_penalization']
       )
-      second_stage_penalization_factors = [
-        float(factor) for factor in second_stage_penalization_factors
-      ]
+      criteria_dict[contour_type]['positional_penalization'] = (
+        penalization_factor
+      )
 
-      for penalization_factor in second_stage_penalization_factors:
-        original_penalization_factor = (
-          criteria_dict[contour_type]['positional_penalization']
-        )
-        criteria_dict[contour_type]['positional_penalization'] = (
-          penalization_factor
-        )
-
+      for case_info in expected_contour_to_cases[expected_contour_key]:
         target_expected_contour = case_info[0]
         candidate_contours = case_info[1]
         correct_candidate_index = case_info[2]
@@ -1579,7 +1589,6 @@ def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
             'candidate_contour_differences': [],
           }
 
-        success_list = []
         scores = []
         for candidate_contour in candidate_contours:
           target_expected_contour.prepare(
@@ -1592,23 +1601,27 @@ def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
           expected_contour_to_case_to_contour_to_difference[
             expected_contour_key][case_title][penalization_factor][
               'candidate_contour_differences'].append(score)
+
         chosen_candidate_index = int(np.argmin(scores))
+        if chosen_candidate_index == correct_candidate_index:
+          penalization_to_success_list[penalization_factor].append(True)
+        else:
+          penalization_to_success_list[penalization_factor].append(False)
 
         expected_contour_to_case_to_contour_to_difference[
           expected_contour_key
           ][case_title][penalization_factor]['chosen_candidate_index'] = chosen_candidate_index
 
-        if chosen_candidate_index == correct_candidate_index:
-          success_list.append(True)
-        else:
-          success_list.append(False)
-        precision = success_list.count(True) / len(success_list)
+      criteria_dict[contour_type]['positional_penalization'] = (
+        original_penalization_factor
+      )
 
-        expected_contour_to_factor_to_precision[expected_contour_key][penalization_factor] = precision
-
-        criteria_dict[contour_type]['positional_penalization'] = (
-          original_penalization_factor
-        )
+    for penalization_factor in second_stage_penalization_factors:
+      positive_amount = penalization_to_success_list[penalization_factor].count(True)
+      length = len(penalization_to_success_list[penalization_factor])
+      expected_contour_to_factor_to_precision[expected_contour_key][penalization_factor] = (
+        positive_amount / length
+      )
 
   output_string = output_string + f'step={step}, range={range}.\n\n'
 
@@ -1637,20 +1650,19 @@ def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
       )
 
     for relevant_expected_contour_key in relevant_expected_contour_keys:
+      penalization_to_success_list = {}
       for penalization_factor in all_penalization_factor_keys:
-        local_factors_dict = (
-          expected_contour_to_factor_to_precision[relevant_expected_contour_key]
-        )
-        if penalization_factor not in local_factors_dict:
+        if penalization_factor not in expected_contour_to_factor_to_precision[relevant_expected_contour_key]:
           missing_penalization_factor = penalization_factor
-          for case_info in expected_contour_to_cases[relevant_expected_contour_key]:
-            original_penalization_factor = (
-              criteria_dict[contour_type]['positional_penalization']
-            )
-            criteria_dict[contour_type]['positional_penalization'] = (
-              missing_penalization_factor
-            )
+          penalization_to_success_list[missing_penalization_factor] = []
 
+          original_penalization_factor = (
+            criteria_dict[contour_type]['positional_penalization']
+          )
+          criteria_dict[contour_type]['positional_penalization'] = (
+            missing_penalization_factor
+          )
+          for case_info in expected_contour_to_cases[relevant_expected_contour_key]:
             target_expected_contour = case_info[0]
             candidate_contours = case_info[1]
             correct_candidate_index = case_info[2]
@@ -1667,7 +1679,6 @@ def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
                 'candidate_contour_differences': [],
               }
 
-            success_list = []
             scores = []
             for candidate_contour in candidate_contours:
               target_expected_contour.prepare(
@@ -1683,22 +1694,25 @@ def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
 
             chosen_candidate_index = int(np.argmin(scores))
 
+            if chosen_candidate_index == correct_candidate_index:
+              penalization_to_success_list[penalization_factor].append(True)
+            else:
+              penalization_to_success_list[penalization_factor].append(False)
+
             expected_contour_to_case_to_contour_to_difference[
               relevant_expected_contour_key
               ][case_title][missing_penalization_factor]['chosen_candidate_index'] = chosen_candidate_index
 
-            if chosen_candidate_index == correct_candidate_index:
-              success_list.append(True)
-            else:
-              success_list.append(False)
-            precision = success_list.count(True) / len(success_list)
-
-            expected_contour_to_factor_to_precision[
-              relevant_expected_contour_key][missing_penalization_factor] = precision
-
-            criteria_dict[contour_type]['positional_penalization'] = (
-              original_penalization_factor
-            )
+          criteria_dict[contour_type]['positional_penalization'] = (
+            original_penalization_factor
+          )
+        
+      for penalization_factor in penalization_to_success_list.keys():
+        positive_amount = penalization_to_success_list[penalization_factor].count(True)
+        length = len(penalization_to_success_list[penalization_factor])
+        expected_contour_to_factor_to_precision[relevant_expected_contour_key][penalization_factor] = (
+          positive_amount / length
+        )
 
   output_string = output_string + '# All expected_contour_to_factor_to_precision (homogeneous)\n'
   output_string = output_string + json.dumps(expected_contour_to_factor_to_precision, indent=2)

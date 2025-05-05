@@ -52,7 +52,7 @@ CRITERIA_DICT = {
     'aspect_ratio_tolerance': 2.75,
     'solidity': 2.511,
     'defect_area_ratio': 0.03,
-    'positional_penalization': 0.15250000000000014,
+    'positional_penalization': 0.6500000000000011,
   },
   'medial': {
     'area': 7,
