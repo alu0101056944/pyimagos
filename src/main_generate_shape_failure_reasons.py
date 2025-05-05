@@ -61,7 +61,7 @@ def contour_shape_failures(contours: list, contour_map: list,
                       expected_contours: list, title: str) -> list[str]:
   '''contour_map is the ordered version of contours which corresponds to the
   expected_contours sequence, which is a list of ExpectedContour classes.'''
-  own_title_to_contour_acceptance = {title: []}
+  own_title_to_contour_info = {title: []}
 
   for i in range(len(contour_map)):
     contour = contours[contour_map[i]]
@@ -81,14 +81,28 @@ def contour_shape_failures(contours: list, contour_map: list,
     image_width = int(max_x - min_x)
     image_height = int(max_y - min_y)
     expected_contour.prepare(contour, image_width, image_height)
-    score = expected_contour.shape_restrictions()
-    if score != float('inf'):
-      own_title_to_contour_acceptance[title].append(True)
+    score, factorname_to_info = expected_contour.shape_restrictions(decompose=True)
+
+    local_contour_decision = {'fail_reasons': []}
+    has_failed = False
+    for factorname in factorname_to_info:
+      info = factorname_to_info[factorname]
+      fail_status = info['fail_status']
+      actual_value = info['obtained_value']
+      threshold_value = info['threshold_value']
+
+      if fail_status == True:
+        has_failed = True
+        local_contour_decision['fail_reasons'].append(factorname)
+
+    if has_failed == True:
+      local_contour_decision['fail_status'] = True
     else:
-      own_title_to_contour_acceptance[title].append(False)
+      local_contour_decision['fail_status'] = False
 
-  return own_title_to_contour_acceptance
+    own_title_to_contour_info[title].append(local_contour_decision)
 
+  return own_title_to_contour_info
 
 def case_004_local():
   contours = case_004()
@@ -991,7 +1005,7 @@ def get_canonical_expected_contours():
 
   return expected_contours
 
-def generate_shape_differences_table_main():
+def generate_shape_failure_reasons_table_main():
   output_string = ''
 
   case_to_contour_acceptances = {}
@@ -1015,21 +1029,28 @@ def generate_shape_differences_table_main():
   case_to_contour_acceptances.update(case_1779_local())
   case_to_contour_acceptances.update(case_2089_local())
 
+  case_titles_that_failed = []
+  for case in case_to_contour_acceptances:
+    has_failed = False
+    for contour_info in case_to_contour_acceptances[case]:
+      if contour_info['fail_status'] == True:
+        has_failed = True
+    
+    if has_failed == True:
+      case_titles_that_failed.append(case)
+
   def table_start(encounter_amount: int = 1):
-    col_specs_str = ''.join(['>{\\raggedright\\tiny\\arraybackslash}p{0.005\\textwidth}|'] * 22)
     return (
       '\\begin{table}[H]\n') + (
       '\\centering\n') + (
-      '\\caption{Validez de la forma de los contornos respecto a segmentación manual ') + (
+      '\\caption{Razones de fallo para cada caso fallado. ') + (
         f'{encounter_amount}' + '}\n') + (
-      '\\label{tab:shape_differences' + f'{encounter_amount}' + '}\n') + (
+      '\\label{tab:shape_failure_reasons ' + f'{encounter_amount}' + '}\n') + (
       '\\begin{footnotesize}\n') + (
-      '\\begin{tabular}{|l|' + col_specs_str +'}\n') + (
+      '\\begin{tabular}{|l||c|l|}\n') + (
       '\\toprule\n') + (
-      ' & \\multicolumn{21}{c|}{Índices de contornos} \\\\ \n') + (
-      '\\hline\n \\textbf{Archivo} & ') + (
-          ' & '.join([str(value) for value in list(np.arange(0, 21, 1))])
-        ) + ' & V ' ' \\\\ \n' + ('\\hline\n')
+      '\\hline\n \\textbf{Archivo} & \\textbf{Índice de contorno} & ') + (
+        '\\textbf{Motivos de fallo}  \\\\ \n') + '\\hline\n'
   
   def table_end():
     return (
@@ -1047,28 +1068,26 @@ def generate_shape_differences_table_main():
   table_cut_count = 0
   TABLE_CUT_THRESHOLD = 12
 
-  for case_title in case_to_contour_acceptances:
+  for case_title in case_titles_that_failed:
     processed_title = case_title.replace('_', '\\_')
-    contour_acceptances = [
-      '1' if value == True else '0' for value in case_to_contour_acceptances[case_title]
-    ]
-    case_valid = contour_acceptances.count('1') == len(contour_acceptances)
-    table_entry = f'{processed_title} & {' & '.join(contour_acceptances)} ' + (
-      f'& {'1' if case_valid else '0'} \\\\ \n')
+    for i, contour_info in enumerate(case_to_contour_acceptances[case_title]):
+      fail_reasons = ', '.join(contour_info['fail_reasons']).replace('_', '\\_')
+      table_entry = f'{processed_title} & {i} & ' + (
+        f'{f'{fail_reasons}.' if len(fail_reasons) > 0 else '-'} \\\\ \n')
 
-    table_cut_count += 1
-    if table_cut_count >= TABLE_CUT_THRESHOLD:
-      tables_generated += 1
-      output_string = output_string + cut_table(table_entry,
-                                                encounter_amount=tables_generated)
-      table_cut_count = 0
-    else:
-      output_string = output_string + table_entry
-    output_string = output_string + '\\hline\n'
+      table_cut_count += 1
+      if table_cut_count >= TABLE_CUT_THRESHOLD:
+        tables_generated += 1
+        output_string = output_string + cut_table(table_entry,
+                                                  encounter_amount=tables_generated)
+        table_cut_count = 0
+      else:
+        output_string = output_string + table_entry
+      output_string = output_string + '\\hline\n'
 
   output_string = output_string + table_end()
 
-  with open('tab_shape_differences.txt', 'w', encoding='utf-8') as f:
+  with open('tab_shape_failure_reasons.txt', 'w', encoding='utf-8') as f:
     f.write(output_string)
-    print('Writing tab_shape_differences.txt')
+    print('Writing tab_shape_failure_reasons.txt')
     print('Success.')

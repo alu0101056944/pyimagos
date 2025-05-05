@@ -14,6 +14,7 @@ global_furthest_invasions_stage_2.txt
 tab_all_contours.txt
 tab_sequence_differences.txt
 tab_shape_differences.txt
+tab_shape_failure_reasons.txt
 
 model/*
 !model/README.md

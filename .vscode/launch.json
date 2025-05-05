@@ -40,7 +40,7 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "generate",
-        "tab-shape-differences"
+        "tab-shape-failure-reasons"
       ]
     },
   ]
