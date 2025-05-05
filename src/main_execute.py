@@ -297,7 +297,8 @@ def search_complete_contours(
   while True:
     elapsed_time = time.time() - start_time
     if elapsed_time >= search_duration_seconds:
-      return []
+      # return []
+      pass
 
     if not silent:
       if not full_silent:
@@ -360,14 +361,14 @@ def search_complete_contours(
             if not full_silent:
               print('No valid contour inside required area was found for ' \
                     'expected contour ' \
-                    f'index={len(state['contours_committed']) - 1}.' \
+                    f'index={len(state['contours_committed'])}.' \
                       ' Search stop.')
             state_stack.pop(0)
         else:
           if not full_silent:
             print('No contours inside required area were found for ' \
                   'expected contour ' \
-                    f'index={len(state['contours_committed']) - 1}.' \
+                    f'index={len(state['contours_committed'])}.' \
                       ' Search stop.')
           state_stack.pop(0)
       

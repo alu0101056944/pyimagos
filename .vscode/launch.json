@@ -26,11 +26,11 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "experiment",
-        "--group17_5=bar",
         "--single",
-        "--useinput2",
         "--nofilter",
-        "--use_starts_file"
+        "--group17_5=bar",
+        "--useinput2",
+        "--use_starts_file",
       ]
     },
     {
@@ -40,7 +40,17 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "develop",
-        "experiment-positions"
+        "experiment-shapes"
+      ]
+    },
+    {
+      "name": "Penalization experiment file. Python Debugger: Python File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": [
+        "develop",
+        "experiment-penalization"
       ]
     },
   ]

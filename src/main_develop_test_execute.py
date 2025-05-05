@@ -8891,6 +8891,6 @@ def radiography_084_case():
 def visualize_execute_tests():
   # canonical_hand_case()
   radiography_004_case()
-  radiography_084_case()
+  # radiography_084_case()
   
   plt.show()

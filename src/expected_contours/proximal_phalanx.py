@@ -332,6 +332,16 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
       hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
       difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+
+      minimum_distance_to_origin = np.min(
+        np.sqrt(np.sum(self.contour ** 2, axis=1))
+      )
+      difference = difference + (
+        criteria['proximal']['positional_penalization'] * (
+          minimum_distance_to_origin
+        )
+      )
+
       return difference
     else:
       shape_fail_statuses = {
@@ -506,6 +516,15 @@ class ExpectedContourProximalPhalanx(ExpectedContourOfBranch):
       hu_moments = (np.log10(hu_moments_no_zeros)).flatten()
 
       difference = np.linalg.norm(hu_moments - self.reference_hu_moments)
+
+      minimum_distance_to_origin = np.min(
+        np.sqrt(np.sum(self.contour ** 2, axis=1))
+      )
+      difference = difference + (
+        criteria['proximal']['positional_penalization'] * (
+          minimum_distance_to_origin
+        )
+      )
 
       return difference, shape_fail_statuses
 
