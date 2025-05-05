@@ -25,8 +25,12 @@
       "request": "launch",
       "program": "${workspaceFolder}/main.py",
       "args": [
-        "develop",
-        "experiment-penalization",
+        "experiment",
+        "--single",
+        "--nofilter",
+        "--group17_5=bar",
+        "--useinput2",
+        "--use_starts_file",
       ]
     },
     {
@@ -37,6 +41,16 @@
       "args": [
         "develop",
         "experiment-shapes"
+      ]
+    },
+    {
+      "name": "Penalization experiment file. Python Debugger: Python File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/main.py",
+      "args": [
+        "develop",
+        "experiment-penalization"
       ]
     },
   ]

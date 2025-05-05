@@ -52,7 +52,7 @@ CRITERIA_DICT = {
     'aspect_ratio_tolerance': 2.75,
     'solidity': 2.511,
     'defect_area_ratio': 0.03,
-    'positional_penalization': 0.005,
+    'positional_penalization': 0.15250000000000014,
   },
   'medial': {
     'area': 7,
@@ -61,7 +61,7 @@ CRITERIA_DICT = {
     'aspect_ratio_tolerance': 2.41,
     'solidity': 2.35,
     'defect_area_ratio': 0.02001,
-    'positional_penalization': 0.005,
+    'positional_penalization': 0,
   },
   'proximal': {
     'area': 22,
@@ -70,7 +70,7 @@ CRITERIA_DICT = {
     'aspect_ratio_tolerance': 2.6,
     'solidity': 2.35,
     'defect_area_ratio': 0.03,
-    'positional_penalization': 0.005,
+    'positional_penalization': 0,
   },
   'metacarpal': {
     'area': 8,
@@ -79,7 +79,7 @@ CRITERIA_DICT = {
     'aspect_ratio_tolerance': 2.7,
     'solidity': 2.4,
     'defect_area_ratio': 0.01,
-    'positional_penalization': 0.005,
+    'positional_penalization': 0.15250000000000014,
   },
   'radius': {
     'area': -52,
@@ -87,7 +87,7 @@ CRITERIA_DICT = {
     'aspect_ratio_max': 5.311,
     'solidity': 2.5,
     'defect_area_ratio': 0.035,
-    'positional_penalization': 0.005,
+    'positional_penalization': 0,
   },
   'ulna': {
     'area': 370,
@@ -95,11 +95,11 @@ CRITERIA_DICT = {
     'aspect_ratio_max': 6.5,
     'solidity': 2.8,
     'defect_area_ratio': 0.012900000000218292,
-    'positional_penalization': 0.005,
+    'positional_penalization': 0,
   },
   'sesamoid': {
     'solidity': 1.4,
-    'positional_penalization': 0.005,
+    'positional_penalization': 0,
   }
 }
 
