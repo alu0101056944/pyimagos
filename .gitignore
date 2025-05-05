@@ -16,6 +16,7 @@ tab_all_contours.txt
 tab_sequence_differences.txt
 tab_shape_differences.txt
 tab_shape_failure_reasons.txt
+tab_case_identification.txt
 
 model/*
 !model/README.md

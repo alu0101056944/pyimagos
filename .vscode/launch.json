@@ -40,7 +40,7 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "generate",
-        "tab-shape-failure-reasons"
+        "tab-case-identification"
       ]
     },
     {

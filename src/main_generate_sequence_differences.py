@@ -202,7 +202,7 @@ def generate_sequence_differences_table_main():
       '\\begin{footnotesize}\n') + (
       '\\begin{tabular}{|l|l|' + col_specs_str + '}\n') + (
       '\\toprule\n') + (
-      ' & & \multicolumn{21}{c|}{Índices de contornos} \\\\ \n') + (
+      ' & & \\multicolumn{21}{c|}{Índices de contornos} \\\\ \n') + (
       '\\hline\n \\textbf{Archivo} & \\textbf{Origen} & ') + (
           ' & '.join([str(value) for value in list(np.arange(0, 22, 1))])
         ) + ' \\\\ \n' + ('\\hline\n')

@@ -69,6 +69,7 @@ from src.main_generate_shape_differences import (
 from src.main_generate_shape_failure_reasons import (
   generate_shape_failure_reasons_table_main
 )
+from src.main_generate_case_identification import generate_case_identification_main
 
 @click.group()
 def cli() -> None:
@@ -663,6 +664,11 @@ def tab_shape_failure_reasons():
   of failed contours to be able to debug the outputs of the experiment.'''
   generate_shape_failure_reasons_table_main()
 
+@generate.command()
+def tab_case_identification():
+  '''Generate a table with the (filename, candidate_index, candidate_difference)
+  of the four valid radiographies to debug the outputs of the experiment.'''
+  generate_case_identification_main()
 
 if __name__ == '__main__':
     cli()
