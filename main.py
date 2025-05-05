@@ -62,6 +62,9 @@ from src.main_generate_tab_all_contours import generate_contours_table_main
 from src.main_generate_sequence_differences import (
   generate_sequence_differences_table_main
 )
+from src.main_generate_shape_differences import (
+  generate_shape_differences_table_main
+)
 
 @click.group()
 def cli() -> None:
@@ -626,9 +629,15 @@ def tab_all_contours():
 
 @generate.command()
 def tab_sequence_differences():
-  '''Generate a table with the (filename, index, expected_contour_index,
-  actual_index) to be able to debug the outputs of the experiment.'''
+  '''Generate a table with the (filename, origin, 0...22 selected contour
+  index) to be able to debug the outputs of the experiment.'''
   generate_sequence_differences_table_main()
+
+@generate.command()
+def tab_shape_differences():
+  '''Generate a table with the (filename, origin, 0...22 selected contour
+  index) to be able to debug the outputs of the experiment.'''
+  generate_shape_differences_table_main()
 
 if __name__ == '__main__':
     cli()

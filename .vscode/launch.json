@@ -40,7 +40,7 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "generate",
-        "tab-sequence-differences"
+        "tab-shape-differences"
       ]
     },
   ]
