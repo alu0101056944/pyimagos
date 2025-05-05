@@ -13,6 +13,10 @@ sucessful in the search.
 
 import numpy as np
 
+from src.expected_contours.distal_phalanx import ExpectedContourDistalPhalanx
+from src.expected_contours.metacarpal import ExpectedContourMetacarpal
+
+
 from src.radiographies.rad_004_with_sesamoid import (
   case_004_with_sesamoid,
   case_004_with_sesamoid_segmentation
@@ -113,7 +117,7 @@ def minimize_contours(contours):
   )
   return adjusted_contours
 
-def generate_case_identification_main():
+def generate_case_selection_main():
   case_to_manual_info = {
     '004_borders_clean.jpg': [case_004_with_sesamoid(), case_004_with_sesamoid_segmentation()],
     '022_borders_clean.jpg': [case_022_with_sesamoid(), case_022_with_sesamoid_segmentation()],
@@ -156,13 +160,13 @@ def generate_case_identification_main():
     return (
       '\\begin{table}[H]\n') + (
       '\\centering\n') + (
-      '\\caption{Contornos involucrados en la selección de contorno esperado ') + (
+      '\\caption{Contornos seleccionados en las situaciones de similitud ') + (
         f'{encounter_amount}' + '}\n') + (
-      '\\label{tab:case_identification ' + f'{encounter_amount}' + '}\n') + (
+      '\\label{tab:case_selection_' + f'{encounter_amount}' + '}\n') + (
       '\\begin{footnotesize}\n') + (
       '\\begin{tabular}{|l|c|c|}\n') + (
       '\\toprule\n') + (
-      '\\textbf{Caso} & \\textbf{Índice del contorno} & \\textbf{Diferencia} \\\\ \n') + (
+      '\\textbf{Caso} & \\textbf{Índice correcto} & \\textbf{Índice seleccionado} \\\\ \n') + (
       '\\hline\n')
   
   def table_end():
@@ -187,6 +191,7 @@ def generate_case_identification_main():
     for case_info in expected_contour_to_cases[expected_contour_key]:
       target_expected_contour = case_info[0]
       candidate_contours = case_info[1]
+      correct_candidate_contour_index = case_info[2]
       case_title = case_info[3]
 
       processed_title = case_title.replace('_', '\\_')
@@ -210,10 +215,12 @@ def generate_case_identification_main():
         )
         score = target_expected_contour.shape_restrictions()
         scores.append(score)
+
+      selected_candidate_contour_index = np.argmin(scores)
       
       for i in range(len(candidate_contours)):
-        table_entry = f'{processed_title} & {candidate_contour_indices[i]}' + (
-          f' & {scores[i]} \\\\ \n')
+        table_entry = f'{processed_title} & {correct_candidate_contour_index}' + (
+          f' & {selected_candidate_contour_index} \\\\ \n')
 
         table_cut_count += 1
         if table_cut_count >= TABLE_CUT_THRESHOLD:
@@ -231,7 +238,7 @@ def generate_case_identification_main():
 
   output_string = output_string + table_end()
 
-  with open('tab_case_identification.txt', 'w', encoding='utf-8') as f:
+  with open('tab_case_selection.txt', 'w', encoding='utf-8') as f:
     f.write(output_string)
-    print('Writing tab_case_identification.txt')
+    print('Writing tab_case_selection.txt')
     print('Success.')
