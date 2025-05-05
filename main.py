@@ -71,6 +71,11 @@ from src.main_generate_shape_failure_reasons import (
 )
 from src.main_generate_case_identification import generate_case_identification_main
 from src.main_generate_case_selection import generate_case_selection_main
+from src.main_generate_first_ranges import generate_first_ranges_main
+from src.main_generate_range_precision import generate_range_precision_main
+from src.main_generate_atomic_differences import generate_atomic_differences_main
+from src.main_generate_contour_type_precisions import generate_contour_type_precisions_main
+from src.main_generate_best_factor import generate_best_factor_main
 
 @click.group()
 def cli() -> None:
@@ -676,6 +681,38 @@ def tab_case_selection():
   '''Generate a table with the (case, selected_candidate, correct_candidate)
   of the four valid radiographies to debug the outputs of the experiment.'''
   generate_case_selection_main()
+
+@generate.command()
+def tab_first_ranges():
+  '''Generate a table like  (expected_contour, case_title,
+  best_precision_first_stage) to study the failure cases on radiographies
+  that should be sucessful in the search.'''
+  generate_first_ranges_main()
+
+@generate.command()
+def tab_range_precision():
+  '''Generate a table like (expected_contour, penalization_factor, precision) to study
+    the failure cases on radiographies that should be sucessful in the search.'''
+  generate_range_precision_main()
+
+@generate.command()
+def tab_atomic_differences():
+  '''Generate a table like (expected_contour, case, penalization factor,
+    correct_index, chosen_index, index, difference) to study the failure
+    cases on radiographies that should be sucessful in the search.'''
+  generate_atomic_differences_main()
+
+@generate.command()
+def tab_contour_type_precisions():
+  '''Generate a table like (contour_type, penalization_factor, precision) to study
+    the failure cases on radiographies that should be sucessful in the search.'''
+  generate_contour_type_precisions_main()
+
+@generate.command()
+def tab_best_factor():
+  '''Generate a table like (contour_type, best_factor, precision) to study
+  the failure cases on radiographies that should be sucessful in the search.'''
+  generate_best_factor_main()
 
 if __name__ == '__main__':
     cli()

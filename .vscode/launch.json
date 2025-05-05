@@ -40,7 +40,7 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "generate",
-        "tab-case-identification"
+        "tab-best-factor"
       ]
     },
     {

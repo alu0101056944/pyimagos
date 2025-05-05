@@ -1465,7 +1465,6 @@ def experiment_penalization_main(debug_mode: bool, step: int = 0.0025,
         'candidate_contour_differences': []
       }
 
-      success_list = []
       scores = []
       for i, candidate_contour in enumerate(candidate_contours):
         target_expected_contour.prepare(
