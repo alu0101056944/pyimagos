@@ -223,12 +223,36 @@ def search_complete_contours(
     criteria_dict: dict = None,
     full_silent: bool = False,
     start_index: int = -1,
+    debug_mode: bool = False,
 ) -> list:
+  debug_output_info = [
+    {
+      'contours_committed': [],
+      'committed_total_value': float('inf')
+    }
+  ]
+
   if len(contours) == 0:
-    return []
+    if not debug_mode:
+      return []
+    else:
+      return [
+          {
+            'contours_committed': [],
+            'committed_total_value': float('inf')
+          }
+        ]
   
   if len(expected_contours) == 0:
-    return []
+    if not debug_mode:
+      return []
+    else:
+      return [
+        {
+          'contours_committed': [],
+          'committed_total_value': float('inf')
+        }
+      ]
 
   state_stack = []
 
@@ -277,7 +301,10 @@ def search_complete_contours(
       if not full_silent:
         print('No valid contours encountered (all scores are "inf"). ' \
               'Search stop.')
-      return []
+      if not debug_mode:
+        return []
+      else:
+        return debug_output_info
   else:
     # To be able to start the search from a specific location a start contour
     # that is meant to not be included in contours is passed as argument
@@ -297,7 +324,10 @@ def search_complete_contours(
   while True:
     elapsed_time = time.time() - start_time
     if elapsed_time >= search_duration_seconds:
-      return []
+      if not debug_mode:
+        return []
+      else:
+        return debug_output_info
 
     if not silent:
       if not full_silent:
@@ -362,19 +392,32 @@ def search_complete_contours(
                     'expected contour ' \
                     f'index={len(state['contours_committed']) - 1}.' \
                       ' Search stop.')
-            state_stack.pop(0)
+            if not debug_mode:
+              state_stack.pop(0)
+            else:
+              debug_output_info[0]['contours_committed'] = state['contours_committed']
+              debug_output_info[0]['committed_total_value'] = state['committed_total_value']
+              state_stack.pop(0)
         else:
           if not full_silent:
             print('No contours inside required area were found for ' \
                   'expected contour ' \
                     f'index={len(state['contours_committed']) - 1}.' \
                       ' Search stop.')
-          state_stack.pop(0)
-      
+          if not debug_mode:
+            state_stack.pop(0)
+          else:
+            debug_output_info[0]['contours_committed'] = state['contours_committed']
+            debug_output_info[0]['committed_total_value'] = state['committed_total_value']
+            state_stack.pop(0)
     else:
       if not full_silent:
         print('Search finished: explored all alternatives but found nothing valid.')
-        return []
+        if not debug_mode:
+          return []
+        else:
+          return debug_output_info
+
     
 def create_minimal_image_from_contours(contours: list, padding = 0):
   if not contours:
@@ -576,6 +619,7 @@ def estimate_age_from_image(
     noresize: bool = False,
     input_image_2: Union[np.ndarray, Image.Image] = None,
     start_index: int = -1,
+    debug_mode: bool = False
 ) -> Tuple[float, list]:
   '''Given an image of a radiography, output the estimated age'''
   HIGHER_THRESHOLD = 40
@@ -666,9 +710,11 @@ def estimate_age_from_image(
     criteria_dict=criteria_dict,
     full_silent=full_silent,
     start_index=start_index,
+    debug_mode=debug_mode,
   )
 
-  if len(complete_contours) > 0:
+  if len(complete_contours) > 0 and (
+      len(complete_contours[0]['contours_committed']) == len(expected_contours)):
     best_contours = complete_contours[0]['contours_committed']
 
     metacarpal2 = best_contours[7]
@@ -700,9 +746,11 @@ def estimate_age_from_image(
       injected_start_contour=metacarpal5,
       criteria_dict=criteria_dict,
       full_silent=full_silent,
+      debug_mode=debug_mode
     )
 
-    if len(complete_contours_2) > 0:
+    if len(complete_contours_2) > 0 and (
+        len(complete_contours_2[0]['contours_committed']) == len(expected_contours_2)):
       best_contours_2 = complete_contours_2[0]['contours_committed']
 
       sesamoid = best_contours_2[1]
@@ -743,25 +791,50 @@ def estimate_age_from_image(
 
       estimated_age = estimate_age(measurements_normalized)
 
-      return (
-        estimated_age,
-        measurements_normalized,
-        minimum_image_1,
-        minimum_image_2,
-      )
+      if not debug_mode:
+        return (
+          estimated_age,
+          measurements_normalized,
+          minimum_image_1,
+          minimum_image_2,
+        )
+      else:
+        full_sequence = best_contours
+        if len(best_contours_2) > 1:
+          full_sequence.append(best_contours_2[1])
+        return (
+          estimated_age,
+          measurements_normalized,
+          minimum_image_1,
+          minimum_image_2,
+          full_sequence,
+        )
     else:
-      return (
-        -1,
-        None,
-        minimum_image_1,
-        minimum_image_2,
-      )
+      if not debug_mode:
+        return (
+          -1,
+          None,
+          minimum_image_1,
+          minimum_image_2,
+        )
+      else:
+        partial_sequence = best_contours
+        if len(best_contours_2) > 1:
+          partial_sequence.append(best_contours_2[1])
+        return (
+          -1,
+          None,
+          minimum_image_1,
+          minimum_image_2,
+          partial_sequence,
+        )
   else:
     return (
       -2,
       None,
       minimum_image_1,
       minimum_image_2,
+      complete_contours[0]['contours_committed'],
     )
 
 def process_radiograph(

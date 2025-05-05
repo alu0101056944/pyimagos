@@ -58,6 +58,10 @@ from src.main_print_shape_differences import shape_differences_main
 from src.main_develop_show_segment_tags import visualize_tags_main
 from src.main_experiment_positions import write_position_experiment
 from src.main_experiment_shape import write_shape_experiment
+from src.main_generate_tab_all_contours import generate_contours_table_main
+from src.main_generate_sequence_differences import (
+  generate_sequence_differences_table_main
+)
 
 @click.group()
 def cli() -> None:
@@ -609,6 +613,22 @@ def experiment_shapes(debug: bool):
   restriction the furthest distance into the wrong side globally (all
   radiographies).'''
   write_shape_experiment(debug)
+
+@cli.group()
+def generate() -> None:
+   '''Table generation commands'''
+   pass
+
+@generate.command()
+def tab_all_contours():
+  '''Generate a big table of (filename, index, contour points)'''
+  generate_contours_table_main()
+
+@generate.command()
+def tab_sequence_differences():
+  '''Generate a table with the (filename, index, expected_contour_index,
+  actual_index) to be able to debug the outputs of the experiment.'''
+  generate_sequence_differences_table_main()
 
 if __name__ == '__main__':
     cli()
