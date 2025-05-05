@@ -90,6 +90,27 @@ from src.radiographies.rad_2089_with_sesamoid import (
 
 from src.main_experiment import main_experiment
 
+from src.main_develop_test_distal_phalanx import (
+  create_minimal_image_from_contours,
+)
+
+def minimize_contours(contours):
+  all_points = np.concatenate(contours)
+  all_points = np.reshape(all_points, (-1, 2))
+  x_values = all_points[:, 0]
+  y_values = all_points[:, 1]
+
+  max_x = int(np.max(x_values))
+  max_y = int(np.max(y_values))
+
+  blank_image = np.zeros((max_y + 20, max_x + 20), dtype=np.uint8)
+  minimal_image, adjusted_contours = create_minimal_image_from_contours(
+    blank_image,
+    contours,
+    padding=20,
+  )
+  return adjusted_contours
+
 def generate_sequence_differences_table_main():
   output_string = ''
 
@@ -114,6 +135,10 @@ def generate_sequence_differences_table_main():
     '1779_borders_clean.jpg': [case_1779_with_sesamoid(), case_1779_with_sesamoid_segmentation()],
     '2089_borders_clean.jpg': [case_2089_with_sesamoid(), case_2089_with_sesamoid_segmentation()],
   }
+
+  # minimize the manual contours to match the automatic ones
+  for case in case_to_manual_info:
+    case_to_manual_info[case][0] = minimize_contours(case_to_manual_info[case][0])
 
   (
     _,
@@ -159,7 +184,7 @@ def generate_sequence_differences_table_main():
     chosen_contours = case_to_contours_sequence[case_key]
     if len(chosen_contours) > 0:
       if case_key in case_to_manual_info:
-        contours = case_to_manual_info[case_key]
+        contours = case_to_manual_info[case_key][0]
         for chosen_contour in chosen_contours:
           for i, contour in enumerate(contours):
             if np.array_equal(chosen_contour, contour):
@@ -219,6 +244,7 @@ def generate_sequence_differences_table_main():
 
     if case_title in case_to_contours_sequence_indices:
       computed_indices = case_to_contours_sequence_indices[case_title]
+      computed_indices = [str(value) for value in computed_indices]
       padded_computed_indices = computed_indices + (
         ['-'] * max(0, 22 - len(computed_indices))
       )

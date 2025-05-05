@@ -829,13 +829,21 @@ def estimate_age_from_image(
           partial_sequence,
         )
   else:
-    return (
-      -2,
-      None,
-      minimum_image_1,
-      minimum_image_2,
-      complete_contours[0]['contours_committed'],
-    )
+    if not debug_mode:
+      return (
+        -2,
+        None,
+        minimum_image_1,
+        minimum_image_2,
+      )
+    else:
+      return (
+        -2,
+        None,
+        minimum_image_1,
+        minimum_image_2,
+        complete_contours[0]['contours_committed'],
+      )
 
 def process_radiograph(
     filename: str,
