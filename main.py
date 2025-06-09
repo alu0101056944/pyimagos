@@ -104,9 +104,11 @@ def cli() -> None:
               ),
               help='Input image to use on second stage when nofilter is set.' \
                 'Fallsback to using input image 1.')
+@click.option('--start_index', type=int, is_flag=False, default=-1,
+              help='Index of the first contour according to the model')
 def execute(filename: str, write_files: bool, show: bool,
             nofilter: bool, all: bool, gpu: bool, noresize: bool,
-            input2: click.Path) -> None:
+            input2: click.Path, start_index: str) -> None:
   '''Left hand radiography age estimation.'''
   
   process_radiograph(
@@ -117,7 +119,8 @@ def execute(filename: str, write_files: bool, show: bool,
     all=all,
     use_cpu=not gpu,
     noresize=noresize,
-    input_image_2=input2
+    input_image_2=input2,
+    start_index=start_index,
   )
 
 @cli.command()
@@ -633,10 +636,10 @@ def experiment_shapes(debug: bool):
               help='Don\'t write the results to the output file.')
 @click.option('--step', is_flag=False, default=0.0025,
               help='Amount by which the algorithm jumps when trying out a new'
-              'penalization factor value. Must be a positive value.')
-@click.option('--range', is_flag=False, default=40,
+              ' penalization factor value. Must be a positive value.')
+@click.option('--range', is_flag=False, default=100,
               help='How many times to jump a step amount when trying out a new'
-              'penalizatio nfactor value. Must be a positive value.')
+              ' penalization factor value. Must be a positive value.')
 def experiment_penalization(debug: bool, step: int, range: int):
   '''Given a set of position penalization factor values calculate the precision
   for especific cases where the wrong contour was chosen.'''

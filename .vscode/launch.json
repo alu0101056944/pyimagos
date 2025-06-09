@@ -15,8 +15,11 @@
       "program": "${workspaceFolder}/main.py",
       "args": [
         "execute",
-        ".\\docs\\radiography_ideal_a_with_sesamoid_minimal.jpg",
-        "--nofilter"
+        ".\\baz\\030_borders_clean.jpg",
+        "--start_index=14",
+        "--nofilter",
+        "--input2=baz/030_borders_clean_stage_2.jpg",
+        "--show"
       ]
     },
     {

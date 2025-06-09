@@ -782,8 +782,8 @@ def estimate_age_from_image(
         'function': intersesamoid_distance_measurement
       }
 
-      # minimum_image_2 will always be bigger than 1 because it has a lower
-      # threshold so at least as many contours as 1 will be detected.
+      # minimum_image_2 will always be at least as big as 1 because it has a
+      # lower threshold so at least as many contours as 1 will be detected.
       measurements_normalized = measure(
         segmentation,
         minimum_image_2,
@@ -854,7 +854,8 @@ def process_radiograph(
     all: bool = False,
     use_cpu: bool = True,
     noresize: bool = False,
-    input_image_2: Path = None
+    input_image_2: Path = None,
+    start_index: int = -1,
 ) -> None:
   input_image = None
   try:
@@ -872,7 +873,7 @@ def process_radiograph(
     try:
       with Image.open(input_image_2) as image2:
         if image2.mode == 'L':
-          image2 = image.convert('RGB')
+          image2 = image2.convert('RGB')
           input_image_2 = np.array(image2)
         elif image2.mode == 'RGB':
           input_image_2 = np.array(image2)
@@ -890,7 +891,8 @@ def process_radiograph(
     nofilter=nofilter,
     use_cpu=use_cpu,
     noresize=noresize,
-    input_image_2=input_image_2
+    input_image_2=input_image_2,
+    start_index=start_index,
   )
 
   if not all:

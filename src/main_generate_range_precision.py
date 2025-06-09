@@ -47,7 +47,7 @@ def generate_range_precision_main():
 
   criteria_dict = copy.deepcopy(CRITERIA_DICT)
   step = 0.0025
-  range = 40
+  range = 100
 
   expected_contour_to_case_to_contour_to_difference = {}
   for expected_contour_key in expected_contour_to_cases:

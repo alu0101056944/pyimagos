@@ -140,15 +140,14 @@ def generate_case_identification_main():
   for case in case_to_manual_info:
     case_to_manual_info[case][0] = minimize_contours(case_to_manual_info[case][0])
 
-    
   informal_case_name_to_filename = {
-    'case_004_distal2': '004_borders_clean.jpg',
-    'case_004_distal2': '004_borders_clean.jpg',
     'case_004_metacarpal1': '004_borders_clean.jpg',
-    'case_006_distal2': '006_borders_clean.jpg',
+    'case_004_distal2': '004_borders_clean.jpg',
+    'case_022_distal2': '022_borders_clean.jpg',
+    # 'case_022_distal5': '022_borders_clean.jpg',
     'case_023_distal2': '023_borders_clean.jpg',
-    'case_023_distal5': '023_borders_clean.jpg',
-    'case_022_distal5': '022_borders_clean.jpg',
+    'case_030_distal2': '030_borders_clean.jpg',
+    # 'case_030_metacarpal1': '030_borders_clean.jpg',
   }
 
   output_string = ''
