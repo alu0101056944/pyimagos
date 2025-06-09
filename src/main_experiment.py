@@ -29,10 +29,14 @@ from constants import BONE_AGE_ATLAS
 def get_fit_dictionary(images: list, selected_group: Union[float, None],
                        nofilter: bool = False, use_cpu: bool = True,
                        noresize: bool = False, useinput2: bool = False,
-                       start_indices_dict: dict = None) -> dict:
+                       start_indices_dict: dict = None,
+                       debug_mode: bool = False) -> dict:
   fit = {}
   ages = {}
   filename_to_measurements = {}
+  output_case_to_contours_sequence = {
+    
+  }
 
   if isinstance(selected_group, float):
     reference_measurements = BONE_AGE_ATLAS[str(selected_group)]
@@ -44,14 +48,29 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
       if start_indices_dict is not None:
         start_index = start_indices_dict[filename]
 
+      print(f'\nExperiment execution with {filename}.')
+
       if not useinput2:
-        (
-          estimated_age,
-          measurements,
-          image_stage_1,
-          image_stage_2,
-        ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
-                                    noresize=noresize, start_index=start_index)
+        if not debug_mode:
+          (
+            estimated_age,
+            measurements,
+            image_stage_1,
+            image_stage_2,
+          ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                      noresize=noresize, start_index=start_index,
+                                      debug_mode=debug_mode)
+        else:
+          (
+            estimated_age,
+            measurements,
+            image_stage_1,
+            image_stage_2,
+            contours_sequence
+          ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                      noresize=noresize, start_index=start_index,
+                                      debug_mode=debug_mode)
+          output_case_to_contours_sequence[filename] = contours_sequence
       else:
         image_stage_2_str = image_info[2]
         image_stage_2 = None
@@ -66,15 +85,30 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
           print(f"Error opening image {image_stage_2}: {e}")
           raise
 
-        (
-          estimated_age,
-          measurements,
-          image_stage_1,
-          image_stage_2,
-        ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
-                                    noresize=noresize,
-                                    input_image_2=image_stage_2,
-                                    start_index=start_index)
+        if not debug_mode:
+          (
+            estimated_age,
+            measurements,
+            image_stage_1,
+            image_stage_2,
+          ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                      noresize=noresize,
+                                      input_image_2=image_stage_2,
+                                      start_index=start_index,
+                                      debug_mode=debug_mode)
+        else:
+          (
+            estimated_age,
+            measurements,
+            image_stage_1,
+            image_stage_2,
+            contours_sequence
+          ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                      noresize=noresize,
+                                      input_image_2=image_stage_2,
+                                      start_index=start_index,
+                                      debug_mode=debug_mode)
+          output_case_to_contours_sequence[filename] = contours_sequence
 
       if filename not in filename_to_measurements:
         filename_to_measurements[filename] = {}
@@ -121,13 +155,26 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
       image = image_info[1]
 
       if not useinput2:
-        (
-          estimated_age,
-          measurements,
-          image_stage_1,
-          image_stage_2,
-        ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
-                                    noresize=noresize)
+        if not debug_mode:
+          (
+            estimated_age,
+            measurements,
+            image_stage_1,
+            image_stage_2,
+          ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                      noresize=noresize,
+                                      debug_mode=debug_mode)
+        else:
+          (
+            estimated_age,
+            measurements,
+            image_stage_1,
+            image_stage_2,
+            contours_sequence,
+          ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                      noresize=noresize,
+                                      debug_mode=debug_mode)
+          output_case_to_contours_sequence[filename] = contours_sequence
       else:
         image_stage_2_str = image_info[2]
         image_stage_2 = None
@@ -142,14 +189,28 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
           print(f"Error opening image {image_stage_2}: {e}")
           raise
 
-        (
-          estimated_age,
-          measurements,
-          image_stage_1,
-          image_stage_2,
-        ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
-                                    noresize=noresize,
-                                    input_image_2=image_stage_2)
+        if not debug_mode:
+          (
+            estimated_age,
+            measurements,
+            image_stage_1,
+            image_stage_2,
+          ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                      noresize=noresize,
+                                      input_image_2=image_stage_2,
+                                      debug_mode=debug_mode)
+        else:
+          (
+            estimated_age,
+            measurements,
+            image_stage_1,
+            image_stage_2,
+            contours_sequence,
+          ) = estimate_age_from_image(image, nofilter=nofilter, use_cpu=use_cpu,
+                                      noresize=noresize,
+                                      input_image_2=image_stage_2,
+                                      debug_mode=debug_mode)
+          output_case_to_contours_sequence[filename] = contours_sequence
 
       if estimated_age != -1 and estimated_age != -2:
         smallest_difference = -1
@@ -201,7 +262,11 @@ def get_fit_dictionary(images: list, selected_group: Union[float, None],
   for measurement_key in fit:
     fit[measurement_key] = fit[measurement_key] / len(images)
 
-  return fit, ages, filename_to_measurements
+  if not debug_mode:
+    return fit, ages, filename_to_measurements
+  else:
+    return fit, ages, filename_to_measurements, output_case_to_contours_sequence
+
 
 def experiment(
     images: Union[dict, list],
@@ -212,22 +277,44 @@ def experiment(
     noresize: bool = False,
     useinput2: bool = False,
     start_indices_dict: dict = None,
+    debug_mode: bool = False,
 ):
   if isinstance(images, list):
     if selected_group == 'control':
-      (
-        fit,
-        ages,
-        filename_to_measurements,
-      ) = get_fit_dictionary(images, None, nofilter, use_cpu, noresize, useinput2,
-                             start_indices_dict)
+      if not debug_mode:
+        (
+          fit,
+          ages,
+          filename_to_measurements,
+        ) = get_fit_dictionary(images, None, nofilter, use_cpu, noresize, useinput2,
+                              start_indices_dict, debug_mode)
+      else:
+        (
+          fit,
+          ages,
+          filename_to_measurements,
+          case_to_contours_sequence,
+        ) = get_fit_dictionary(images, None, nofilter, use_cpu, noresize, useinput2,
+                              start_indices_dict, debug_mode)
+        return fit, ages, filename_to_measurements, case_to_contours_sequence
     else:
-      (
-        fit,
-        ages,
-        filename_to_measurements,
-      ) = get_fit_dictionary(images, float(selected_group), nofilter, use_cpu,
-                             noresize, useinput2, start_indices_dict)
+      if not debug_mode:
+        (
+          fit,
+          ages,
+          filename_to_measurements,
+        ) = get_fit_dictionary(images, float(selected_group), nofilter, use_cpu,
+                              noresize, useinput2, start_indices_dict, debug_mode)
+      else:
+        (
+          fit,
+          ages,
+          filename_to_measurements,
+          case_to_contours_sequence,
+        ) = get_fit_dictionary(images, float(selected_group), nofilter, use_cpu,
+                              noresize, useinput2, start_indices_dict, debug_mode)
+        return fit, ages, filename_to_measurements, case_to_contours_sequence
+
 
     print('\n')
     print(f'Fit results for group {selected_group}:')
@@ -273,10 +360,22 @@ def experiment(
       elif images_key == 'group_control':
         selected_group = None
 
-      fit, ages, _ = get_fit_dictionary(images[images_key], selected_group,
-                                     nofilter, use_cpu, noresize, useinput2,
-                                     start_indices_dict)
-
+      if not debug_mode:
+        fit, ages, _ = get_fit_dictionary(images[images_key], selected_group,
+                                          nofilter, use_cpu, noresize, useinput2,
+                                          start_indices_dict, debug_mode)
+      else:
+        fit, ages, _, case_to_contours_sequence = get_fit_dictionary(
+          images[images_key],
+          selected_group,
+          nofilter,
+          use_cpu,
+          noresize,
+          useinput2,
+          start_indices_dict,
+          debug_mode
+        )
+        return fit, ages, _, case_to_contours_sequence
       print(f'Fit results for group {selected_group}:')
       for measurement_key in fit:
         print(f'{measurement_key}={fit[measurement_key]}')
@@ -311,6 +410,7 @@ def main_experiment(
     noresize: bool = False,
     useinput2: bool = False,
     use_starts_file: bool = False,
+    debug_mode: bool = False,
 ):
   if single:
     amount_of_passed_options = (
@@ -467,9 +567,13 @@ def main_experiment(
                             f"entries. Expected {len(images)} but found" \
                               f" {len(control_dict)}")
           
+    if not debug_mode:
+      experiment(images, selected_group, control_dict, nofilter, use_cpu,
+                noresize, useinput2, start_indices_dict)
+    else:
+      return experiment(images, selected_group, control_dict, nofilter, use_cpu,
+                noresize, useinput2, start_indices_dict, debug_mode)
 
-    experiment(images, selected_group, control_dict, nofilter, use_cpu,
-               noresize, useinput2, start_indices_dict)
   else:
     # TODO --single mode has received changes to non control groups, so not --single
     # group is not updated and may raise errors. Fix it.

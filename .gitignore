@@ -12,6 +12,17 @@ best_shape_factors.txt
 best_shape_factors_stage_2.txt
 global_furthest_invasions_stage_2.txt
 best_penalization_factors.txt
+tab_all_contours.txt
+tab_sequence_differences.txt
+tab_shape_differences.txt
+tab_shape_failure_reasons.txt
+tab_case_identification.txt
+tab_case_selection.txt
+tab_first_ranges.txt
+tab_range_precision.txt
+tab_atomic_differences.txt
+tab_contour_type_precisions.txt
+tab_best_factor.txt
 
 model/*
 !model/README.md
